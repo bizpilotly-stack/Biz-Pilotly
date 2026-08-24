@@ -1,0 +1,22 @@
+{
+  "name": "BizPilotly",
+  "short_name": "BizPilotly",
+  "description": "Calculate. Create. Manage. — Business Operating Platform for Freelancers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0B1F3A",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}

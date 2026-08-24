@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <defs>
+    <linearGradient id="appleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A0A0A"/>
+      <stop offset="100%" stop-color="#0B1F3A"/>
+    </linearGradient>
+    <linearGradient id="appleGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EBD068"/>
+      <stop offset="100%" stop-color="#C9A227"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="180" height="180" rx="40" fill="url(#appleBg)"/>
+
+  <g transform="translate(18, 18) scale(2.25)">
+    <path d="M 18 42 L 32 16 L 46 42 L 32 34 Z" fill="#FFFFFF" fill-opacity="0.95"/>
+    <polygon points="32,22 39,36 32,31 25,36" fill="url(#appleGold)"/>
+    <circle cx="32" cy="47" r="3" fill="#C9A227"/>
+  </g>
+</svg>
