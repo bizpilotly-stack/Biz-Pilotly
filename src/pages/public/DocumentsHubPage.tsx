@@ -58,7 +58,7 @@ export const DocumentsHubPage: React.FC = () => {
       <SEO
         title={`Business Document Builders | ${BRAND_NAME}`}
         description="Create professional, printable Invoices, Quotes, Receipts, and Proposals with real-time side-by-side preview."
-        canonical="https://example.com/documents"
+        canonical="https://bizpilotly.com/documents"
       />
 
       <div className="container">

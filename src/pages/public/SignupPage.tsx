@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layers, ArrowRight } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
-import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -10,18 +10,25 @@ import { useToast } from '../../components/common/Toast';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { signUp, signInWithGoogle } = useAuth();
   const { showToast } = useToast();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) {
+    if (!name.trim() || !email.trim() || !password) {
       showToast('Please fill out all required fields.', 'error');
+      return;
+    }
+    if (password.length < 6) {
+      showToast('Password must be at least 6 characters.', 'error');
       return;
     }
     if (password !== confirmPassword) {
@@ -32,26 +39,46 @@ export const SignupPage: React.FC = () => {
       showToast('Please accept the terms of service to proceed.', 'error');
       return;
     }
+
     setLoading(true);
     try {
-      await authService.signup(name, email, password);
-      showToast('Account created successfully! Welcome to your workspace.', 'success');
-      navigate('/app');
-    } catch {
-      showToast('Failed to create account. Please try again.', 'error');
+      const { user, session, error } = await signUp(email.trim(), password, name.trim());
+      if (error) {
+        if (error.message.includes('User already registered')) {
+          showToast('An account with this email already exists. Please sign in.', 'error');
+        } else {
+          showToast(error.message || 'Failed to create account. Please try again.', 'error');
+        }
+        return;
+      }
+
+      if (user && !session) {
+        // Email confirmation is required by Supabase project settings
+        showToast('Registration successful! Please check your email to confirm your account.', 'info');
+        navigate('/login');
+      } else if (user && session) {
+        // Direct signup without email confirmation
+        showToast('Account created successfully! Welcome to your workspace.', 'success');
+        navigate('/app');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'An unexpected error occurred during signup.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSignup = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
-      await authService.loginWithGoogle();
-      showToast('Account initialized via Google (Demo Session).', 'success');
-      navigate('/app');
+      const { error } = await signInWithGoogle();
+      if (error) {
+        showToast(error.message || 'Google sign up failed. Ensure Google OAuth is enabled in Supabase.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to initialize Google signup.', 'error');
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -60,7 +87,7 @@ export const SignupPage: React.FC = () => {
       <SEO
         title={`Create Your Free Account | ${BRAND_NAME}`}
         description={`Sign up for free to access ${BRAND_NAME} business calculators, invoice builders, and client management tools.`}
-        canonical="https://example.com/signup"
+        canonical="https://bizpilotly.com/signup"
       />
 
       <div style={{ width: '100%', maxWidth: '480px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
@@ -76,10 +103,11 @@ export const SignupPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Google Signup Mock Button */}
+        {/* Google Signup Button */}
         <button
           type="button"
           onClick={handleGoogleSignup}
+          disabled={googleLoading || loading}
           className="btn btn-secondary"
           style={{ width: '100%', justifyContent: 'center', marginBottom: '1.5rem', padding: '0.75rem' }}
         >
@@ -89,7 +117,7 @@ export const SignupPage: React.FC = () => {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
           </svg>
-          <span>Sign up with Google</span>
+          <span>{googleLoading ? 'Connecting to Google...' : 'Sign up with Google'}</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -124,7 +152,7 @@ export const SignupPage: React.FC = () => {
               <input
                 type="password"
                 className="form-input"
-                placeholder="At least 8 chars"
+                placeholder="At least 6 chars"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

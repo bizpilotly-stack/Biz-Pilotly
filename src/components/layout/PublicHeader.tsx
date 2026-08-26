@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, LayoutDashboard, Menu, X } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
-import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import { BrandLogo } from '../common/BrandLogo';
 
 export const PublicHeader: React.FC = () => {
   const location = useLocation();
-  const isAuthenticated = authService.isAuthenticated();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [

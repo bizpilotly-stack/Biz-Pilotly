@@ -1,30 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calculator, Bell } from 'lucide-react';
+import { Plus, Calculator, Bell, Layers } from 'lucide-react';
 import { useToast } from '../common/Toast';
 
 export const AppHeader: React.FC = () => {
   const { showToast } = useToast();
 
   const handleNotificationClick = () => {
-    showToast('You have 2 pending invoice payments scheduled this week.', 'info');
+    showToast('No unread notifications at this time.', 'info');
   };
 
   return (
     <header className="app-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Link to="/" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8125rem' }}>← Marketing Site</span>
-        </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+          <Layers size={16} color="#0B1F3A" />
+          <span>Workspace</span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <Link to="/calculators" className="btn btn-secondary btn-sm">
+        <Link to="/app/calculators" className="btn btn-secondary btn-sm">
           <Calculator size={14} />
           <span>Calculators</span>
         </Link>
 
-        <Link to="/documents/invoice" className="btn btn-primary btn-sm">
+        <Link to="/app/documents/invoice" className="btn btn-primary btn-sm">
           <Plus size={14} />
           <span>New Invoice</span>
         </Link>
@@ -41,3 +42,4 @@ export const AppHeader: React.FC = () => {
     </header>
   );
 };
+

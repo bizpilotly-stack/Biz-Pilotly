@@ -29,3 +29,7 @@ dist-ssr
 .env.local
 .env.production
 .env.development
+
+# Temporary Vite timestamps
+vite.config.ts.timestamp-*
+

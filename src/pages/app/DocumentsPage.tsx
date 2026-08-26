@@ -4,11 +4,13 @@ import {
   FileText,
   Plus,
   Search,
+  Download,
   ExternalLink,
   Trash2,
 } from 'lucide-react';
 import { BusinessDocument, DocumentType, DocumentStatus } from '../../types';
 import { documentService } from '../../services/documentService';
+import { pdfService } from '../../services/pdf';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { PageHeader } from '../../components/common/PageHeader';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -20,6 +22,7 @@ export const DocumentsPage: React.FC = () => {
   const { showToast } = useToast();
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<DocumentType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | 'all'>('all');
@@ -59,6 +62,28 @@ export const DocumentsPage: React.FC = () => {
       await documentService.deleteDocument(id);
       showToast(`Document ${number} removed`, 'info');
       loadDocuments();
+    }
+  };
+
+  const handleDownloadPdf = async (doc: BusinessDocument) => {
+    setDownloadingId(doc.id);
+    try {
+      showToast(`Preparing PDF for #${doc.documentNumber}...`, 'info');
+      const { downloadUrl, filename } = await pdfService.getSecureDownloadUrl(doc.id);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Downloaded #${doc.documentNumber} PDF!`, 'success');
+    } catch (err: any) {
+      console.warn('Falling back to local vector PDF render:', err);
+      await pdfService.downloadDocumentLocally(doc);
+      showToast(`Downloaded #${doc.documentNumber} PDF!`, 'success');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -210,6 +235,14 @@ export const DocumentsPage: React.FC = () => {
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => handleDownloadPdf(d)}
+                        className="btn btn-ghost btn-sm btn-icon"
+                        title="Download PDF"
+                        disabled={downloadingId === d.id}
+                      >
+                        <Download size={15} color="#0B1F3A" />
+                      </button>
                       <Link
                         to={`/documents/${d.type}`}
                         className="btn btn-ghost btn-sm btn-icon"

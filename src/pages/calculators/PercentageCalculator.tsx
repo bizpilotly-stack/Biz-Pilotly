@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Calculator, FileText, Sparkles, HelpCircle } from 'lucide-react';
 import { calculatorService, PercentageCalcInput } from '../../services/calculatorService';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
 
 export const PercentageCalculator: React.FC = () => {
+  const location = useLocation();
+  const isApp = location.pathname.startsWith('/app');
+  const calcsBase = isApp ? '/app/calculators' : '/calculators';
+  const docsBase = isApp ? '/app/documents' : '/documents';
+
   const meta = calculatorService.getCalculatorBySlug('percentage')!;
+  const relatedCalculators = calculatorService.getRelatedCalculators('percentage');
+  const jsonLd = calculatorService.getJsonLd('percentage');
+
   const [mode, setMode] = useState<PercentageCalcInput['mode']>('what_is_x_percent_of_y');
   const [val1, setVal1] = useState<number>(25);
   const [val2, setVal2] = useState<number>(4800);
@@ -20,21 +28,22 @@ export const PercentageCalculator: React.FC = () => {
   return (
     <div className="section-py-sm">
       <SEO
-        title={`${meta.title} | ${BRAND_NAME}`}
-        description={meta.shortDescription}
-        canonical="https://example.com/calculators/percentage"
+        title={meta.seoTitle || `${meta.name} | ${BRAND_NAME}`}
+        description={meta.seoDescription || meta.shortDescription}
+        canonical={`https://bizpilotly.com${meta.route}`}
+        jsonLd={jsonLd}
       />
 
       <div className="container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-          <Link to="/calculators" style={{ color: 'var(--brand-navy-600)' }}>Calculators</Link>
+          <Link to={calcsBase} style={{ color: 'var(--brand-navy-600)' }}>Calculators</Link>
           <span>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>{meta.title}</span>
+          <span style={{ color: 'var(--text-primary)' }}>{meta.name}</span>
         </div>
 
         <div style={{ maxWidth: '780px', marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
-            {meta.title}
+            {meta.name}
           </h1>
           <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             {meta.shortDescription}
@@ -46,7 +55,7 @@ export const PercentageCalculator: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Calculator size={20} color="#0B1F3A" />
-                <span>Percentage Inputs</span>
+                <span>Percentage Mode</span>
               </h3>
               <button
                 type="button"
@@ -90,10 +99,11 @@ export const PercentageCalculator: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="form-group">
-                <label className="form-label">
+                <label className="form-label" htmlFor="val1Input">
                   {mode === 'what_is_x_percent_of_y' ? 'Percentage (X %)' : mode === 'x_is_what_percent_of_y' ? 'Part Value (X)' : 'Initial Value (X)'}
                 </label>
                 <input
+                  id="val1Input"
                   type="number"
                   className="form-input"
                   value={val1}
@@ -102,10 +112,11 @@ export const PercentageCalculator: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">
+                <label className="form-label" htmlFor="val2Input">
                   {mode === 'what_is_x_percent_of_y' ? 'Total Amount (Y)' : mode === 'x_is_what_percent_of_y' ? 'Total Amount (Y)' : 'New Value (Y)'}
                 </label>
                 <input
+                  id="val2Input"
                   type="number"
                   className="form-input"
                   value={val2}
@@ -125,7 +136,7 @@ export const PercentageCalculator: React.FC = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.875rem', color: '#38bdf8' }}>
                 <Sparkles size={16} />
-                <span>Formula: {res.explanation}</span>
+                <span>{res.explanation}</span>
               </div>
             </div>
 
@@ -142,7 +153,7 @@ export const PercentageCalculator: React.FC = () => {
             </div>
 
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <Link to="/documents/quote" className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
+              <Link to={`${docsBase}/quote`} className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
                 <FileText size={16} />
                 <span>Apply to Business Document</span>
                 <ArrowRight size={16} />
@@ -154,7 +165,7 @@ export const PercentageCalculator: React.FC = () => {
         <div className="calc-info-section">
           <div className="calc-info-card">
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <HelpCircle size={18} color="#1d4ed8" />
+              <HelpCircle size={18} color="#0B1F3A" />
               <span>Formula Explanation</span>
             </h3>
             <div className="formula-box">
@@ -183,25 +194,27 @@ export const PercentageCalculator: React.FC = () => {
             <h3>{meta.targetDocumentCTA.text}</h3>
             <p>Prepare financial estimates for upcoming client projects.</p>
           </div>
-          <Link to={meta.targetDocumentCTA.link} className="btn btn-gold">
+          <Link to={isApp ? `/app${meta.targetDocumentCTA.link}` : meta.targetDocumentCTA.link} className="btn btn-gold">
             <span>{meta.targetDocumentCTA.buttonLabel}</span>
             <ArrowRight size={16} />
           </Link>
         </div>
 
-        <div style={{ marginTop: '3rem' }}>
-          <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Related Pricing Calculators
-          </h4>
-          <div className="related-calcs-list">
-            {meta.relatedCalculators.map((r, idx) => (
-              <Link key={idx} to={`/calculators/${r.slug}`} className="related-calc-chip">
-                <span>{r.title}</span>
-                <ArrowRight size={12} />
-              </Link>
-            ))}
+        {relatedCalculators.length > 0 && (
+          <div style={{ marginTop: '3rem' }}>
+            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Related Pricing Calculators
+            </h4>
+            <div className="related-calcs-list">
+              {relatedCalculators.map((r) => (
+                <Link key={r.slug} to={isApp ? `/app${r.route}` : r.route} className="related-calc-chip">
+                  <span>{r.name}</span>
+                  <ArrowRight size={12} />
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

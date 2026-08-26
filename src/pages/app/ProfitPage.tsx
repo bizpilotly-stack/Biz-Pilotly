@@ -1,19 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   DollarSign,
   Receipt,
   Percent,
 } from 'lucide-react';
-import { INITIAL_PROFIT_METRICS, MONTHLY_FINANCIALS } from '../../mock/profit';
+import { ProfitMetrics, MonthlyFinancialSummary } from '../../types';
+import { profitService } from '../../services/profitService';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { PageHeader } from '../../components/common/PageHeader';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
 
 export const ProfitPage: React.FC = () => {
-  const metrics = INITIAL_PROFIT_METRICS;
-  const maxRevenue = Math.max(...MONTHLY_FINANCIALS.map((m) => m.revenue));
+  const [metrics, setMetrics] = useState<ProfitMetrics | null>(null);
+  const [financials, setFinancials] = useState<MonthlyFinancialSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProfitData = async () => {
+      setLoading(true);
+      try {
+        const [metricsData, financialsData] = await Promise.all([
+          profitService.getProfitMetrics(),
+          profitService.getMonthlyFinancials(),
+        ]);
+        setMetrics(metricsData);
+        setFinancials(financialsData);
+      } catch (err) {
+        console.error('Error loading profit metrics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfitData();
+  }, []);
+
+  if (loading || !metrics) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        Loading financial analytics...
+      </div>
+    );
+  }
+
+  const maxRevenue = financials.length > 0 ? Math.max(...financials.map((m) => m.revenue)) : 1000;
 
   return (
     <div>
@@ -27,7 +59,7 @@ export const ProfitPage: React.FC = () => {
         description="Comprehensive analysis of your realized revenue, expense overheads, and net profit margins."
       />
 
-      {/* Top 5 KPI Metric Cards */}
+      {/* Top 4 KPI Metric Cards */}
       <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <div className="metric-card">
           <div className="metric-card-top">
@@ -37,8 +69,8 @@ export const ProfitPage: React.FC = () => {
             </div>
           </div>
           <div className="metric-card-value">{formatCurrency(metrics.totalRevenue)}</div>
-          <div className="metric-card-subtext" style={{ color: '#10b981' }}>
-            <span>8 months tracked</span>
+          <div className="metric-card-subtext" style={{ color: metrics.totalRevenue > 0 ? '#10b981' : 'var(--text-muted)' }}>
+            <span>{metrics.totalRevenue > 0 ? `${financials.length} months tracked` : 'No revenue recorded yet'}</span>
           </div>
         </div>
 
@@ -49,11 +81,11 @@ export const ProfitPage: React.FC = () => {
               <Receipt size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: '#b91c1c' }}>
+          <div className="metric-card-value" style={{ color: metrics.totalExpenses > 0 ? '#b91c1c' : 'inherit' }}>
             {formatCurrency(metrics.totalExpenses)}
           </div>
           <div className="metric-card-subtext">
-            <span>Direct + Overheads</span>
+            <span>{metrics.totalExpenses > 0 ? 'Direct + Overheads' : 'No expenses recorded yet'}</span>
           </div>
         </div>
 
@@ -66,7 +98,7 @@ export const ProfitPage: React.FC = () => {
           </div>
           <div className="metric-card-value">{formatCurrency(metrics.grossProfit)}</div>
           <div className="metric-card-subtext">
-            <span>86.2% gross margin</span>
+            <span>{metrics.totalRevenue > 0 ? `${metrics.profitMargin}% gross margin` : '0% gross margin'}</span>
           </div>
         </div>
 
@@ -77,7 +109,7 @@ export const ProfitPage: React.FC = () => {
               <TrendingUp size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: 'var(--brand-navy-700)' }}>
+          <div className="metric-card-value" style={{ color: metrics.netProfit > 0 ? 'var(--brand-navy-700)' : 'inherit' }}>
             {formatCurrency(metrics.netProfit)}
           </div>
           <div className="metric-card-subtext">
@@ -113,21 +145,21 @@ export const ProfitPage: React.FC = () => {
 
         {/* Visual Responsive Pure CSS/SVG Bar Chart */}
         <div className="chart-bars-wrap">
-          {MONTHLY_FINANCIALS.map((m) => {
-            const revHeightPct = Math.max(8, (m.revenue / maxRevenue) * 100);
-            const expHeightPct = Math.max(4, (m.expenses / maxRevenue) * 100);
+          {financials.map((m) => {
+            const revHeightPct = m.revenue > 0 ? Math.max(8, (m.revenue / maxRevenue) * 100) : 2;
+            const expHeightPct = m.expenses > 0 ? Math.max(4, (m.expenses / maxRevenue) * 100) : 2;
 
             return (
               <div key={m.month} className="chart-col">
                 <div className="chart-bar-pair">
                   <div
                     className="chart-bar chart-bar-rev"
-                    style={{ height: `${revHeightPct}%` }}
+                    style={{ height: `${revHeightPct}%`, opacity: m.revenue > 0 ? 1 : 0.2 }}
                     title={`${m.month} Revenue: ${formatCurrency(m.revenue)}`}
                   />
                   <div
                     className="chart-bar chart-bar-exp"
-                    style={{ height: `${expHeightPct}%` }}
+                    style={{ height: `${expHeightPct}%`, opacity: m.expenses > 0 ? 1 : 0.2 }}
                     title={`${m.month} Expenses: ${formatCurrency(m.expenses)}`}
                   />
                 </div>
@@ -158,7 +190,7 @@ export const ProfitPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {MONTHLY_FINANCIALS.map((m) => (
+              {financials.map((m) => (
                 <tr key={m.month}>
                   <td style={{ fontWeight: 700 }}>{m.month} 2026</td>
                   <td style={{ fontWeight: 600, color: 'var(--brand-navy-700)' }}>{formatCurrency(m.revenue)}</td>

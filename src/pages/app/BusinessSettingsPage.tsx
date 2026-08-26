@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building,
   Save,
@@ -6,7 +6,8 @@ import {
   FileText,
   CreditCard,
 } from 'lucide-react';
-import { INITIAL_SETTINGS } from '../../mock/settings';
+import { BusinessSettings } from '../../types';
+import { businessService } from '../../services/businessService';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
@@ -16,12 +17,38 @@ import { SEO } from '../../components/common/SEO';
 
 export const BusinessSettingsPage: React.FC = () => {
   const { showToast } = useToast();
-  const [settings, setSettings] = useState(INITIAL_SETTINGS);
+  const [settings, setSettings] = useState<BusinessSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    businessService.getSettings().then((data) => {
+      setSettings(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('Business settings saved successfully!', 'success');
+    if (!settings) return;
+    setSaving(true);
+    try {
+      await businessService.updateSettings(settings);
+      showToast('Business settings saved successfully!', 'success');
+    } catch {
+      showToast('Error saving business settings.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading || !settings) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        Loading business settings...
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -241,7 +268,7 @@ export const BusinessSettingsPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-          <Button type="submit" variant="primary" size="lg">
+          <Button type="submit" variant="primary" size="lg" isLoading={saving}>
             <Save size={16} />
             <span>Save All Settings</span>
           </Button>

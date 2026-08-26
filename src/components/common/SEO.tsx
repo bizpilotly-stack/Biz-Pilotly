@@ -6,12 +6,14 @@ export interface SEOProps {
   description: string;
   canonical?: string;
   ogType?: 'website' | 'article';
+  jsonLd?: Record<string, any>;
 }
 
 export const SEO: React.FC<SEOProps> = ({
   title,
   description,
   canonical,
+  jsonLd,
 }) => {
   useEffect(() => {
     // Update Document Title
@@ -45,7 +47,27 @@ export const SEO: React.FC<SEOProps> = ({
       }
       linkCanonical.setAttribute('href', canonical);
     }
-  }, [title, description, canonical]);
+
+    // Structured JSON-LD Data Injection
+    let scriptJsonLd = document.querySelector('script#structured-json-ld');
+    if (jsonLd) {
+      if (!scriptJsonLd) {
+        scriptJsonLd = document.createElement('script');
+        scriptJsonLd.setAttribute('id', 'structured-json-ld');
+        scriptJsonLd.setAttribute('type', 'application/ld+json');
+        document.head.appendChild(scriptJsonLd);
+      }
+      scriptJsonLd.textContent = JSON.stringify(jsonLd);
+    } else if (scriptJsonLd) {
+      scriptJsonLd.remove();
+    }
+
+    return () => {
+      // Clean up JSON-LD on unmount
+      const existing = document.querySelector('script#structured-json-ld');
+      if (existing) existing.remove();
+    };
+  }, [title, description, canonical, jsonLd]);
 
   return null;
 };

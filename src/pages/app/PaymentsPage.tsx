@@ -25,6 +25,7 @@ export const PaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState({ totalReceived: 0, pendingAmount: 0, completedCount: 0, pendingCount: 0 });
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -62,6 +63,8 @@ export const PaymentsPage: React.FC = () => {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await paymentService.recordPayment({
         invoiceId: 'doc-manual',
@@ -85,6 +88,8 @@ export const PaymentsPage: React.FC = () => {
       loadData();
     } catch {
       showToast('Error recording payment', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -301,10 +306,10 @@ export const PaymentsPage: React.FC = () => {
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-            <Button type="button" variant="secondary" onClick={() => setRecordModalOpen(false)}>
+            <Button type="button" variant="secondary" onClick={() => setRecordModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
               Confirm & Record
             </Button>
           </div>

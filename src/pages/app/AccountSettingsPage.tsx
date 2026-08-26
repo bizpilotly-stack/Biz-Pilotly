@@ -1,46 +1,81 @@
-import React, { useState } from 'react';
-import { User, Lock, Bell } from 'lucide-react';
-import { authService } from '../../services/authService';
+import React, { useState, useEffect } from 'react';
+import { User as UserIcon, Lock, Bell } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../components/common/Toast';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
+import { supabase } from '../../services/supabase';
 
 export const AccountSettingsPage: React.FC = () => {
   const { showToast } = useToast();
-  const user = authService.getCurrentUser();
+  const { user } = useAuth();
 
-  const [name, setName] = useState(user?.name || 'Alex Mercer');
-  const [email, setEmail] = useState(user?.email || 'alex@studionorth.co');
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [paymentAlerts, setPaymentAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      setName(user.user_metadata?.full_name || user.user_metadata?.name || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('Personal profile information updated successfully!', 'success');
+    setProfileLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: name, name },
+      });
+      if (error) throw error;
+      showToast('Personal profile information updated successfully!', 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update profile.', 'error');
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword) {
-      showToast('Please enter both current and new password.', 'error');
+    if (!newPassword) {
+      showToast('Please enter a new password.', 'error');
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast('Password must be at least 6 characters.', 'error');
       return;
     }
     if (newPassword !== confirmPassword) {
       showToast('New passwords do not match.', 'error');
       return;
     }
-    showToast('Password updated successfully!', 'success');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw error;
+      showToast('Password updated successfully!', 'success');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update password.', 'error');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   return (
@@ -60,7 +95,7 @@ export const AccountSettingsPage: React.FC = () => {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <User size={18} color="#1d4ed8" />
+              <UserIcon size={18} color="#1d4ed8" />
               <span>Personal Profile</span>
             </h3>
           </div>
@@ -73,17 +108,21 @@ export const AccountSettingsPage: React.FC = () => {
                 onChange={(e) => setName(e.target.value)}
                 required
               />
-              <Input
-                label="Login Email Address"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <div>
+                <Input
+                  label="Login Email Address"
+                  type="email"
+                  value={email}
+                  disabled
+                />
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Email is managed through your Supabase authentication account.
+                </p>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <Button type="submit" variant="secondary" size="sm">
+              <Button type="submit" variant="secondary" size="sm" isLoading={profileLoading}>
                 Save Profile
               </Button>
             </div>
@@ -100,19 +139,11 @@ export const AccountSettingsPage: React.FC = () => {
           </div>
 
           <form onSubmit={handleChangePassword}>
-            <Input
-              label="Current Password"
-              type="password"
-              placeholder="••••••••"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <Input
                 label="New Password"
                 type="password"
-                placeholder="New password (8+ characters)"
+                placeholder="New password (6+ characters)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
@@ -126,7 +157,7 @@ export const AccountSettingsPage: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <Button type="submit" variant="secondary" size="sm">
+              <Button type="submit" variant="secondary" size="sm" isLoading={passwordLoading}>
                 Update Password
               </Button>
             </div>

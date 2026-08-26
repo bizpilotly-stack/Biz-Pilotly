@@ -1,44 +1,101 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Plus,
   Trash2,
   Printer,
+  RotateCcw,
   Save,
-  Send,
+  Download,
   Building,
   User,
   FileText,
   CreditCard,
   Sparkles,
+  CheckCircle2,
+  Layers,
+  ArrowRight,
 } from 'lucide-react';
-import { BusinessDocument, DocumentType, LineItem } from '../../types';
-import { documentService } from '../../services/documentService';
-import { formatCurrency, calculateLineItemTotal, calculateDocumentTotals } from '../../utils/formatters';
-import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
-import { INITIAL_CLIENTS } from '../../mock/clients';
+import {
+  BusinessDocument,
+  DocumentType,
+  LineItem,
+  documentService,
+  SUPPORTED_CURRENCIES,
+  formatCurrencyAmount,
+} from '../../services/documentService';
+import { clientService } from '../../services/clientService';
+import { pdfService } from '../../services/pdf';
+import { Client } from '../../types';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { useToast } from '../common/Toast';
-import { Modal } from '../common/Modal';
+import { useAuth } from '../../contexts/AuthContext';
 import { SEO } from '../common/SEO';
 
 interface DocumentEditorProps {
-  initialDocument: BusinessDocument;
   documentType: DocumentType;
-  title: string;
-  badgeLabel: string;
 }
 
 export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
-  initialDocument,
   documentType,
-  title,
-  badgeLabel,
 }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  const isApp = location.pathname.startsWith('/app');
+  const docsBase = isApp ? '/app/documents' : '/documents';
+
   const { showToast } = useToast();
-  const [doc, setDoc] = useState<BusinessDocument>(initialDocument);
-  const [sendModalOpen, setSendModalOpen] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState(initialDocument.client.email);
+  const meta = documentService.getMeta(documentType);
+  const jsonLd = documentService.getJsonLd(documentType);
+
+  // Initialize from saved draft or default template
+  const [doc, setDoc] = useState<BusinessDocument>(() =>
+    documentService.loadDraft(documentType)
+  );
+  const [clients, setClients] = useState<Client[]>([]);
+  const [draftSaved, setDraftSaved] = useState<boolean>(true);
+  const [isSavingToCloud, setIsSavingToCloud] = useState<boolean>(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const saveTimeoutRef = useRef<number | null>(null);
+
+  // Auto-fetch database sequential document number for authenticated users
+  useEffect(() => {
+    if (user || isApp) {
+      documentService.getNextDocumentNumber(documentType).then((nextNum) => {
+        setDoc((prev) => {
+          // Only replace if document is a fresh unsaved draft
+          if (!prev.id && prev.documentNumber.endsWith('-0001')) {
+            return { ...prev, documentNumber: nextNum };
+          }
+          return prev;
+        });
+      }).catch(console.error);
+    }
+  }, [documentType, user, isApp]);
+
+  // Load clients asynchronously from service boundary
+  useEffect(() => {
+    clientService.getClients().then(setClients).catch(console.error);
+  }, []);
+
+  // Auto-save draft on doc state changes (debounced by 300ms)
+  useEffect(() => {
+    setDraftSaved(false);
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = window.setTimeout(() => {
+      documentService.saveDraft(documentType, doc);
+      setDraftSaved(true);
+    }, 300);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [doc, documentType]);
 
   // Recalculate totals whenever items, taxRate, or discountRate change
   const handleItemChange = (id: string, field: keyof LineItem, value: any) => {
@@ -46,22 +103,21 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
       if (item.id === id) {
         const updated = { ...item, [field]: value };
         if (field === 'quantity' || field === 'unitPrice') {
-          updated.amount = calculateLineItemTotal(
-            field === 'quantity' ? Number(value) : item.quantity,
-            field === 'unitPrice' ? Number(value) : item.unitPrice
-          );
+          const qty = field === 'quantity' ? Number(value) : item.quantity;
+          const price = field === 'unitPrice' ? Number(value) : item.unitPrice;
+          updated.amount = documentService.calculateLineItem(qty, price);
         }
         return updated;
       }
       return item;
     });
 
-    const totals = calculateDocumentTotals(updatedItems, doc.taxRate, doc.discountRate);
-    setDoc({
-      ...doc,
+    const totals = documentService.calculateTotals(updatedItems, doc.taxRate, doc.discountRate);
+    setDoc((prev) => ({
+      ...prev,
       items: updatedItems,
       ...totals,
-    });
+    }));
   };
 
   const handleAddItem = () => {
@@ -73,51 +129,64 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
       amount: 500,
     };
     const updatedItems = [...doc.items, newItem];
-    const totals = calculateDocumentTotals(updatedItems, doc.taxRate, doc.discountRate);
-    setDoc({
-      ...doc,
+    const totals = documentService.calculateTotals(updatedItems, doc.taxRate, doc.discountRate);
+    setDoc((prev) => ({
+      ...prev,
       items: updatedItems,
       ...totals,
-    });
+    }));
   };
 
   const handleRemoveItem = (id: string) => {
     if (doc.items.length <= 1) {
-      showToast('Document must contain at least one item.', 'error');
+      showToast('Document must contain at least one line item.', 'error');
       return;
     }
     const updatedItems = doc.items.filter((item) => item.id !== id);
-    const totals = calculateDocumentTotals(updatedItems, doc.taxRate, doc.discountRate);
-    setDoc({
-      ...doc,
+    const totals = documentService.calculateTotals(updatedItems, doc.taxRate, doc.discountRate);
+    setDoc((prev) => ({
+      ...prev,
       items: updatedItems,
       ...totals,
-    });
+    }));
   };
 
   const handleTaxChange = (rate: number) => {
-    const totals = calculateDocumentTotals(doc.items, rate, doc.discountRate);
-    setDoc({
-      ...doc,
-      taxRate: rate,
+    const safeRate = Math.max(0, Math.min(100, Number(rate) || 0));
+    const totals = documentService.calculateTotals(doc.items, safeRate, doc.discountRate);
+    setDoc((prev) => ({
+      ...prev,
+      taxRate: safeRate,
       ...totals,
-    });
+    }));
   };
 
   const handleDiscountChange = (rate: number) => {
-    const totals = calculateDocumentTotals(doc.items, doc.taxRate, rate);
-    setDoc({
-      ...doc,
-      discountRate: rate,
+    const safeRate = Math.max(0, Math.min(100, Number(rate) || 0));
+    const totals = documentService.calculateTotals(doc.items, doc.taxRate, safeRate);
+    setDoc((prev) => ({
+      ...prev,
+      discountRate: safeRate,
       ...totals,
-    });
+    }));
+  };
+
+  const handleCurrencyChange = (currencyCode: string) => {
+    const selected = SUPPORTED_CURRENCIES.find((c) => c.code === currencyCode);
+    if (selected) {
+      setDoc((prev) => ({
+        ...prev,
+        currency: selected.code,
+        currencySymbol: selected.symbol,
+      }));
+    }
   };
 
   const handleClientSelect = (clientId: string) => {
-    const found = INITIAL_CLIENTS.find((c) => c.id === clientId);
+    const found = clients.find((c) => c.id === clientId);
     if (found) {
-      setDoc({
-        ...doc,
+      setDoc((prev) => ({
+        ...prev,
         client: {
           id: found.id,
           name: found.name,
@@ -126,63 +195,123 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           phone: found.phone,
           address: found.address,
         },
-      });
-      setRecipientEmail(found.email);
+      }));
+      showToast(`Loaded details for ${found.name}`, 'info');
+    }
+  };
+
+  const handleReset = () => {
+    if (window.confirm('Reset this document to its initial default template? Current edits will be cleared.')) {
+      const fresh = documentService.clearDraft(documentType);
+      setDoc(fresh);
+      setValidationErrors({});
+      showToast('Document reset to initial template.', 'info');
+    }
+  };
+
+  const handleSaveToDashboard = async () => {
+    const validation = documentService.validate(doc);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      showToast('Please fix required validation fields before saving.', 'error');
+      return;
+    }
+    setValidationErrors({});
+    setIsSavingToCloud(true);
+    try {
+      const saved = await documentService.saveDocument(doc);
+      setDoc(saved);
+      showToast(`Document #${saved.documentNumber} successfully saved to dashboard!`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Error saving document to database.', 'error');
+    } finally {
+      setIsSavingToCloud(false);
+    }
+  };
+
+  const handleDownloadDirectPdf = async () => {
+    const validation = documentService.validate(doc);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      showToast('Please fix required validation fields before downloading.', 'error');
+      return;
+    }
+    setValidationErrors({});
+    try {
+      showToast('Generating vector PDF...', 'info');
+      await pdfService.downloadDocumentLocally(doc);
+      showToast('PDF downloaded successfully!', 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Error generating PDF.', 'error');
     }
   };
 
   const handlePrint = () => {
-    window.print();
-  };
-
-  const handleSave = async () => {
-    try {
-      await documentService.saveDocument(doc);
-      showToast(`${title} (${doc.documentNumber}) saved locally to documents ledger!`, 'success');
-    } catch {
-      showToast('Error saving document', 'error');
+    const validation = documentService.validate(doc);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      showToast('Please fix required validation fields before printing.', 'error');
+      return;
     }
-  };
-
-  const handleMockSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSendModalOpen(false);
-    showToast(`Document sent to ${recipientEmail} (Mock email simulation)`, 'success');
+    setValidationErrors({});
+    window.print();
   };
 
   return (
     <div className="section-py-sm">
       <SEO
-        title={`${title} Builder | ${BRAND_NAME}`}
-        description={`Interactive live builder for ${title}. Customize rates, tax, line items, and export professional print-ready business documents.`}
-        canonical={`https://example.com/documents/${documentType}`}
+        title={meta.seoTitle}
+        description={meta.seoDescription}
+        canonical={`https://bizpilotly.com${meta.route}`}
+        jsonLd={jsonLd}
       />
 
       <div className="container-fluid">
         {/* Page Top Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <span className="badge badge-gold">{badgeLabel}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Real-Time Live Sheet Sync</span>
+            {/* Breadcrumbs */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+              <Link to={docsBase} style={{ color: 'var(--brand-navy-600)' }}>Documents</Link>
+              <span>/</span>
+              <span style={{ color: 'var(--text-primary)' }}>{meta.title}</span>
             </div>
-            <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.025em' }}>
-              {title} Builder
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.025em' }}>
+                {meta.title} Builder
+              </h1>
+              <span className="badge badge-gold">{meta.badgeLabel}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', fontSize: '0.8125rem', color: draftSaved ? 'var(--brand-navy-600)' : 'var(--text-muted)' }}>
+              {draftSaved ? <CheckCircle2 size={14} color="#0B1F3A" /> : <Sparkles size={14} />}
+              <span>{draftSaved ? 'Draft saved in browser' : 'Saving draft changes...'}</span>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Button variant="secondary" size="sm" onClick={handlePrint}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <Button variant="ghost" size="sm" onClick={handleReset} title="Reset to default document template">
+              <RotateCcw size={15} />
+              <span>Reset</span>
+            </Button>
+            {user && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleSaveToDashboard}
+                isLoading={isSavingToCloud}
+                title="Save document to your Supabase business dashboard"
+              >
+                <Save size={15} />
+                <span>Save to Dashboard</span>
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={handleDownloadDirectPdf} title="Generate and download vector PDF file">
+              <Download size={15} />
+              <span>Download PDF</span>
+            </Button>
+            <Button variant="primary" size="sm" onClick={handlePrint}>
               <Printer size={15} />
-              <span>Print / PDF</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSave}>
-              <Save size={15} />
-              <span>Save Document</span>
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => setSendModalOpen(true)}>
-              <Send size={15} />
-              <span>Send to Client</span>
+              <span>Print / Browser PDF</span>
             </Button>
           </div>
         </div>
@@ -195,21 +324,22 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           <div className="doc-editor-column">
             {/* Header Info */}
             <div className="doc-section-title">
-              <FileText size={18} color="#1d4ed8" />
+              <FileText size={18} color="#0B1F3A" />
               <span>Document Identification</span>
             </div>
 
             <div className="doc-form-row">
               <Input
-                label="Document Title / Scope"
+                label="Document Scope / Title"
                 value={doc.title}
                 onChange={(e) => setDoc({ ...doc, title: e.target.value })}
                 required
               />
               <Input
-                label="Document Number"
+                label="Document Reference #"
                 value={doc.documentNumber}
                 onChange={(e) => setDoc({ ...doc, documentNumber: e.target.value })}
+                error={validationErrors['documentNumber']}
                 required
               />
             </div>
@@ -220,45 +350,72 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 type="date"
                 value={doc.date}
                 onChange={(e) => setDoc({ ...doc, date: e.target.value })}
+                error={validationErrors['date']}
                 required
               />
-              <Input
-                label={documentType === 'quote' || documentType === 'proposal' ? 'Valid Until' : 'Due Date'}
-                type="date"
-                value={doc.dueDate || doc.validUntil || ''}
-                onChange={(e) =>
-                  setDoc({
-                    ...doc,
-                    dueDate: e.target.value,
-                    validUntil: e.target.value,
-                  })
-                }
-              />
+
+              {documentType === 'invoice' && (
+                <Input
+                  label="Payment Due Date"
+                  type="date"
+                  value={doc.dueDate || ''}
+                  onChange={(e) => setDoc({ ...doc, dueDate: e.target.value })}
+                />
+              )}
+
+              {(documentType === 'quote' || documentType === 'proposal') && (
+                <Input
+                  label="Quote Valid Until"
+                  type="date"
+                  value={doc.validUntil || ''}
+                  onChange={(e) => setDoc({ ...doc, validUntil: e.target.value })}
+                />
+              )}
+
+              {documentType === 'receipt' && (
+                <Input
+                  label="Transaction Ref / TXN ID"
+                  value={doc.paymentReference || ''}
+                  onChange={(e) => setDoc({ ...doc, paymentReference: e.target.value })}
+                  placeholder="e.g. TXN-89214"
+                />
+              )}
+
               <div className="form-group">
-                <label className="form-label">Currency</label>
+                <label className="form-label" htmlFor="currencySelect">Currency</label>
                 <select
+                  id="currencySelect"
                   className="form-select"
                   value={doc.currency}
-                  onChange={(e) => {
-                    const sel = CURRENCIES.find((c) => c.code === e.target.value);
-                    if (sel) {
-                      setDoc({ ...doc, currency: sel.code, currencySymbol: sel.symbol });
-                    }
-                  }}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
                 >
-                  {CURRENCIES.map((c) => (
+                  {SUPPORTED_CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>
-                      {c.code} ({c.symbol})
+                      {c.code} ({c.symbol}) — {c.name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
+            {/* Proposal Specific Narrative Overview */}
+            {documentType === 'proposal' && (
+              <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                <label className="form-label">Project Executive Overview / Scope Narrative</label>
+                <textarea
+                  className="form-textarea"
+                  rows={3}
+                  value={doc.projectOverview || ''}
+                  onChange={(e) => setDoc({ ...doc, projectOverview: e.target.value })}
+                  placeholder="Outline the client goals, strategic approach, and high-level milestones..."
+                />
+              </div>
+            )}
+
             {/* Business (Sender) Section */}
             <div className="doc-section-title" style={{ marginTop: '1.5rem' }}>
-              <Building size={18} color="#1d4ed8" />
-              <span>Your Business Details</span>
+              <Building size={18} color="#0B1F3A" />
+              <span>Your Business Details (Issuer)</span>
             </div>
 
             <div className="doc-form-row">
@@ -271,6 +428,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     business: { ...doc.business, name: e.target.value },
                   })
                 }
+                error={validationErrors['business.name']}
                 required
               />
               <Input
@@ -283,6 +441,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     business: { ...doc.business, email: e.target.value },
                   })
                 }
+                error={validationErrors['business.email']}
               />
             </div>
 
@@ -296,6 +455,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     business: { ...doc.business, address: e.target.value },
                   })
                 }
+                placeholder="Studio address or city / state"
               />
               <Input
                 label="Tax / VAT Registration ID"
@@ -306,14 +466,15 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     business: { ...doc.business, taxNumber: e.target.value },
                   })
                 }
+                placeholder="Optional VAT or EIN number"
               />
             </div>
 
             {/* Client (Recipient) Section */}
-            <div className="doc-section-title" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="doc-section-title" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <User size={18} color="#1d4ed8" />
-                <span>Client Information</span>
+                <User size={18} color="#0B1F3A" />
+                <span>Client Information (Recipient)</span>
               </div>
               <select
                 className="form-select"
@@ -321,8 +482,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 onChange={(e) => handleClientSelect(e.target.value)}
                 defaultValue=""
               >
-                <option value="" disabled>Load from Clients Directory...</option>
-                {INITIAL_CLIENTS.map((c) => (
+                <option value="" disabled>Load from Directory...</option>
+                {clients.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.company})
                   </option>
@@ -340,10 +501,11 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     client: { ...doc.client, name: e.target.value },
                   })
                 }
+                error={validationErrors['client.name']}
                 required
               />
               <Input
-                label="Client Company / Org"
+                label="Client Company / Organization"
                 value={doc.client.company || ''}
                 onChange={(e) =>
                   setDoc({
@@ -365,6 +527,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     client: { ...doc.client, email: e.target.value },
                   })
                 }
+                error={validationErrors['client.email']}
               />
               <Input
                 label="Client Address"
@@ -400,20 +563,22 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 <div></div>
               </div>
 
-              {doc.items.map((item) => (
+              {doc.items.map((item, idx) => (
                 <div key={item.id} className="line-item-row">
                   <input
                     className="form-input"
                     placeholder="Deliverable description..."
                     value={item.description}
                     onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                    aria-label={`Item ${idx + 1} description`}
                   />
                   <input
                     type="number"
                     className="form-input"
                     min="1"
                     value={item.quantity}
-                    onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
+                    onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
+                    aria-label={`Item ${idx + 1} quantity`}
                   />
                   <input
                     type="number"
@@ -421,13 +586,15 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     min="0"
                     step="10"
                     value={item.unitPrice}
-                    onChange={(e) => handleItemChange(item.id, 'unitPrice', e.target.value)}
+                    onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))}
+                    aria-label={`Item ${idx + 1} unit price`}
                   />
                   <input
                     className="form-input"
                     readOnly
-                    value={formatCurrency(item.amount, doc.currency, doc.currencySymbol)}
+                    value={formatCurrencyAmount(item.amount, doc.currency, doc.currencySymbol)}
                     style={{ background: 'var(--bg-surface-muted)', fontWeight: 600 }}
+                    aria-label={`Item ${idx + 1} total amount`}
                   />
                   <button
                     type="button"
@@ -435,6 +602,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     className="btn btn-ghost btn-sm btn-icon"
                     style={{ color: '#ef4444' }}
                     title="Remove item"
+                    aria-label={`Remove item ${idx + 1}`}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -445,8 +613,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
             {/* Adjustments (Tax & Discount) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Tax / VAT Rate (%)</label>
+                <label className="form-label" htmlFor="taxRateInput">Tax / VAT Rate (%)</label>
                 <input
+                  id="taxRateInput"
                   type="number"
                   className="form-input"
                   min="0"
@@ -457,8 +626,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Discount Allowance (%)</label>
+                <label className="form-label" htmlFor="discountRateInput">Discount Allowance (%)</label>
                 <input
+                  id="discountRateInput"
                   type="number"
                   className="form-input"
                   min="0"
@@ -471,27 +641,47 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
 
             {/* Notes & Payment Instructions */}
             <div className="doc-section-title">
-              <CreditCard size={18} color="#1d4ed8" />
+              <CreditCard size={18} color="#0B1F3A" />
               <span>Notes & Settlement Instructions</span>
             </div>
 
+            {documentType === 'receipt' && (
+              <div className="form-group">
+                <label className="form-label">Payment Method Used</label>
+                <select
+                  className="form-select"
+                  value={doc.paymentMethod || 'Bank Transfer'}
+                  onChange={(e) => setDoc({ ...doc, paymentMethod: e.target.value })}
+                >
+                  <option value="Bank Transfer">Bank Transfer / Direct Wire</option>
+                  <option value="Credit Card">Credit Card / Debit</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Stripe">Stripe Checkout</option>
+                  <option value="Other">Other / Cheque</option>
+                </select>
+              </div>
+            )}
+
             <div className="form-group">
-              <label className="form-label">Client Notes & Instructions</label>
+              <label className="form-label">Client Notes & Remarks</label>
               <textarea
                 className="form-textarea"
                 rows={2}
                 value={doc.notes || ''}
                 onChange={(e) => setDoc({ ...doc, notes: e.target.value })}
+                placeholder="Notes shown on printable document..."
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Payment Terms / Bank Instructions</label>
+              <label className="form-label">Legal Terms & Settlement Terms</label>
               <textarea
                 className="form-textarea"
                 rows={2}
                 value={doc.terms || ''}
                 onChange={(e) => setDoc({ ...doc, terms: e.target.value })}
+                placeholder="Payment terms, late fee provisions, or turnaround timeline..."
               />
             </div>
           </div>
@@ -502,10 +692,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           <div className="doc-preview-column">
             <div className="doc-preview-toolbar">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}>
-                <Sparkles size={16} color="#d97706" />
+                <Sparkles size={16} color="#C9A227" />
                 <span>Live Document Preview</span>
               </div>
-              <span className="badge badge-neutral">A4 / US-Letter Proportions</span>
+              <span className="badge badge-neutral">A4 / Print Proportions</span>
             </div>
 
             <div className="doc-preview-sheet-wrapper">
@@ -546,7 +736,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                         <strong>Issue Date:</strong> {doc.date}<br />
                         {doc.dueDate && <span><strong>Due Date:</strong> {doc.dueDate}<br /></span>}
                         {doc.validUntil && <span><strong>Valid Until:</strong> {doc.validUntil}<br /></span>}
-                        <strong>Status:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 700, color: '#1d4ed8' }}>{doc.status}</span>
+                        {doc.paymentMethod && <span><strong>Method:</strong> {doc.paymentMethod}<br /></span>}
+                        {doc.paymentReference && <span><strong>Ref:</strong> {doc.paymentReference}<br /></span>}
+                        <strong>Status:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 700, color: '#0B1F3A' }}>{doc.status}</span>
                       </p>
                     </div>
                   </div>
@@ -554,6 +746,13 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
                     Project Scope: {doc.title}
                   </div>
+
+                  {/* Optional Proposal Narrative */}
+                  {doc.projectOverview && (
+                    <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#334155', marginBottom: '18px', lineHeight: 1.5 }}>
+                      <strong>Executive Summary:</strong> {doc.projectOverview}
+                    </div>
+                  )}
 
                   {/* Table of Items */}
                   <table className="doc-sheet-table">
@@ -570,8 +769,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                         <tr key={item.id}>
                           <td><strong>{item.description}</strong></td>
                           <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                          <td style={{ textAlign: 'right' }}>{formatCurrency(item.unitPrice, doc.currency, doc.currencySymbol)}</td>
-                          <td style={{ textAlign: 'right' }}><strong>{formatCurrency(item.amount, doc.currency, doc.currencySymbol)}</strong></td>
+                          <td style={{ textAlign: 'right' }}>{formatCurrencyAmount(item.unitPrice, doc.currency, doc.currencySymbol)}</td>
+                          <td style={{ textAlign: 'right' }}><strong>{formatCurrencyAmount(item.amount, doc.currency, doc.currencySymbol)}</strong></td>
                         </tr>
                       ))}
                     </tbody>
@@ -581,23 +780,23 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   <div className="doc-sheet-totals">
                     <div className="doc-totals-row">
                       <span>Subtotal:</span>
-                      <span>{formatCurrency(doc.subtotal, doc.currency, doc.currencySymbol)}</span>
+                      <span>{formatCurrencyAmount(doc.subtotal, doc.currency, doc.currencySymbol)}</span>
                     </div>
                     {doc.discountAmount > 0 && (
                       <div className="doc-totals-row" style={{ color: '#b91c1c' }}>
                         <span>Discount ({doc.discountRate}%):</span>
-                        <span>-{formatCurrency(doc.discountAmount, doc.currency, doc.currencySymbol)}</span>
+                        <span>-{formatCurrencyAmount(doc.discountAmount, doc.currency, doc.currencySymbol)}</span>
                       </div>
                     )}
                     {doc.taxAmount > 0 && (
                       <div className="doc-totals-row">
                         <span>Tax / VAT ({doc.taxRate}%):</span>
-                        <span>+{formatCurrency(doc.taxAmount, doc.currency, doc.currencySymbol)}</span>
+                        <span>+{formatCurrencyAmount(doc.taxAmount, doc.currency, doc.currencySymbol)}</span>
                       </div>
                     )}
                     <div className="doc-totals-row grand-total">
                       <span>Total Amount:</span>
-                      <span>{formatCurrency(doc.total, doc.currency, doc.currencySymbol)}</span>
+                      <span>{formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}</span>
                     </div>
                   </div>
                 </div>
@@ -627,50 +826,26 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Conversion Bridge for Anonymous Visitors */}
+            {!user && !isApp && (
+              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Layers size={20} color="#0B1F3A" />
+                  <div style={{ fontSize: '0.8125rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--brand-black)' }}>Need Cloud Sync & Online Invoicing?</span>
+                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>Automate payment reminders and client ledgers in BizPilotly workspace.</p>
+                  </div>
+                </div>
+                <Link to="/signup" className="btn btn-outline btn-sm">
+                  <span>Get Started</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Mock Send Email Modal */}
-      <Modal
-        isOpen={sendModalOpen}
-        onClose={() => setSendModalOpen(false)}
-        title={`Send ${title} to Client`}
-      >
-        <form onSubmit={handleMockSend}>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            Simulate sending an official email notification with a downloadable PDF attachment to your client.
-          </p>
-          <Input
-            label="Recipient Email"
-            type="email"
-            value={recipientEmail}
-            onChange={(e) => setRecipientEmail(e.target.value)}
-            required
-          />
-          <Input
-            label="Subject"
-            defaultValue={`${doc.business.name} has sent you ${title} #${doc.documentNumber}`}
-          />
-          <div className="form-group">
-            <label className="form-label">Message</label>
-            <textarea
-              className="form-textarea"
-              rows={3}
-              defaultValue={`Hi ${doc.client.name},\n\nPlease find attached ${title} #${doc.documentNumber} for ${formatCurrency(doc.total, doc.currency, doc.currencySymbol)}.\n\nBest regards,\n${doc.business.name}`}
-            />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-            <Button type="button" variant="secondary" onClick={() => setSendModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary">
-              <Send size={15} />
-              <span>Send Document</span>
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };

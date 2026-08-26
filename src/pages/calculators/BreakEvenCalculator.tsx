@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Calculator, FileText, Sparkles, HelpCircle } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ArrowRight, Calculator, FileText, Sparkles, HelpCircle, AlertCircle } from 'lucide-react';
 import { calculatorService } from '../../services/calculatorService';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
 
 export const BreakEvenCalculator: React.FC = () => {
+  const location = useLocation();
+  const isApp = location.pathname.startsWith('/app');
+  const calcsBase = isApp ? '/app/calculators' : '/calculators';
+  const docsBase = isApp ? '/app/documents' : '/documents';
+
   const meta = calculatorService.getCalculatorBySlug('break-even')!;
+  const relatedCalculators = calculatorService.getRelatedCalculators('break-even');
+  const jsonLd = calculatorService.getJsonLd('break-even');
+
   const [fixedCosts, setFixedCosts] = useState<number>(3000);
   const [pricePerUnit, setPricePerUnit] = useState<number>(150);
   const [variableCost, setVariableCost] = useState<number>(30);
@@ -21,21 +29,22 @@ export const BreakEvenCalculator: React.FC = () => {
   return (
     <div className="section-py-sm">
       <SEO
-        title={`${meta.title} | ${BRAND_NAME}`}
-        description={meta.shortDescription}
-        canonical="https://example.com/calculators/break-even"
+        title={meta.seoTitle || `${meta.name} | ${BRAND_NAME}`}
+        description={meta.seoDescription || meta.shortDescription}
+        canonical={`https://bizpilotly.com${meta.route}`}
+        jsonLd={jsonLd}
       />
 
       <div className="container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-          <Link to="/calculators" style={{ color: 'var(--brand-navy-600)' }}>Calculators</Link>
+          <Link to={calcsBase} style={{ color: 'var(--brand-navy-600)' }}>Calculators</Link>
           <span>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>{meta.title}</span>
+          <span style={{ color: 'var(--text-primary)' }}>{meta.name}</span>
         </div>
 
         <div style={{ maxWidth: '780px', marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
-            {meta.title}
+            {meta.name}
           </h1>
           <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             {meta.shortDescription}
@@ -64,10 +73,11 @@ export const BreakEvenCalculator: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Total Monthly Fixed Overheads ($)</label>
+              <label className="form-label" htmlFor="fixedCostsInput">Total Monthly Fixed Overheads ($)</label>
               <div className="input-with-prefix">
                 <span className="input-prefix">$</span>
                 <input
+                  id="fixedCostsInput"
                   type="number"
                   className="form-input"
                   min="0"
@@ -80,10 +90,11 @@ export const BreakEvenCalculator: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Client Rate Per Billable Unit / Hour ($)</label>
+              <label className="form-label" htmlFor="pricePerUnitInput">Client Rate Per Billable Unit / Hour ($)</label>
               <div className="input-with-prefix">
                 <span className="input-prefix">$</span>
                 <input
+                  id="pricePerUnitInput"
                   type="number"
                   className="form-input"
                   min="1"
@@ -95,10 +106,11 @@ export const BreakEvenCalculator: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Variable Direct Cost Per Unit / Hour ($)</label>
+              <label className="form-label" htmlFor="variableCostInput">Variable Direct Cost Per Unit / Hour ($)</label>
               <div className="input-with-prefix">
                 <span className="input-prefix">$</span>
                 <input
+                  id="variableCostInput"
                   type="number"
                   className="form-input"
                   min="0"
@@ -108,6 +120,13 @@ export const BreakEvenCalculator: React.FC = () => {
                 />
               </div>
             </div>
+
+            {res.error && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--status-danger-bg)', color: 'var(--status-danger-text)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', marginTop: '1rem' }}>
+                <AlertCircle size={16} />
+                <span>{res.error}</span>
+              </div>
+            )}
           </div>
 
           <div className="calc-results-panel">
@@ -147,9 +166,9 @@ export const BreakEvenCalculator: React.FC = () => {
             </div>
 
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <Link to="/documents/quote" className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
+              <Link to={`${docsBase}/quote`} className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
                 <FileText size={16} />
-                <span>Create Quote</span>
+                <span>Create Quote for {res.breakEvenUnits} Units</span>
                 <ArrowRight size={16} />
               </Link>
             </div>
@@ -159,7 +178,7 @@ export const BreakEvenCalculator: React.FC = () => {
         <div className="calc-info-section">
           <div className="calc-info-card">
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <HelpCircle size={18} color="#1d4ed8" />
+              <HelpCircle size={18} color="#0B1F3A" />
               <span>Formula Explanation</span>
             </h3>
             <div className="formula-box">
@@ -188,25 +207,27 @@ export const BreakEvenCalculator: React.FC = () => {
             <h3>{meta.targetDocumentCTA.text}</h3>
             <p>Draft an estimate based on your target billable hours.</p>
           </div>
-          <Link to={meta.targetDocumentCTA.link} className="btn btn-gold">
+          <Link to={isApp ? `/app${meta.targetDocumentCTA.link}` : meta.targetDocumentCTA.link} className="btn btn-gold">
             <span>{meta.targetDocumentCTA.buttonLabel}</span>
             <ArrowRight size={16} />
           </Link>
         </div>
 
-        <div style={{ marginTop: '3rem' }}>
-          <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Related Pricing Calculators
-          </h4>
-          <div className="related-calcs-list">
-            {meta.relatedCalculators.map((r, idx) => (
-              <Link key={idx} to={`/calculators/${r.slug}`} className="related-calc-chip">
-                <span>{r.title}</span>
-                <ArrowRight size={12} />
-              </Link>
-            ))}
+        {relatedCalculators.length > 0 && (
+          <div style={{ marginTop: '3rem' }}>
+            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Related Pricing Calculators
+            </h4>
+            <div className="related-calcs-list">
+              {relatedCalculators.map((r) => (
+                <Link key={r.slug} to={isApp ? `/app${r.route}` : r.route} className="related-calc-chip">
+                  <span>{r.name}</span>
+                  <ArrowRight size={12} />
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

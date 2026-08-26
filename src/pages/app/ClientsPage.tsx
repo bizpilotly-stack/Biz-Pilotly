@@ -30,6 +30,7 @@ export const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorState, setErrorState] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -71,6 +72,8 @@ export const ClientsPage: React.FC = () => {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const created = await clientService.createClient({
         name: newName,
@@ -92,6 +95,8 @@ export const ClientsPage: React.FC = () => {
       setSelectedClient(created);
     } catch {
       showToast('Error creating client record.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -393,10 +398,10 @@ export const ClientsPage: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-            <Button type="button" variant="secondary" onClick={() => setAddModalOpen(false)}>
+            <Button type="button" variant="secondary" onClick={() => setAddModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
               Save Client
             </Button>
           </div>

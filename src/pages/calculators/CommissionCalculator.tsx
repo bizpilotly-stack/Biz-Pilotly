@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Calculator, FileText, Sparkles, HelpCircle } from 'lucide-react';
 import { calculatorService } from '../../services/calculatorService';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
@@ -7,7 +7,15 @@ import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
 
 export const CommissionCalculator: React.FC = () => {
+  const location = useLocation();
+  const isApp = location.pathname.startsWith('/app');
+  const calcsBase = isApp ? '/app/calculators' : '/calculators';
+  const docsBase = isApp ? '/app/documents' : '/documents';
+
   const meta = calculatorService.getCalculatorBySlug('commission')!;
+  const relatedCalculators = calculatorService.getRelatedCalculators('commission');
+  const jsonLd = calculatorService.getJsonLd('commission');
+
   const [dealAmount, setDealAmount] = useState<number>(18000);
   const [commissionRate, setCommissionRate] = useState<number>(8.5);
 
@@ -19,21 +27,22 @@ export const CommissionCalculator: React.FC = () => {
   return (
     <div className="section-py-sm">
       <SEO
-        title={`${meta.title} | ${BRAND_NAME}`}
-        description={meta.shortDescription}
-        canonical="https://example.com/calculators/commission"
+        title={meta.seoTitle || `${meta.name} | ${BRAND_NAME}`}
+        description={meta.seoDescription || meta.shortDescription}
+        canonical={`https://bizpilotly.com${meta.route}`}
+        jsonLd={jsonLd}
       />
 
       <div className="container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-          <Link to="/calculators" style={{ color: 'var(--brand-navy-600)' }}>Calculators</Link>
+          <Link to={calcsBase} style={{ color: 'var(--brand-navy-600)' }}>Calculators</Link>
           <span>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>{meta.title}</span>
+          <span style={{ color: 'var(--text-primary)' }}>{meta.name}</span>
         </div>
 
         <div style={{ maxWidth: '780px', marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
-            {meta.title}
+            {meta.name}
           </h1>
           <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             {meta.shortDescription}
@@ -61,10 +70,11 @@ export const CommissionCalculator: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Total Contract / Deal Value ($)</label>
+              <label className="form-label" htmlFor="dealAmountInput">Total Contract / Deal Value ($)</label>
               <div className="input-with-prefix">
                 <span className="input-prefix">$</span>
                 <input
+                  id="dealAmountInput"
                   type="number"
                   className="form-input"
                   min="0"
@@ -73,12 +83,14 @@ export const CommissionCalculator: React.FC = () => {
                   onChange={(e) => setDealAmount(Number(e.target.value))}
                 />
               </div>
+              <p className="form-hint">Gross value of closed engagement or broker deal</p>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Commission / Referral Split Rate (%)</label>
+              <label className="form-label" htmlFor="commissionRateInput">Commission Rate (%)</label>
               <div className="input-with-suffix">
                 <input
+                  id="commissionRateInput"
                   type="number"
                   className="form-input"
                   min="0"
@@ -89,6 +101,7 @@ export const CommissionCalculator: React.FC = () => {
                 />
                 <span className="input-suffix">%</span>
               </div>
+              <p className="form-hint">Referral fee, broker share, or agent split percentage</p>
             </div>
           </div>
 
@@ -97,24 +110,24 @@ export const CommissionCalculator: React.FC = () => {
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                 Total Commission Payout
               </div>
-              <div className="calc-main-stat">
+              <div className="calc-main-stat" style={{ color: 'var(--brand-gold-400)' }}>
                 {formatCurrency(res.commissionAmount)}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.875rem', color: '#38bdf8' }}>
                 <Sparkles size={16} />
-                <span>Net retained by producer: <strong>{formatCurrency(res.remainingAmount)}</strong></span>
+                <span>Net retained to studio: <strong>{formatCurrency(res.remainingAmount)}</strong></span>
               </div>
             </div>
 
             <div className="calc-stats-grid">
               <div className="calc-stat-item">
-                <div className="calc-stat-label">Producer Retained</div>
-                <div className="calc-stat-val" style={{ color: '#10b981' }}>{formatCurrency(res.remainingAmount)}</div>
+                <div className="calc-stat-label">Commission Fee</div>
+                <div className="calc-stat-val" style={{ color: '#fbbf24' }}>{formatCurrency(res.commissionAmount)}</div>
               </div>
 
               <div className="calc-stat-item">
-                <div className="calc-stat-label">Referral Fee</div>
-                <div className="calc-stat-val" style={{ color: 'var(--brand-gold-400)' }}>{formatCurrency(res.commissionAmount)}</div>
+                <div className="calc-stat-label">Commission Split</div>
+                <div className="calc-stat-val">{formatPercent(res.commissionRatePercent)}</div>
               </div>
 
               <div className="calc-stat-item">
@@ -123,15 +136,15 @@ export const CommissionCalculator: React.FC = () => {
               </div>
 
               <div className="calc-stat-item">
-                <div className="calc-stat-label">Rate Percentage</div>
-                <div className="calc-stat-val">{formatPercent(commissionRate)}</div>
+                <div className="calc-stat-label">Retained Balance</div>
+                <div className="calc-stat-val" style={{ color: '#34d399' }}>{formatCurrency(res.remainingAmount)}</div>
               </div>
             </div>
 
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <Link to="/documents/receipt" className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
+              <Link to={`${docsBase}/receipt`} className="btn btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
                 <FileText size={16} />
-                <span>Issue Commission Receipt</span>
+                <span>Create Receipt for {formatCurrency(res.commissionAmount)}</span>
                 <ArrowRight size={16} />
               </Link>
             </div>
@@ -141,7 +154,7 @@ export const CommissionCalculator: React.FC = () => {
         <div className="calc-info-section">
           <div className="calc-info-card">
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <HelpCircle size={18} color="#1d4ed8" />
+              <HelpCircle size={18} color="#0B1F3A" />
               <span>Formula Explanation</span>
             </h3>
             <div className="formula-box">
@@ -168,27 +181,29 @@ export const CommissionCalculator: React.FC = () => {
         <div className="calc-cta-banner">
           <div className="calc-cta-text">
             <h3>{meta.targetDocumentCTA.text}</h3>
-            <p>Generate an official receipt confirming funds or commission settlement.</p>
+            <p>Generate an official receipt acknowledging received commission or referral payout.</p>
           </div>
-          <Link to={meta.targetDocumentCTA.link} className="btn btn-gold">
+          <Link to={isApp ? `/app${meta.targetDocumentCTA.link}` : meta.targetDocumentCTA.link} className="btn btn-gold">
             <span>{meta.targetDocumentCTA.buttonLabel}</span>
             <ArrowRight size={16} />
           </Link>
         </div>
 
-        <div style={{ marginTop: '3rem' }}>
-          <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Related Pricing Calculators
-          </h4>
-          <div className="related-calcs-list">
-            {meta.relatedCalculators.map((r, idx) => (
-              <Link key={idx} to={`/calculators/${r.slug}`} className="related-calc-chip">
-                <span>{r.title}</span>
-                <ArrowRight size={12} />
-              </Link>
-            ))}
+        {relatedCalculators.length > 0 && (
+          <div style={{ marginTop: '3rem' }}>
+            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Related Pricing Calculators
+            </h4>
+            <div className="related-calcs-list">
+              {relatedCalculators.map((r) => (
+                <Link key={r.slug} to={isApp ? `/app${r.route}` : r.route} className="related-calc-chip">
+                  <span>{r.name}</span>
+                  <ArrowRight size={12} />
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -36,6 +36,7 @@ export const ExpensesPage: React.FC = () => {
     count: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
@@ -74,6 +75,8 @@ export const ExpensesPage: React.FC = () => {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await expenseService.addExpense({
         title,
@@ -98,6 +101,8 @@ export const ExpensesPage: React.FC = () => {
       loadData();
     } catch {
       showToast('Error logging expense', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -345,10 +350,10 @@ export const ExpensesPage: React.FC = () => {
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-            <Button type="button" variant="secondary" onClick={() => setAddModalOpen(false)}>
+            <Button type="button" variant="secondary" onClick={() => setAddModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" isLoading={isSubmitting} disabled={isSubmitting}>
               Log Expense
             </Button>
           </div>

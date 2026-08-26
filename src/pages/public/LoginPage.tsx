@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Layers, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
-import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -10,11 +10,18 @@ import { useToast } from '../../components/common/Toast';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, signInWithGoogle, resetPassword } = useAuth();
   const { showToast } = useToast();
-  const [email, setEmail] = useState('alex@studionorth.co');
-  const [password, setPassword] = useState('password123');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Determine redirect destination if user was redirected from a protected route
+  const fromPath = (location.state as { from?: { pathname: string } })?.from?.pathname || '/app';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,26 +29,60 @@ export const LoginPage: React.FC = () => {
       showToast('Please enter both email and password.', 'error');
       return;
     }
+
     setLoading(true);
     try {
-      await authService.login(email, password);
-      showToast('Welcome back! Signed in successfully.', 'success');
-      navigate('/app');
-    } catch {
-      showToast('Login failed. Please check your credentials.', 'error');
+      const { user, error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          showToast('Invalid email or password. Please check your credentials.', 'error');
+        } else if (error.message.includes('Email not confirmed')) {
+          showToast('Please confirm your email address before signing in.', 'info');
+        } else {
+          showToast(error.message || 'Login failed. Please try again.', 'error');
+        }
+        return;
+      }
+
+      if (user) {
+        showToast('Welcome back! Signed in successfully.', 'success');
+        navigate(fromPath, { replace: true });
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'An unexpected connection error occurred.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
-      await authService.loginWithGoogle();
-      showToast('Signed in with Google (Demo Session).', 'success');
-      navigate('/app');
+      const { error } = await signInWithGoogle();
+      if (error) {
+        showToast(error.message || 'Google sign in failed. Ensure Google OAuth is enabled in Supabase.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to initialize Google authentication.', 'error');
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      showToast('Please enter your email address first, then click Forgot password.', 'info');
+      return;
+    }
+    try {
+      const { error } = await resetPassword(email);
+      if (error) {
+        showToast(error.message, 'error');
+      } else {
+        showToast(`Password reset link sent to ${email}. Check your inbox!`, 'success');
+      }
+    } catch {
+      showToast('Failed to send password reset request.', 'error');
     }
   };
 
@@ -50,7 +91,7 @@ export const LoginPage: React.FC = () => {
       <SEO
         title={`Sign In to Your Workspace | ${BRAND_NAME}`}
         description={`Log in to access your ${BRAND_NAME} business dashboard, client directory, and invoices.`}
-        canonical="https://example.com/login"
+        canonical="https://bizpilotly.com/login"
       />
 
       <div style={{ width: '100%', maxWidth: '440px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
@@ -66,10 +107,11 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Google OAuth Mock Button */}
+        {/* Google OAuth Button */}
         <button
           type="button"
           onClick={handleGoogleLogin}
+          disabled={googleLoading || loading}
           className="btn btn-secondary"
           style={{ width: '100%', justifyContent: 'center', marginBottom: '1.5rem', padding: '0.75rem' }}
         >
@@ -79,7 +121,7 @@ export const LoginPage: React.FC = () => {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
           </svg>
-          <span>Continue with Google</span>
+          <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -103,7 +145,7 @@ export const LoginPage: React.FC = () => {
               <label className="form-label">Password</label>
               <button
                 type="button"
-                onClick={() => showToast('Demo Mode: Password reset mock link clicked.', 'info')}
+                onClick={handleForgotPassword}
                 style={{ background: 'none', border: 'none', color: 'var(--brand-navy-600)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
               >
                 Forgot password?
@@ -123,6 +165,7 @@ export const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { MobileNav } from './MobileNav';
+import { PWAInstallPrompt } from '../common/PWAInstallPrompt';
 
 export const AppLayout: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ export const AppLayout: React.FC = () => {
         </main>
       </div>
       <MobileNav />
+      <PWAInstallPrompt />
     </div>
   );
 };

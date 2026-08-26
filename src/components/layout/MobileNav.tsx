@@ -1,50 +1,51 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calculator, FileText, LayoutDashboard, User } from 'lucide-react';
+import { LayoutDashboard, Calculator, FileText, Users, Settings } from 'lucide-react';
 
 export const MobileNav: React.FC = () => {
   return (
     <nav className="mobile-nav-bar" aria-label="Mobile Bottom Navigation">
       <NavLink
-        to="/"
+        to="/app"
         className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
         end
       >
-        <Home size={20} />
-        <span>Home</span>
+        <LayoutDashboard size={20} />
+        <span>Overview</span>
       </NavLink>
 
       <NavLink
-        to="/calculators"
+        to="/app/calculators"
         className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
       >
         <Calculator size={20} />
-        <span>Tools</span>
+        <span>Calculators</span>
       </NavLink>
 
       <NavLink
-        to="/documents"
+        to="/app/documents"
         className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
       >
         <FileText size={20} />
-        <span>Docs</span>
+        <span>Documents</span>
       </NavLink>
 
       <NavLink
-        to="/app"
+        to="/app/clients"
         className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
       >
-        <LayoutDashboard size={20} />
-        <span>Dashboard</span>
+        <Users size={20} />
+        <span>Clients</span>
       </NavLink>
 
       <NavLink
-        to="/app/settings/account"
+        to="/app/settings/business"
         className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
       >
-        <User size={20} />
-        <span>Account</span>
+        <Settings size={20} />
+        <span>Settings</span>
       </NavLink>
     </nav>
   );
 };
+

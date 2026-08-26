@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -9,20 +9,91 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
+  Building,
+  Users,
+  X,
+  Sparkles,
 } from 'lucide-react';
-import { INITIAL_DASHBOARD_STATS, INITIAL_ACTIVITIES } from '../../mock/dashboard';
-import { INITIAL_DOCUMENTS } from '../../mock/documents';
-import { INITIAL_PAYMENTS } from '../../mock/payments';
+import { DashboardStats, ActivityItem, BusinessDocument, Payment } from '../../types';
+import { dashboardService } from '../../services/dashboardService';
+import { documentService } from '../../services/documentService';
+import { paymentService } from '../../services/paymentService';
+import { clientService } from '../../services/clientService';
+import { expenseService } from '../../services/expenseService';
+import { businessService } from '../../services/businessService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Badge } from '../../components/common/Badge';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
 
+const ONBOARDING_DISMISSED_KEY = 'bizpilotly_onboarding_dismissed';
+
 export const OverviewPage: React.FC = () => {
-  const stats = INITIAL_DASHBOARD_STATS;
-  const recentInvoices = INITIAL_DOCUMENTS.slice(0, 4);
-  const recentPayments = INITIAL_PAYMENTS.slice(0, 4);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentInvoices, setRecentInvoices] = useState<BusinessDocument[]>([]);
+  const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Onboarding Checklist States
+  const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
+    return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === 'true';
+  });
+  const [hasConfiguredBusiness, setHasConfiguredBusiness] = useState(false);
+  const [hasClients, setHasClients] = useState(false);
+  const [hasExpenses, setHasExpenses] = useState(false);
+
+  useEffect(() => {
+    const loadOverviewData = async () => {
+      setLoading(true);
+      try {
+        const [statsData, docsData, paymentsData, activitiesData, clientsData, expensesData, businessData] = await Promise.all([
+          dashboardService.getDashboardStats(),
+          documentService.getDocuments(),
+          paymentService.getPayments(),
+          dashboardService.getRecentActivities(),
+          clientService.getClients(),
+          expenseService.getExpenses(),
+          businessService.getCurrentBusiness(),
+        ]);
+        setStats(statsData);
+        setRecentInvoices(docsData.slice(0, 4));
+        setRecentPayments(paymentsData.slice(0, 4));
+        setActivities(activitiesData);
+        setHasClients(clientsData.length > 0);
+        setHasExpenses(expensesData.length > 0);
+        setHasConfiguredBusiness(!!businessData && businessData.name !== 'My Business Studio');
+      } catch (err) {
+        console.error('Error loading dashboard overview:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOverviewData();
+  }, []);
+
+  const handleDismissOnboarding = () => {
+    setOnboardingDismissed(true);
+    localStorage.setItem(ONBOARDING_DISMISSED_KEY, 'true');
+  };
+
+  if (loading || !stats) {
+    return (
+      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        Loading business dashboard...
+      </div>
+    );
+  }
+
+  // Calculate onboarding progress (out of 4 steps)
+  const step1Done = hasConfiguredBusiness;
+  const step2Done = hasClients;
+  const step3Done = recentInvoices.length > 0;
+  const step4Done = hasExpenses;
+  const completedStepsCount = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0) + (step4Done ? 1 : 0);
+  const showOnboarding = !onboardingDismissed && completedStepsCount < 4;
 
   return (
     <div>
@@ -36,7 +107,7 @@ export const OverviewPage: React.FC = () => {
         description="Summary of your ongoing billing, outstanding client invoices, and net financial performance."
         actions={
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Link to="/documents/invoice" className="btn btn-primary btn-sm">
+            <Link to="/app/documents/invoice" className="btn btn-primary btn-sm">
               <Plus size={14} />
               <span>Create Invoice</span>
             </Link>
@@ -47,8 +118,189 @@ export const OverviewPage: React.FC = () => {
         }
       />
 
-      {/* 4 Metric Cards */}
+      {/* First-Login Onboarding Tutorial Card */}
+      {showOnboarding && (
+        <div
+          className="card"
+          style={{
+            background: 'linear-gradient(135deg, #0B1F3A 0%, #1e293b 100%)',
+            color: '#ffffff',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            marginBottom: '2rem',
+            padding: '1.75rem',
+            position: 'relative',
+          }}
+        >
+          <button
+            onClick={handleDismissOnboarding}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              fontSize: '0.75rem',
+            }}
+            title="Dismiss tutorial"
+            aria-label="Dismiss tutorial"
+          >
+            <span>Dismiss</span>
+            <X size={16} />
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <Sparkles size={18} color="#C9A227" />
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+              Welcome to BizPilotly
+            </h3>
+            <span className="badge badge-gold" style={{ fontSize: '0.6875rem' }}>
+              {completedStepsCount} of 4 Completed
+            </span>
+          </div>
+          <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
+            Set up your business to get started. Complete these essential steps to power your workspace:
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            {/* Step 1 */}
+            <Link
+              to="/app/settings/business"
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: `1px solid ${step1Done ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                color: '#ffffff',
+                textDecoration: 'none',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              {step1Done ? (
+                <CheckCircle2 size={20} color="#10b981" />
+              ) : (
+                <Building size={20} color="#94a3b8" />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+                  1. Business Details
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: step1Done ? '#10b981' : '#94a3b8' }}>
+                  {step1Done ? 'Configured' : 'Add name, logo & terms'}
+                </div>
+              </div>
+              <ArrowRight size={14} color="#94a3b8" />
+            </Link>
+
+            {/* Step 2 */}
+            <Link
+              to="/app/clients"
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: `1px solid ${step2Done ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                color: '#ffffff',
+                textDecoration: 'none',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              {step2Done ? (
+                <CheckCircle2 size={20} color="#10b981" />
+              ) : (
+                <Users size={20} color="#94a3b8" />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+                  2. Add First Client
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: step2Done ? '#10b981' : '#94a3b8' }}>
+                  {step2Done ? 'Client added' : 'Directory & contacts'}
+                </div>
+              </div>
+              <ArrowRight size={14} color="#94a3b8" />
+            </Link>
+
+            {/* Step 3 */}
+            <Link
+              to="/app/documents/invoice"
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: `1px solid ${step3Done ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                color: '#ffffff',
+                textDecoration: 'none',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              {step3Done ? (
+                <CheckCircle2 size={20} color="#10b981" />
+              ) : (
+                <FileText size={20} color="#94a3b8" />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+                  3. Create Invoice
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: step3Done ? '#10b981' : '#94a3b8' }}>
+                  {step3Done ? 'Invoice issued' : 'Bill for services'}
+                </div>
+              </div>
+              <ArrowRight size={14} color="#94a3b8" />
+            </Link>
+
+            {/* Step 4 */}
+            <Link
+              to="/app/expenses"
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: `1px solid ${step4Done ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                color: '#ffffff',
+                textDecoration: 'none',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              {step4Done ? (
+                <CheckCircle2 size={20} color="#10b981" />
+              ) : (
+                <Receipt size={20} color="#94a3b8" />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+                  4. Record Expense
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: step4Done ? '#10b981' : '#94a3b8' }}>
+                  {step4Done ? 'Expense logged' : 'Track software & costs'}
+                </div>
+              </div>
+              <ArrowRight size={14} color="#94a3b8" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 4 Metric Cards with Honest Zero States */}
       <div className="metrics-grid">
+        {/* Revenue */}
         <div className="metric-card">
           <div className="metric-card-top">
             <span className="metric-card-label">Monthly Gross Revenue</span>
@@ -58,11 +310,15 @@ export const OverviewPage: React.FC = () => {
           </div>
           <div className="metric-card-value">{formatCurrency(stats.revenue)}</div>
           <div className="metric-card-subtext">
-            <span style={{ color: '#10b981', fontWeight: 600 }}>↑ +{stats.revenueChangePct}%</span>
-            <span>vs previous month</span>
+            {stats.revenue === 0 ? (
+              <span style={{ color: 'var(--text-muted)' }}>No payments recorded yet.</span>
+            ) : (
+              <span style={{ color: '#10b981', fontWeight: 600 }}>Settled billing receipts</span>
+            )}
           </div>
         </div>
 
+        {/* Outstanding Invoices */}
         <div className="metric-card">
           <div className="metric-card-top">
             <span className="metric-card-label">Outstanding Invoices</span>
@@ -70,28 +326,37 @@ export const OverviewPage: React.FC = () => {
               <Clock size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: 'var(--brand-gold-600)' }}>
+          <div className="metric-card-value" style={{ color: stats.outstandingInvoices > 0 ? 'var(--brand-gold-600)' : 'inherit' }}>
             {formatCurrency(stats.outstandingInvoices)}
           </div>
           <div className="metric-card-subtext">
-            <span>{stats.outstandingCount} invoices awaiting client settlement</span>
+            {stats.outstandingCount === 0 ? (
+              <span style={{ color: 'var(--text-muted)' }}>No outstanding invoices.</span>
+            ) : (
+              <span>{stats.outstandingCount} invoice{stats.outstandingCount !== 1 ? 's' : ''} awaiting client settlement</span>
+            )}
           </div>
         </div>
 
+        {/* Expenses */}
         <div className="metric-card">
           <div className="metric-card-top">
-            <span className="metric-card-label">Logged Expenses (Aug)</span>
+            <span className="metric-card-label">Logged Expenses</span>
             <div className="metric-card-icon" style={{ background: 'var(--status-danger-bg)', color: 'var(--status-danger-text)' }}>
               <Receipt size={18} />
             </div>
           </div>
           <div className="metric-card-value">{formatCurrency(stats.expenses)}</div>
           <div className="metric-card-subtext">
-            <span style={{ color: '#10b981', fontWeight: 600 }}>{stats.expenseChangePct}%</span>
-            <span>operating overhead control</span>
+            {stats.expenses === 0 ? (
+              <span style={{ color: 'var(--text-muted)' }}>No expenses recorded yet.</span>
+            ) : (
+              <span style={{ color: 'var(--text-secondary)' }}>Operating overhead recorded</span>
+            )}
           </div>
         </div>
 
+        {/* Net Profit */}
         <div className="metric-card">
           <div className="metric-card-top">
             <span className="metric-card-label">Net Realized Profit</span>
@@ -99,14 +364,17 @@ export const OverviewPage: React.FC = () => {
               <TrendingUp size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: 'var(--brand-navy-700)' }}>
+          <div className="metric-card-value" style={{ color: stats.profit > 0 ? 'var(--brand-navy-700)' : 'inherit' }}>
             {formatCurrency(stats.profit)}
           </div>
           <div className="metric-card-subtext">
-            <span className="badge badge-success" style={{ fontSize: '0.6875rem' }}>
-              {stats.profitMarginPct}% Margin
-            </span>
-            <span>healthy return</span>
+            {stats.revenue === 0 && stats.expenses === 0 ? (
+              <span style={{ color: 'var(--text-muted)' }}>Your profit summary will appear once you record business activity.</span>
+            ) : (
+              <span className="badge badge-success" style={{ fontSize: '0.6875rem' }}>
+                {stats.profitMarginPct}% Margin
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -120,41 +388,57 @@ export const OverviewPage: React.FC = () => {
             <div className="card-header">
               <h3 className="card-title">Recent Invoices & Documents</h3>
               <Link to="/app/documents" className="btn btn-ghost btn-sm" style={{ color: 'var(--brand-navy-600)' }}>
-                <span>View All ({INITIAL_DOCUMENTS.length})</span>
+                <span>View All ({recentInvoices.length})</span>
                 <ArrowRight size={14} />
               </Link>
             </div>
 
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Doc #</th>
-                    <th>Client</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentInvoices.map((doc) => (
-                    <tr key={doc.id}>
-                      <td style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
-                        <Link to={`/documents/${doc.type}`} style={{ color: 'var(--brand-navy-600)' }}>
-                          {doc.documentNumber}
-                        </Link>
-                      </td>
-                      <td>{doc.client.company || doc.client.name}</td>
-                      <td style={{ color: 'var(--text-muted)' }}>{formatDate(doc.date)}</td>
-                      <td style={{ fontWeight: 700 }}>{formatCurrency(doc.total, doc.currency, doc.currencySymbol)}</td>
-                      <td>
-                        <Badge status={doc.status}>{doc.status}</Badge>
-                      </td>
+            {recentInvoices.length === 0 ? (
+              <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
+                <FileText size={32} color="#94a3b8" style={{ margin: '0 auto 0.75rem' }} />
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  No documents yet.
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                  Create your first professional invoice in seconds.
+                </p>
+                <Link to="/app/documents/invoice" className="btn btn-primary btn-sm">
+                  <Plus size={14} />
+                  <span>Create Invoice</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Doc #</th>
+                      <th>Client</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {recentInvoices.map((doc) => (
+                      <tr key={doc.id}>
+                        <td style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+                          <Link to={`/app/documents/${doc.type}`} style={{ color: 'var(--brand-navy-600)' }}>
+                            {doc.documentNumber}
+                          </Link>
+                        </td>
+                        <td>{doc.client.company || doc.client.name}</td>
+                        <td style={{ color: 'var(--text-muted)' }}>{formatDate(doc.date)}</td>
+                        <td style={{ fontWeight: 700 }}>{formatCurrency(doc.total, doc.currency, doc.currencySymbol)}</td>
+                        <td>
+                          <Badge status={doc.status}>{doc.status}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Recent Payments Table */}
@@ -167,38 +451,53 @@ export const OverviewPage: React.FC = () => {
               </Link>
             </div>
 
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Payment ID</th>
-                    <th>Client</th>
-                    <th>Method</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentPayments.map((pay) => (
-                    <tr key={pay.id}>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>{pay.paymentNumber}</td>
-                      <td>{pay.clientName.split('(')[0]}</td>
-                      <td style={{ color: 'var(--text-muted)' }}>{pay.method}</td>
-                      <td style={{ fontWeight: 700, color: '#047857' }}>
-                        +{formatCurrency(pay.amount, pay.currency, pay.currencySymbol)}
-                      </td>
-                      <td>
-                        <Badge status={pay.status}>{pay.status}</Badge>
-                      </td>
+            {recentPayments.length === 0 ? (
+              <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
+                <DollarSign size={32} color="#94a3b8" style={{ margin: '0 auto 0.75rem' }} />
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  No payments recorded yet.
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                  Record payments manually in your ledger as clients settle invoices.
+                </p>
+                <Link to="/app/payments" className="btn btn-secondary btn-sm">
+                  <span>Open Payments Ledger</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Payment ID</th>
+                      <th>Client</th>
+                      <th>Method</th>
+                      <th>Amount</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {recentPayments.map((pay) => (
+                      <tr key={pay.id}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>{pay.paymentNumber}</td>
+                        <td>{pay.clientName.split('(')[0]}</td>
+                        <td style={{ color: 'var(--text-muted)' }}>{pay.method}</td>
+                        <td style={{ fontWeight: 700, color: '#047857' }}>
+                          +{formatCurrency(pay.amount, pay.currency, pay.currencySymbol)}
+                        </td>
+                        <td>
+                          <Badge status={pay.status}>{pay.status}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column: Activity Feed & Quick Actions */}
+        {/* Right Column: Quick Actions & Activity Feed */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* Quick Actions Panel */}
           <div className="card" style={{ background: 'linear-gradient(135deg, var(--brand-black) 0%, #1e293b 100%)', color: '#ffffff', border: '1px solid var(--brand-black-border)' }}>
@@ -206,14 +505,14 @@ export const OverviewPage: React.FC = () => {
               Quick Launch Tools
             </h3>
             <p style={{ fontSize: '0.8125rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
-              Jump straight into client billing or profit calculations.
+              Jump straight into client billing, pricing calculators, or logging costs.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <Link to="/documents/invoice" className="btn btn-gold btn-sm" style={{ justifyContent: 'flex-start' }}>
+              <Link to="/app/documents/invoice" className="btn btn-gold btn-sm" style={{ justifyContent: 'flex-start' }}>
                 <Plus size={14} />
                 <span>Issue New Invoice</span>
               </Link>
-              <Link to="/calculators/profit-margin" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start', background: 'rgba(255, 255, 255, 0.08)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}>
+              <Link to="/app/calculators/profit-margin" className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start', background: 'rgba(255, 255, 255, 0.08)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}>
                 <TrendingUp size={14} />
                 <span>Calculate Profit Margin</span>
               </Link>
@@ -227,23 +526,33 @@ export const OverviewPage: React.FC = () => {
           {/* Activity Feed */}
           <div className="card">
             <h3 className="card-title" style={{ marginBottom: '1rem' }}>Recent Operational Activity</h3>
-            <div className="activity-feed">
-              {INITIAL_ACTIVITIES.map((act) => (
-                <div key={act.id} className="activity-item">
-                  <div className="activity-icon-badge">
-                    {act.type === 'invoice_paid' ? <CheckCircle2 size={16} color="#047857" /> : <FileText size={16} color="#1d4ed8" />}
-                  </div>
-                  <div className="activity-info">
-                    <div className="activity-title">{act.title}</div>
-                    <div className="activity-desc">{act.description}</div>
-                  </div>
-                  <div className="activity-time">{act.timestamp}</div>
+            {activities.length === 0 ? (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                No operational activity recorded yet.
+                <div style={{ marginTop: '0.5rem' }}>
+                  Create an invoice or record an expense to begin tracking activity.
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="activity-feed">
+                {activities.map((act) => (
+                  <div key={act.id} className="activity-item">
+                    <div className="activity-icon-badge">
+                      {act.type === 'invoice_paid' ? <CheckCircle2 size={16} color="#047857" /> : <FileText size={16} color="#1d4ed8" />}
+                    </div>
+                    <div className="activity-info">
+                      <div className="activity-title">{act.title}</div>
+                      <div className="activity-desc">{act.description}</div>
+                    </div>
+                    <div className="activity-time">{act.timestamp}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
