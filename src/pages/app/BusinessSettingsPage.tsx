@@ -12,6 +12,7 @@ import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
 import { NIGERIAN_BANKS } from '../../constants/nigerianBanks';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
+import { bankResolutionService } from '../../services/bankResolutionService';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../components/common/Toast';
 import { SEO } from '../../components/common/SEO';
@@ -21,6 +22,7 @@ export const BusinessSettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resolvingBank, setResolvingBank] = useState(false);
 
   useEffect(() => {
     businessService.getSettings().then((data) => {
@@ -40,6 +42,45 @@ export const BusinessSettingsPage: React.FC = () => {
       showToast('Error saving business settings.', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBankOrAccountChange = async (newBankName: string, newAccountNumber: string) => {
+    if (!settings) return;
+    const cleaned = newAccountNumber.replace(/\D/g, '').slice(0, 10);
+    const updated = {
+      ...settings,
+      bankDetails: {
+        ...settings.bankDetails,
+        bankName: newBankName,
+        accountNumber: cleaned,
+      },
+    };
+    setSettings(updated);
+
+    if (newBankName && cleaned.length === 10) {
+      setResolvingBank(true);
+      try {
+        const res = await bankResolutionService.resolveAccountName(cleaned, newBankName);
+        if (res.success && res.accountName) {
+          setSettings((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  bankDetails: {
+                    ...prev.bankDetails,
+                    accountName: res.accountName || prev.bankDetails.accountName,
+                  },
+                }
+              : prev
+          );
+          showToast(`Account name verified: ${res.accountName}`, 'success');
+        }
+      } catch (err) {
+        console.warn('Bank verification finished');
+      } finally {
+        setResolvingBank(false);
+      }
     }
   };
 
@@ -241,10 +282,7 @@ export const BusinessSettingsPage: React.FC = () => {
                   style={{ height: '42px', fontSize: '0.875rem' }}
                   value={settings.bankDetails.bankName || ''}
                   onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      bankDetails: { ...settings.bankDetails, bankName: e.target.value },
-                    })
+                    handleBankOrAccountChange(e.target.value, settings.bankDetails.accountNumber)
                   }
                   required
                 >
@@ -274,20 +312,27 @@ export const BusinessSettingsPage: React.FC = () => {
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
                   <span>NUBAN Account Number (10 Digits) <span className="required">*</span></span>
-                  {settings.bankDetails.accountNumber && (
-                    <span
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        background: settings.bankDetails.accountNumber.length === 10 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        color: settings.bankDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b',
-                      }}
-                    >
-                      {settings.bankDetails.accountNumber.length === 10 ? '✓ 10 Digits Valid' : `${settings.bankDetails.accountNumber.length}/10 digits`}
-                    </span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {resolvingBank && (
+                      <span style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: 600 }}>
+                        🔍 Verifying...
+                      </span>
+                    )}
+                    {settings.bankDetails.accountNumber && !resolvingBank && (
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          background: settings.bankDetails.accountNumber.length === 10 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                          color: settings.bankDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b',
+                        }}
+                      >
+                        {settings.bankDetails.accountNumber.length === 10 ? '✓ 10 Digits Valid' : `${settings.bankDetails.accountNumber.length}/10 digits`}
+                      </span>
+                    )}
+                  </div>
                 </label>
                 <input
                   type="text"
@@ -296,13 +341,9 @@ export const BusinessSettingsPage: React.FC = () => {
                   placeholder="e.g. 0123456789"
                   maxLength={10}
                   value={settings.bankDetails.accountNumber}
-                  onChange={(e) => {
-                    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
-                    setSettings({
-                      ...settings,
-                      bankDetails: { ...settings.bankDetails, accountNumber: cleaned },
-                    });
-                  }}
+                  onChange={(e) =>
+                    handleBankOrAccountChange(settings.bankDetails.bankName, e.target.value)
+                  }
                   required
                 />
               </div>

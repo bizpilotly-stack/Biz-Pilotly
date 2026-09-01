@@ -123,24 +123,54 @@ class AdminService {
    * Fetches platform users for administration.
    */
   async getPlatformUsers(): Promise<PlatformUserRow[]> {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('user_id, role, created_at');
+    // 1. Fetch all registered businesses (which represent platform user accounts)
+    const { data: businesses, error: busError } = await supabase
+      .from('businesses')
+      .select('user_id, name, email, created_at');
 
-    if (error) {
-      console.error('Error fetching admin users:', error);
-      return [];
+    // 2. Fetch all role records
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+
+    const roleMap = new Map<string, string>();
+    (roles || []).forEach((r) => roleMap.set(r.user_id, r.role));
+
+    if (busError) {
+      console.error('Error fetching platform users:', busError);
     }
 
-    return (data || []).map((r) => ({
-      id: r.user_id,
-      email: `user-${r.user_id.slice(0, 8)}@platform.bizpilotly.com`,
-      name: `Account User (${r.user_id.slice(0, 6)})`,
-      role: r.role,
-      createdAt: r.created_at,
-      businessCount: 1,
-      documentCount: 0,
-    }));
+    const userMap = new Map<string, PlatformUserRow>();
+
+    // Add all registered business accounts as users
+    (businesses || []).forEach((b) => {
+      userMap.set(b.user_id, {
+        id: b.user_id,
+        email: b.email || `user-${b.user_id.slice(0, 8)}@bizpilotly.com`,
+        name: b.name || `User (${b.user_id.slice(0, 6)})`,
+        role: (roleMap.get(b.user_id) as any) || 'user',
+        createdAt: b.created_at,
+        businessCount: 1,
+        documentCount: 0,
+      });
+    });
+
+    // Add any explicit role accounts
+    (roles || []).forEach((r) => {
+      if (!userMap.has(r.user_id)) {
+        userMap.set(r.user_id, {
+          id: r.user_id,
+          email: `admin-${r.user_id.slice(0, 8)}@bizpilotly.com`,
+          name: `Admin Account (${r.user_id.slice(0, 6)})`,
+          role: r.role as any,
+          createdAt: new Date().toISOString(),
+          businessCount: 0,
+          documentCount: 0,
+        });
+      }
+    });
+
+    return Array.from(userMap.values());
   }
 
   /**
