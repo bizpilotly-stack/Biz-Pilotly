@@ -34,22 +34,22 @@ export const PricingPage: React.FC = () => {
   return (
     <div className="section-py-sm">
       <SEO
-        title={`Pricing & Plans | Free First | ${BRAND_NAME}`}
-        description="Transparent Free First launch model. Enjoy full access to calculators, document creation, and client tools today. Pro automation coming soon."
-        canonical="https://example.com/pricing"
+        title={`Pricing & Plans | ${BRAND_NAME}`}
+        description="Simple, transparent pricing for independent professionals. Access calculators, document generators, and client tools."
+        canonical="https://bizpilotly.com/pricing"
       />
 
       <div className="container">
         <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
           <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>
             <Sparkles size={14} />
-            <span>Launch Phase: Free First</span>
+            <span>Transparent Pricing</span>
           </div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1rem' }}>
-            Start Free Today. Upgrade When You Scale.
+            Simple, Transparent Plans
           </h1>
           <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            We believe core pricing math and client document creation should be accessible to all freelancers. Pricing for future Pro automation is currently in preview.
+            Start with our complete suite of financial calculators and document builders. Upgrade to automated recurring invoicing and deep analytics as your business scales.
           </p>
         </div>
 
@@ -178,10 +178,10 @@ export const PricingPage: React.FC = () => {
         <div style={{ maxWidth: '780px', margin: '0 auto', background: 'var(--bg-surface-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem 2rem', textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
             <ShieldCheck size={18} color="#1d4ed8" />
-            <span>Early Adopter Guarantee</span>
+            <span>Founder Guarantee</span>
           </div>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Early users who create an account during our public preview will retain their free tier capabilities forever and receive discounted founder access when advanced Pro automation goes live.
+            All core calculation tools and document generators remain fully accessible on the Starter plan. Early accounts receive guaranteed preferential founder rates when Pro automation modules launch.
           </p>
         </div>
       </div>

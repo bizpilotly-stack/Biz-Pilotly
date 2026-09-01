@@ -21,13 +21,13 @@ class SubscriptionService {
   getPlans(): SubscriptionPlan[] {
     return [
       {
-        id: 'free',
-        name: 'Free Forever',
+        id: 'starter',
+        name: 'Starter',
         price: '$0',
-        billingPeriod: 'forever free',
-        description: 'Essential business calculation and document drafting tools for solo freelancers and starters.',
+        billingPeriod: 'month',
+        description: 'Complete financial calculation suite and essential document generators for freelancers.',
         status: 'active',
-        ctaText: 'Get Started Free',
+        ctaText: 'Get Started',
         highlighted: false,
         features: [
           { text: 'All 8 Financial & Pricing Calculators', included: true },
@@ -46,16 +46,16 @@ class SubscriptionService {
       },
       {
         id: 'pro',
-        name: 'Pro Platform',
+        name: 'Professional',
         badge: 'Coming Soon',
-        price: 'Early Access',
-        billingPeriod: 'pricing not finalized',
-        description: 'Advanced automation, recurring billing, and deep analytics for scaling service businesses.',
+        price: '$19',
+        billingPeriod: 'month (at launch)',
+        description: 'Advanced workflow automation, recurring billing, and deep analytics for scaling service businesses.',
         status: 'coming_soon',
         ctaText: 'Join Pro Waitlist',
         highlighted: true,
         features: [
-          { text: 'Everything in Free forever', included: true },
+          { text: 'Everything in Starter', included: true },
           { text: 'Unlimited Clients, Invoices & Proposals', included: true, isNew: true },
           { text: 'Automated Recurring Invoices & Schedules', included: true, isNew: true },
           { text: 'Automatic Client Payment Reminders via Email', included: true, isNew: true },
