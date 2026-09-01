@@ -21,6 +21,9 @@ import { paymentService } from '../../services/paymentService';
 import { clientService } from '../../services/clientService';
 import { expenseService } from '../../services/expenseService';
 import { businessService } from '../../services/businessService';
+import { waitlistService } from '../../services/waitlistService';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../components/common/Toast';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Badge } from '../../components/common/Badge';
@@ -30,11 +33,33 @@ import { BRAND_NAME } from '../../constants/brand';
 const ONBOARDING_DISMISSED_KEY = 'bizpilotly_onboarding_dismissed';
 
 export const OverviewPage: React.FC = () => {
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<BusinessDocument[]>([]);
   const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasJoinedWaitlist, setHasJoinedWaitlist] = useState<boolean>(() => {
+    return localStorage.getItem('bizpilotly_joined_waitlist_user') === 'true';
+  });
+
+  const handleJoinWaitlist = async () => {
+    if (!user?.email) {
+      showToast('Please verify your email to join the waitlist.', 'error');
+      return;
+    }
+    const res = await waitlistService.joinWaitlist({
+      email: user.email,
+      name: user.user_metadata?.full_name || user.email.split('@')[0],
+      userId: user.id,
+      plan: 'Pro Tier',
+      source: 'app_dashboard_banner',
+    });
+    setHasJoinedWaitlist(true);
+    localStorage.setItem('bizpilotly_joined_waitlist_user', 'true');
+    showToast(res.message, 'success');
+  };
 
   // Onboarding Checklist States
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
@@ -388,6 +413,84 @@ export const OverviewPage: React.FC = () => {
               </span>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Pro Plan Early Access Waitlist Banner */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #0B1F3A 0%, #17325B 100%)',
+          color: '#ffffff',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1.25rem 1.75rem',
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          boxShadow: '0 4px 16px rgba(11, 31, 58, 0.12)',
+        }}
+      >
+        <div style={{ maxWidth: '680px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)',
+                color: '#78350F',
+                padding: '2px 8px',
+                borderRadius: '999px',
+              }}
+            >
+              ⭐ Pro Tier Early Access
+            </span>
+            <span style={{ fontSize: '0.8125rem', color: '#93C5FD', fontWeight: 600 }}>
+              Special Founding Access
+            </span>
+          </div>
+          <h3 style={{ fontSize: '1.0625rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: '#ffffff' }}>
+            Get Custom Domains, Multi-Seats & Automated Payment Webhooks
+          </h3>
+          <p style={{ fontSize: '0.8125rem', color: '#CBD5E1', margin: 0, lineHeight: 1.4 }}>
+            Join the waitlist to receive founding member benefits and early access when BizPilotly Pro is rolled out.
+          </p>
+        </div>
+
+        <div>
+          {hasJoinedWaitlist ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16, 185, 129, 0.2)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34D399', fontWeight: 700, fontSize: '0.875rem' }}>
+              <CheckCircle2 size={18} />
+              <span>You're On The Waitlist!</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleJoinWaitlist}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.625rem 1.25rem',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #C59B27 100%)',
+                color: '#0B1F3A',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 10px rgba(212, 175, 55, 0.35)',
+                transition: 'transform 0.15s ease',
+              }}
+            >
+              <Sparkles size={16} />
+              <span>Join Pro Waitlist</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, ArrowRight, Sparkles, Clock, ShieldCheck, Mail } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { subscriptionService } from '../../services/subscriptionService';
+import { waitlistService } from '../../services/waitlistService';
 import { SEO } from '../../components/common/SEO';
 import { useToast } from '../../components/common/Toast';
 import { Modal } from '../../components/common/Modal';
@@ -16,12 +17,17 @@ export const PricingPage: React.FC = () => {
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
 
-  const handleWaitlistSubmit = (e: React.FormEvent) => {
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!waitlistEmail || !waitlistEmail.includes('@')) {
       showToast('Please enter a valid email address', 'error');
       return;
     }
+    await waitlistService.joinWaitlist({
+      email: waitlistEmail,
+      plan: 'Pro Tier',
+      source: 'public_pricing_page',
+    });
     setWaitlistSubmitted(true);
     showToast('You are on the Pro early access waitlist!', 'success');
     setTimeout(() => {

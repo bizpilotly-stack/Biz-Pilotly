@@ -10,6 +10,7 @@ import {
   Mail,
   History,
   ArrowLeft,
+  Sparkles,
 } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 
@@ -17,6 +18,7 @@ export const AdminLayout: React.FC = () => {
   const navItems = [
     { to: '/admin', label: 'Platform Overview', icon: LayoutDashboard, end: true },
     { to: '/admin/users', label: 'Users & Accounts', icon: Users },
+    { to: '/admin/waitlist', label: 'Pro Plan Waitlist', icon: Sparkles },
     { to: '/admin/businesses', label: 'Businesses', icon: Building2 },
     { to: '/admin/documents', label: 'Documents Monitor', icon: FileText },
     { to: '/admin/payments', label: 'Payments Ledger', icon: CreditCard },

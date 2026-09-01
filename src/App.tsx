@@ -16,6 +16,7 @@ import { AdminDocumentsPage } from './pages/admin/AdminDocumentsPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminEmailsPage } from './pages/admin/AdminEmailsPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
+import { AdminWaitlistPage } from './pages/admin/AdminWaitlistPage';
 
 // Public Marketing Pages
 import { HomePage } from './pages/public/HomePage';
@@ -141,6 +142,7 @@ export const App: React.FC = () => {
             >
               <Route index element={<AdminOverviewPage />} />
               <Route path="users" element={<AdminUsersPage />} />
+              <Route path="waitlist" element={<AdminWaitlistPage />} />
               <Route path="businesses" element={<AdminBusinessesPage />} />
               <Route path="documents" element={<AdminDocumentsPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
