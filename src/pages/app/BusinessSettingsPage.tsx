@@ -213,100 +213,140 @@ export const BusinessSettingsPage: React.FC = () => {
         </div>
 
         {/* Bank & Settlement Details */}
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <div className="card-header">
-            <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CreditCard size={18} color="#1d4ed8" />
-              <span>Nigerian Bank Settlement Details (Printed on Invoices)</span>
-            </h3>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-              These bank account details will appear clearly at the bottom of all generated invoices for direct client bank transfers.
-            </p>
+        <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'linear-gradient(to right, rgba(11, 31, 58, 0.04), transparent)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(11, 31, 58, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0B1F3A' }}>
+                <CreditCard size={20} color="#0B1F3A" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--brand-black)' }}>
+                  Nigerian Bank Settlement Details
+                </h3>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                  These account details are automatically formatted on all issued invoices for direct client bank payments.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-            <div className="form-group">
-              <label className="form-label">
-                Bank Institution (Nigeria) <span className="required">*</span>
-              </label>
-              <select
-                className="form-select"
-                value={settings.bankDetails.bankName || ''}
+          <div style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: 600 }}>
+                  Bank Institution (Nigeria) <span className="required">*</span>
+                </label>
+                <select
+                  className="form-select"
+                  style={{ height: '42px', fontSize: '0.875rem' }}
+                  value={settings.bankDetails.bankName || ''}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      bankDetails: { ...settings.bankDetails, bankName: e.target.value },
+                    })
+                  }
+                  required
+                >
+                  <option value="">-- Select Nigerian Bank --</option>
+                  {NIGERIAN_BANKS.map((b) => (
+                    <option key={b.code} value={b.name}>
+                      {b.name}
+                    </option>
+                  ))}
+                  <option value="Other Bank">Other / International Bank</option>
+                </select>
+              </div>
+
+              <Input
+                label="Account Beneficiary Name"
+                placeholder="e.g. Adeyemi Creative Ltd / John Doe"
+                value={settings.bankDetails.accountName}
                 onChange={(e) =>
                   setSettings({
                     ...settings,
-                    bankDetails: { ...settings.bankDetails, bankName: e.target.value },
+                    bankDetails: { ...settings.bankDetails, accountName: e.target.value },
                   })
                 }
-              >
-                <option value="">-- Select Nigerian Bank --</option>
-                {NIGERIAN_BANKS.map((b) => (
-                  <option key={b.code} value={b.name}>
-                    {b.name}
-                  </option>
-                ))}
-                <option value="Other Bank">Other / International Bank</option>
-              </select>
-            </div>
+                required
+              />
 
-            <Input
-              label="Account Beneficiary Name"
-              placeholder="e.g. Adeyemi Design Ltd / John Doe"
-              value={settings.bankDetails.accountName}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  bankDetails: { ...settings.bankDetails, accountName: e.target.value },
-                })
-              }
-              required
-            />
-          </div>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                  <span>NUBAN Account Number (10 Digits) <span className="required">*</span></span>
+                  {settings.bankDetails.accountNumber && (
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        background: settings.bankDetails.accountNumber.length === 10 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        color: settings.bankDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b',
+                      }}
+                    >
+                      {settings.bankDetails.accountNumber.length === 10 ? '✓ 10 Digits Valid' : `${settings.bankDetails.accountNumber.length}/10 digits`}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ height: '42px', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}
+                  placeholder="e.g. 0123456789"
+                  maxLength={10}
+                  value={settings.bankDetails.accountNumber}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setSettings({
+                      ...settings,
+                      bankDetails: { ...settings.bankDetails, accountNumber: cleaned },
+                    });
+                  }}
+                  required
+                />
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>NUBAN Account Number (10 Digits) <span className="required">*</span></span>
-                {settings.bankDetails.accountNumber && (
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      color: settings.bankDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b',
-                    }}
-                  >
-                    {settings.bankDetails.accountNumber.length}/10 digits
-                  </span>
-                )}
-              </label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g. 0123456789"
-                maxLength={10}
-                value={settings.bankDetails.accountNumber}
-                onChange={(e) => {
-                  const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+              <Input
+                label="Sort Code / Branch (Optional)"
+                placeholder="Optional branch or routing code"
+                value={settings.bankDetails.routingCode}
+                onChange={(e) =>
                   setSettings({
                     ...settings,
-                    bankDetails: { ...settings.bankDetails, accountNumber: cleaned },
-                  });
-                }}
-                required
+                    bankDetails: { ...settings.bankDetails, routingCode: e.target.value },
+                  })
+                }
               />
             </div>
 
-            <Input
-              label="Sort Code / Branch (Optional)"
-              placeholder="Optional branch or routing code"
-              value={settings.bankDetails.routingCode}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  bankDetails: { ...settings.bankDetails, routingCode: e.target.value },
-                })
-              }
-            />
+            {/* Live Visual Preview Card */}
+            {(settings.bankDetails.bankName || settings.bankDetails.accountNumber) && (
+              <div
+                style={{
+                  marginTop: '1.25rem',
+                  padding: '1rem 1.25rem',
+                  background: 'var(--bg-surface-muted)',
+                  border: '1px dashed var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                    Live Preview on Issued Invoices
+                  </div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {settings.bankDetails.bankName || 'Selected Bank'} • <span style={{ fontFamily: 'var(--font-mono)' }}>{settings.bankDetails.accountNumber || '0000000000'}</span> • {settings.bankDetails.accountName || 'Beneficiary'}
+                  </div>
+                </div>
+                <span className="badge badge-success">Active on Invoices</span>
+              </div>
+            )}
           </div>
         </div>
 

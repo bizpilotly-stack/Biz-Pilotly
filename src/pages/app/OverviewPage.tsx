@@ -63,7 +63,19 @@ export const OverviewPage: React.FC = () => {
         setActivities(activitiesData);
         setHasClients(clientsData.length > 0);
         setHasExpenses(expensesData.length > 0);
-        setHasConfiguredBusiness(!!businessData && businessData.name !== 'My Business Studio');
+        const isBusinessFullyConfigured = Boolean(
+          businessData &&
+          businessData.name &&
+          businessData.name.trim() !== '' &&
+          businessData.name.trim() !== 'My Business Studio' &&
+          !businessData.name.endsWith("'s Business") &&
+          businessData.email &&
+          (businessData.phone || businessData.address) &&
+          businessData.bank_name &&
+          businessData.bank_account_number &&
+          businessData.bank_account_name
+        );
+        setHasConfiguredBusiness(isBusinessFullyConfigured);
       } catch (err) {
         console.error('Error loading dashboard overview:', err);
       } finally {

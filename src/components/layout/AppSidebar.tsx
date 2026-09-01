@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,15 +11,26 @@ import {
   User as UserIcon,
   LogOut,
   Calculator,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { BrandLogo } from '../common/BrandLogo';
+import { adminService } from '../../services/adminService';
 
 export const AppSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      adminService.checkIsAdmin().then((res) => setIsAdmin(res));
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -100,6 +111,25 @@ export const AppSidebar: React.FC = () => {
             <span>{item.label}</span>
           </NavLink>
         ))}
+
+        {isAdmin && (
+          <>
+            <div className="sidebar-nav-section-title" style={{ marginTop: '1rem', color: '#fbbf24' }}>Platform Admin</div>
+            <Link
+              to="/admin"
+              className="sidebar-nav-item"
+              style={{
+                background: 'rgba(201, 162, 39, 0.12)',
+                color: '#fef08a',
+                border: '1px solid rgba(201, 162, 39, 0.25)',
+                fontWeight: 600,
+              }}
+            >
+              <ShieldCheck className="icon" color="#fbbf24" />
+              <span>Admin Suite</span>
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="app-sidebar-footer">
