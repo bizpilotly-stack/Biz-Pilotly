@@ -725,7 +725,12 @@ export function getCountryProfile(countryCode: string = 'NG'): CountryBankingPro
   const match = COUNTRIES_BANKING_PROFILES.find(
     (c) => c.countryCode.toUpperCase() === countryCode.toUpperCase()
   );
-  if (match) return match;
+  if (match) {
+    return {
+      ...match,
+      banks: [...match.banks].sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }
 
   const worldMatch = ALL_WORLD_COUNTRIES.find(
     (c) => c.code.toUpperCase() === countryCode.toUpperCase()
@@ -744,14 +749,17 @@ export function getCountryProfile(countryCode: string = 'NG'): CountryBankingPro
       routingCodePlaceholder: 'SWIFT / BIC or branch routing code',
       banks: [
         { name: 'Direct Commercial Bank Wire' },
-        { name: 'Wise Business (TransferWise)' },
         { name: 'Payoneer' },
+        { name: 'PayPal Merchant Account' },
         { name: 'Revolut Business Multi-Currency' },
         { name: 'Stripe Settlement Account' },
-        { name: 'PayPal Merchant Account' },
+        { name: 'Wise Business (TransferWise)' },
       ],
     };
   }
 
-  return COUNTRIES_BANKING_PROFILES[0];
+  return {
+    ...COUNTRIES_BANKING_PROFILES[0],
+    banks: [...COUNTRIES_BANKING_PROFILES[0].banks].sort((a, b) => a.name.localeCompare(b.name)),
+  };
 }
