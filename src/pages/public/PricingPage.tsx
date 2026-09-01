@@ -100,13 +100,15 @@ export const PricingPage: React.FC = () => {
                   {plan.description}
                 </p>
 
-                <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em' }}>
+                <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.25rem' }}>
+                  <span style={{ fontSize: plan.price.startsWith('$') ? '2.75rem' : '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em' }}>
                     {plan.price}
                   </span>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-                    / {plan.billingPeriod}
-                  </span>
+                  {plan.billingPeriod && (
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginLeft: '0.25rem' }}>
+                      {plan.price.startsWith('$') ? `/ ${plan.billingPeriod}` : `• ${plan.billingPeriod}`}
+                    </span>
+                  )}
                 </div>
 
                 <div style={{ fontSize: '0.8125rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '1rem' }}>

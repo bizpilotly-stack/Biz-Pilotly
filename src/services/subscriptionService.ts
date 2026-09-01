@@ -47,9 +47,9 @@ class SubscriptionService {
       {
         id: 'pro',
         name: 'Professional',
-        badge: 'Coming Soon',
-        price: '$19',
-        billingPeriod: 'month (at launch)',
+        badge: 'In Development',
+        price: 'Coming Soon',
+        billingPeriod: 'unveiling at launch',
         description: 'Advanced workflow automation, recurring billing, and deep analytics for scaling service businesses.',
         status: 'coming_soon',
         ctaText: 'Join Pro Waitlist',
