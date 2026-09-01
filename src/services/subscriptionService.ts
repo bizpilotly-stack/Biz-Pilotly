@@ -4,28 +4,25 @@ export interface PlanFeature {
   isNew?: boolean;
 }
 
+export type CurrencyType = 'NGN' | 'USD' | 'EUR';
+
 export interface SubscriptionPlan {
-  id: string;
+  id: 'free' | 'pro' | 'business';
   name: string;
   badge?: string;
   priceNGN: string;
   priceUSD: string;
+  priceEUR: string;
+  amountNGN: number;
+  amountUSD: number;
+  amountEUR: number;
   billingPeriod: string;
+  trialText: string;
   description: string;
   status: 'active' | 'coming_soon';
   features: PlanFeature[];
   ctaText: string;
   highlighted?: boolean;
-}
-
-export interface UserTrialInfo {
-  isInTrial: boolean;
-  daysRemaining: number;
-  daysElapsed: number;
-  totalTrialDays: number;
-  expiryDateString: string;
-  tierName: string;
-  hasFullAccess: boolean;
 }
 
 class SubscriptionService {
@@ -36,7 +33,12 @@ class SubscriptionService {
         name: 'Free Starter',
         priceNGN: '₦0',
         priceUSD: '$0',
+        priceEUR: '€0',
+        amountNGN: 0,
+        amountUSD: 0,
+        amountEUR: 0,
         billingPeriod: 'forever free',
+        trialText: 'No credit card needed',
         description: 'Essential business calculation suite and standard document generation for solo freelancers.',
         status: 'active',
         ctaText: 'Start Free',
@@ -57,16 +59,22 @@ class SubscriptionService {
       {
         id: 'pro',
         name: 'Professional',
-        badge: 'Most Popular • 30-Day Free Trial',
-        priceNGN: '₦4,500',
-        priceUSD: '$12',
+        badge: '15-Day Free Trial',
+        priceNGN: '₦5,000',
+        priceUSD: '$4',
+        priceEUR: '€4',
+        amountNGN: 5000,
+        amountUSD: 4,
+        amountEUR: 4,
         billingPeriod: 'per month',
+        trialText: '15-Day Free Trial Included',
         description: 'Complete invoicing automation, custom branding, and online card payment acceptance for solo pros.',
         status: 'coming_soon',
-        ctaText: 'Join Pro Waitlist (50% Off)',
+        ctaText: 'Start 15-Day Free Trial',
         highlighted: true,
         features: [
           { text: 'Everything in Free Starter', included: true },
+          { text: '15-Day Free Trial on Launch', included: true, isNew: true },
           { text: 'Unlimited Invoices, Receipts, Quotes & Proposals', included: true, isNew: true },
           { text: 'Unlimited Saved Client Contacts & Ledgers', included: true, isNew: true },
           { text: '100% White-Label Branding (Upload Custom Logo)', included: true, isNew: true },
@@ -75,22 +83,27 @@ class SubscriptionService {
           { text: 'Multi-Currency Global Invoicing (USD, GBP, EUR, NGN)', included: true, isNew: true },
           { text: 'Financial Profit & Loss Analytics & Cloud Sync', included: true, isNew: true },
           { text: 'Team Member Logins & Multi-Seats', included: false },
-          { text: 'Multi-Business Workspace Switching', included: false },
         ],
       },
       {
         id: 'business',
         name: 'Business Suite',
-        badge: 'For Agencies & Teams',
-        priceNGN: '₦12,500',
-        priceUSD: '$29',
+        badge: '15-Day Free Trial',
+        priceNGN: '₦10,000',
+        priceUSD: '$7',
+        priceEUR: '€7',
+        amountNGN: 10000,
+        amountUSD: 7,
+        amountEUR: 7,
         billingPeriod: 'per month',
+        trialText: '15-Day Free Trial Included',
         description: 'Multi-entity business management, team member collaboration seats, and recurring retainer automation.',
         status: 'coming_soon',
-        ctaText: 'Join Suite Waitlist',
+        ctaText: 'Start 15-Day Free Trial',
         highlighted: false,
         features: [
           { text: 'Everything in Professional Tier', included: true },
+          { text: '15-Day Free Trial on Launch', included: true, isNew: true },
           { text: 'Up to 5 Separate Business Entities / Brands', included: true, isNew: true },
           { text: 'Up to 5 Team Member Seats & Role Permissions', included: true, isNew: true },
           { text: 'Automated Recurring Monthly Retainer Invoices', included: true, isNew: true },
@@ -103,51 +116,10 @@ class SubscriptionService {
     ];
   }
 
-  /**
-   * Calculates the user's 30-Day All-Access Free Launch Trial status.
-   */
-  getUserTrialInfo(userCreatedAt?: string | null): UserTrialInfo {
-    const TOTAL_TRIAL_DAYS = 30;
-
-    if (!userCreatedAt) {
-      return {
-        isInTrial: true,
-        daysRemaining: TOTAL_TRIAL_DAYS,
-        daysElapsed: 0,
-        totalTrialDays: TOTAL_TRIAL_DAYS,
-        expiryDateString: new Date(Date.now() + TOTAL_TRIAL_DAYS * 86400000).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }),
-        tierName: '30-Day VIP All-Access Pass',
-        hasFullAccess: true,
-      };
-    }
-
-    const createdTime = new Date(userCreatedAt).getTime();
-    const now = Date.now();
-    const diffMs = Math.max(0, now - createdTime);
-    const daysElapsed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const daysRemaining = Math.max(0, TOTAL_TRIAL_DAYS - daysElapsed);
-    const isInTrial = daysRemaining > 0;
-
-    const expiryDate = new Date(createdTime + TOTAL_TRIAL_DAYS * 86400000);
-    const expiryDateString = expiryDate.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-
-    return {
-      isInTrial,
-      daysRemaining,
-      daysElapsed,
-      totalTrialDays: TOTAL_TRIAL_DAYS,
-      expiryDateString,
-      tierName: isInTrial ? '30-Day VIP All-Access Pass' : 'Free Starter',
-      hasFullAccess: isInTrial,
-    };
+  getFormattedPrice(plan: SubscriptionPlan, currency: CurrencyType): string {
+    if (currency === 'USD') return plan.priceUSD;
+    if (currency === 'EUR') return plan.priceEUR;
+    return plan.priceNGN;
   }
 }
 

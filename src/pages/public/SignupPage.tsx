@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Layers, ArrowRight, Eye, EyeOff, Check, X, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Layers, ArrowRight, Eye, EyeOff, Check, X, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
+import { subscriptionService } from '../../services/subscriptionService';
+import { waitlistService } from '../../services/waitlistService';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -14,6 +16,7 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { signUp, signInWithGoogle } = useAuth();
   const { showToast } = useToast();
+  const plans = subscriptionService.getPlans();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,6 +24,7 @@ export const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<'free' | 'pro' | 'business'>('pro');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -111,8 +115,21 @@ export const SignupPage: React.FC = () => {
         return;
       }
 
+      // 3. If user selected Pro or Business Suite, record 15-day trial reservation
+      if (selectedPlanId !== 'free') {
+        try {
+          await waitlistService.joinWaitlist({
+            email: cleanEmail,
+            plan: selectedPlanId === 'business' ? 'Business Suite (15-Day Free Trial)' : 'Professional (15-Day Free Trial)',
+            source: 'signup_tier_selector',
+          });
+        } catch {
+          // Non-blocking fallback
+        }
+      }
+
       if (user && session) {
-        showToast('Account created successfully! Welcome to your workspace.', 'success');
+        showToast(`Account created! 15-day trial activated for ${selectedPlanId.toUpperCase()} tier.`, 'success');
         navigate('/app');
       } else if (user && !session) {
         showToast('Account created successfully! Redirecting...', 'success');
@@ -153,17 +170,56 @@ export const SignupPage: React.FC = () => {
         canonical="https://bizpilotly.com/signup"
       />
 
-      <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
+      <div style={{ width: '100%', maxWidth: '580px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
         <div className="text-center" style={{ marginBottom: '1.75rem' }}>
           <div style={{ display: 'inline-flex', width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-black)', color: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
             <Layers size={22} color="#f59e0b" />
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}>
-            Create Account
+            Create Your Account
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.375rem' }}>
-            Get started with your free client invoicing and pricing workspace.
+            Choose your plan to start with all financial calculators and document builders.
           </p>
+        </div>
+
+        {/* 3-Tier Plan Selector with 15-Day Free Trial */}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <Sparkles size={14} color="#F59E0B" />
+            <span>Select Your Starting Tier (15-Day Free Trial on Paid Plans):</span>
+          </label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem' }}>
+            {plans.map((p) => {
+              const isSelected = selectedPlanId === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedPlanId(p.id)}
+                  style={{
+                    border: isSelected ? '2px solid #0B1F3A' : '1px solid #E2E8F0',
+                    background: isSelected ? '#F8FAFC' : '#ffffff',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '0.75rem 0.5rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {p.badge && (
+                    <div style={{ position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#F59E0B', color: '#ffffff', fontSize: '0.5625rem', fontWeight: 800, padding: '1px 6px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+                      15D Trial
+                    </div>
+                  )}
+                  <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: '#0B1F3A' }}>{p.name}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0B1F3A', marginTop: '2px' }}>{p.priceNGN}</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>({p.priceUSD}) / mo</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Google Signup Button */}
@@ -340,7 +396,11 @@ export const SignupPage: React.FC = () => {
             disabled={password.length > 0 && (!pwdValidation.isValid || password !== confirmPassword)}
             style={{ width: '100%', padding: '0.75rem' }}
           >
-            <span>Create Account</span>
+            <span>
+              {selectedPlanId === 'free'
+                ? 'Create Free Account'
+                : `Start 15-Day Free Trial (${selectedPlanId === 'pro' ? 'Pro' : 'Business'})`}
+            </span>
             <ArrowRight size={16} />
           </Button>
         </form>
