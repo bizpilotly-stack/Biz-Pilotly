@@ -28,19 +28,104 @@ export function formatPercent(value: number, decimals: number = 1): string {
   })}%`;
 }
 
-export function formatDate(dateString?: string): string {
+export function getUserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+export function getUserLocale(): string {
+  if (typeof navigator !== 'undefined' && navigator.language) {
+    return navigator.language;
+  }
+  return 'en-US';
+}
+
+export function formatDate(dateString?: string, timeZone?: string): string {
   if (!dateString) return '';
   try {
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return dateString;
-    return d.toLocaleDateString('en-US', {
+    const tz = timeZone || getUserTimezone();
+    const locale = getUserLocale();
+
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
+      timeZone: tz,
+    }).format(d);
   } catch {
     return dateString;
   }
+}
+
+export function formatDateTime(dateString?: string, timeZone?: string): string {
+  if (!dateString) return '';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    const tz = timeZone || getUserTimezone();
+    const locale = getUserLocale();
+
+    return new Intl.DateTimeFormat(locale, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: tz,
+      timeZoneName: 'short',
+    }).format(d);
+  } catch {
+    return dateString;
+  }
+}
+
+export interface PasswordValidationResult {
+  isValid: boolean;
+  score: number; // 0 to 5
+  hasMinLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+  hasSpecialChar: boolean;
+  errors: string[];
+}
+
+export function validatePasswordStrength(password: string): PasswordValidationResult {
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password);
+
+  const errors: string[] = [];
+  if (!hasMinLength) errors.push('At least 8 characters');
+  if (!hasUppercase) errors.push('At least one uppercase letter (A-Z)');
+  if (!hasLowercase) errors.push('At least one lowercase letter (a-z)');
+  if (!hasNumber) errors.push('At least one number (0-9)');
+  if (!hasSpecialChar) errors.push('At least one special character (!@#$%^&*)');
+
+  let score = 0;
+  if (hasMinLength) score++;
+  if (hasUppercase) score++;
+  if (hasLowercase) score++;
+  if (hasNumber) score++;
+  if (hasSpecialChar) score++;
+
+  return {
+    isValid: score === 5,
+    score,
+    hasMinLength,
+    hasUppercase,
+    hasLowercase,
+    hasNumber,
+    hasSpecialChar,
+    errors,
+  };
 }
 
 export function generateDocNumber(prefix: string, count: number): string {

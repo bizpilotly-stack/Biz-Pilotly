@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Layers, ArrowRight } from 'lucide-react';
+import { Layers, ArrowRight, Eye, EyeOff, Check, X, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
@@ -8,6 +8,7 @@ import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../components/common/Toast';
+import { validatePasswordStrength } from '../../utils/formatters';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,8 +19,13 @@ export const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Live password validation
+  const pwdValidation = useMemo(() => validatePasswordStrength(password), [password]);
 
   // Detect OAuth error parameters in URL (e.g. returned from Google/Supabase)
   React.useEffect(() => {
@@ -42,10 +48,13 @@ export const SignupPage: React.FC = () => {
       showToast('Please fill out all required fields.', 'error');
       return;
     }
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters.', 'error');
+
+    // Strict Password Validation
+    if (!pwdValidation.isValid) {
+      showToast(`Password must satisfy all security rules: ${pwdValidation.errors.join(', ')}.`, 'error');
       return;
     }
+
     if (password !== confirmPassword) {
       showToast('Passwords do not match. Please verify.', 'error');
       return;
@@ -139,19 +148,22 @@ export const SignupPage: React.FC = () => {
   return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 1.5rem', background: 'var(--bg-app)' }}>
       <SEO
-        title={`Create Your Free Account | ${BRAND_NAME}`}
+        title={`Create Your Account | ${BRAND_NAME}`}
         description={`Sign up for free to access ${BRAND_NAME} business calculators, invoice builders, and client management tools.`}
         canonical="https://bizpilotly.com/signup"
       />
 
-      <div style={{ width: '100%', maxWidth: '480px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
-        <div className="text-center" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'inline-flex', width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-black)', color: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
+        <div className="text-center" style={{ marginBottom: '1.75rem' }}>
+          <div style={{ display: 'inline-flex', width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-black)', color: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
             <Layers size={22} color="#f59e0b" />
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}>
             Create Account
           </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.375rem' }}>
+            Get started with your free client invoicing and pricing workspace.
+          </p>
         </div>
 
         {/* Google Signup Button */}
@@ -195,37 +207,139 @@ export const SignupPage: React.FC = () => {
             required
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="form-group">
-              <label className="form-label">
-                Password <span className="required">*</span>
-              </label>
+          {/* Password Field */}
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label className="form-label" style={{ fontWeight: 600 }}>
+              Password <span className="required">*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 className="form-input"
-                placeholder="At least 6 chars"
+                placeholder="Create a strong password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                style={{ paddingRight: '2.5rem' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                Confirm <span className="required">*</span>
-              </label>
+          {/* Live Password Checklist & Strength Bar */}
+          {password.length > 0 && (
+            <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.875rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  {pwdValidation.isValid ? <ShieldCheck size={14} color="#16a34a" /> : <ShieldAlert size={14} color="#d97706" />}
+                  <span>Password Security:</span>
+                </span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: pwdValidation.score <= 2 ? '#dc2626' : pwdValidation.score <= 4 ? '#d97706' : '#16a34a' }}>
+                  {pwdValidation.score <= 2 ? 'Weak' : pwdValidation.score <= 4 ? 'Medium' : 'Strong & Secure'}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div style={{ height: '4px', background: '#E2E8F0', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.625rem' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${(pwdValidation.score / 5) * 100}%`,
+                    background: pwdValidation.score <= 2 ? '#ef4444' : pwdValidation.score <= 4 ? '#f59e0b' : '#10b981',
+                    transition: 'width 0.2s ease',
+                  }}
+                />
+              </div>
+
+              {/* Requirement Checklist */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.375rem', fontSize: '0.6875rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: pwdValidation.hasMinLength ? '#16a34a' : '#64748b' }}>
+                  {pwdValidation.hasMinLength ? <Check size={12} color="#16a34a" /> : <X size={12} color="#94a3b8" />}
+                  <span>8+ characters</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: pwdValidation.hasUppercase ? '#16a34a' : '#64748b' }}>
+                  {pwdValidation.hasUppercase ? <Check size={12} color="#16a34a" /> : <X size={12} color="#94a3b8" />}
+                  <span>Uppercase (A-Z)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: pwdValidation.hasLowercase ? '#16a34a' : '#64748b' }}>
+                  {pwdValidation.hasLowercase ? <Check size={12} color="#16a34a" /> : <X size={12} color="#94a3b8" />}
+                  <span>Lowercase (a-z)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: pwdValidation.hasNumber ? '#16a34a' : '#64748b' }}>
+                  {pwdValidation.hasNumber ? <Check size={12} color="#16a34a" /> : <X size={12} color="#94a3b8" />}
+                  <span>Number (0-9)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: pwdValidation.hasSpecialChar ? '#16a34a' : '#64748b', gridColumn: 'span 2' }}>
+                  {pwdValidation.hasSpecialChar ? <Check size={12} color="#16a34a" /> : <X size={12} color="#94a3b8" />}
+                  <span>Special character (!@#$%^&*)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm Password Field */}
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <label className="form-label" style={{ fontWeight: 600 }}>
+              Confirm Password <span className="required">*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 className="form-input"
                 placeholder="Repeat password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                style={{ paddingRight: '2.5rem' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
+            {confirmPassword.length > 0 && password !== confirmPassword && (
+              <span style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px', display: 'block' }}>
+                Passwords do not match.
+              </span>
+            )}
           </div>
 
-          <Button type="submit" variant="primary" isLoading={loading} style={{ width: '100%', padding: '0.75rem' }}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={loading}
+            disabled={password.length > 0 && (!pwdValidation.isValid || password !== confirmPassword)}
+            style={{ width: '100%', padding: '0.75rem' }}
+          >
             <span>Create Account</span>
             <ArrowRight size={16} />
           </Button>
