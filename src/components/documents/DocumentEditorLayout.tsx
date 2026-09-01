@@ -1022,14 +1022,14 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 ) : (
                   <div style={{ background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid var(--border-color)' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-                      Transfer to Seller's Verified Nigerian Account
+                      Direct Bank Transfer Settlement Details
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
                       <div style={{ background: 'var(--bg-surface)', padding: '0.625rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Bank Name</div>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Bank Institution</div>
                         <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginTop: '2px' }}>
-                          {doc.paymentDetails?.bankName || 'Guaranty Trust Bank (GTBank)'}
+                          {doc.paymentDetails?.bankName || 'Direct Bank Settlement'}
                         </div>
                       </div>
 
@@ -1041,10 +1041,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                       </div>
                     </div>
 
-                    {/* NUBAN Account & 1-Click Copy */}
+                    {/* Account / IBAN / NUBAN & 1-Click Copy */}
                     <div style={{ background: 'var(--bg-surface)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>NUBAN Account Number</div>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Account Number / IBAN</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '0.08em', color: 'var(--brand-black)', marginTop: '2px' }}>
                           {doc.paymentDetails?.accountNumber || '0123456789'}
                         </div>

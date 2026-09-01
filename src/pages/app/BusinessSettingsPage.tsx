@@ -5,11 +5,12 @@ import {
   DollarSign,
   FileText,
   CreditCard,
+  Globe,
 } from 'lucide-react';
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
-import { NIGERIAN_BANKS } from '../../constants/nigerianBanks';
+import { COUNTRIES_BANKING_PROFILES, getCountryProfile } from '../../constants/internationalBanks';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
 import { bankResolutionService } from '../../services/bankResolutionService';
@@ -23,6 +24,9 @@ export const BusinessSettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [resolvingBank, setResolvingBank] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<string>('NG');
+
+  const countryProfile = getCountryProfile(selectedCountry);
 
   useEffect(() => {
     businessService.getSettings().then((data) => {
@@ -262,20 +266,54 @@ export const BusinessSettingsPage: React.FC = () => {
               </div>
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--brand-black)' }}>
-                  Nigerian Bank Settlement Details
+                  Bank Settlement & Payout Instructions
                 </h3>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-                  These account details are automatically formatted on all issued invoices for direct client bank payments.
+                  Select your country to configure local bank details formatted precisely for your clients' payment transfers.
                 </p>
               </div>
             </div>
           </div>
 
           <div style={{ padding: '1.5rem' }}>
+            {/* Country Selector */}
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label className="form-label" style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Globe size={15} color="#0B1F3A" />
+                <span>Settlement Country & Banking System <span className="required">*</span></span>
+              </label>
+              <select
+                className="form-select"
+                style={{ height: '42px', fontSize: '0.875rem', fontWeight: 600 }}
+                value={selectedCountry}
+                onChange={(e) => {
+                  const newCountry = e.target.value;
+                  setSelectedCountry(newCountry);
+                  if (settings) {
+                    setSettings({
+                      ...settings,
+                      bankDetails: {
+                        ...settings.bankDetails,
+                        bankName: '',
+                        accountNumber: '',
+                        routingCode: '',
+                      },
+                    });
+                  }
+                }}
+              >
+                {COUNTRIES_BANKING_PROFILES.map((c) => (
+                  <option key={c.countryCode} value={c.countryCode}>
+                    {c.flagEmoji} {c.countryName} ({c.currencyCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group">
                 <label className="form-label" style={{ fontWeight: 600 }}>
-                  Bank Institution (Nigeria) <span className="required">*</span>
+                  Bank Institution ({countryProfile.countryName}) <span className="required">*</span>
                 </label>
                 <select
                   className="form-select"
@@ -286,13 +324,13 @@ export const BusinessSettingsPage: React.FC = () => {
                   }
                   required
                 >
-                  <option value="">-- Select Nigerian Bank --</option>
-                  {NIGERIAN_BANKS.map((b) => (
-                    <option key={b.code} value={b.name}>
+                  <option value="">-- Select Bank in {countryProfile.countryName} --</option>
+                  {countryProfile.banks.map((b, idx) => (
+                    <option key={`${b.name}-${idx}`} value={b.name}>
                       {b.name}
                     </option>
                   ))}
-                  <option value="Other Bank">Other / International Bank</option>
+                  <option value="Other Bank">Other / International Institution</option>
                 </select>
               </div>
 
@@ -311,25 +349,27 @@ export const BusinessSettingsPage: React.FC = () => {
 
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-                  <span>NUBAN Account Number (10 Digits) <span className="required">*</span></span>
+                  <span>{countryProfile.accountNumberLabel} <span className="required">*</span></span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {resolvingBank && (
                       <span style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: 600 }}>
                         🔍 Verifying...
                       </span>
                     )}
-                    {settings.bankDetails.accountNumber && !resolvingBank && (
+                    {settings.bankDetails.accountNumber && !resolvingBank && countryProfile.accountNumberLength && (
                       <span
                         style={{
                           fontSize: '0.75rem',
                           fontWeight: 700,
                           padding: '2px 8px',
                           borderRadius: '999px',
-                          background: settings.bankDetails.accountNumber.length === 10 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                          color: settings.bankDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b',
+                          background: settings.bankDetails.accountNumber.length === countryProfile.accountNumberLength ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                          color: settings.bankDetails.accountNumber.length === countryProfile.accountNumberLength ? '#10b981' : '#f59e0b',
                         }}
                       >
-                        {settings.bankDetails.accountNumber.length === 10 ? '✓ 10 Digits Valid' : `${settings.bankDetails.accountNumber.length}/10 digits`}
+                        {settings.bankDetails.accountNumber.length === countryProfile.accountNumberLength
+                          ? `✓ ${countryProfile.accountNumberLength} Digits Valid`
+                          : `${settings.bankDetails.accountNumber.length}/${countryProfile.accountNumberLength} digits`}
                       </span>
                     )}
                   </div>
@@ -338,8 +378,8 @@ export const BusinessSettingsPage: React.FC = () => {
                   type="text"
                   className="form-input"
                   style={{ height: '42px', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}
-                  placeholder="e.g. 0123456789"
-                  maxLength={10}
+                  placeholder={countryProfile.accountNumberPlaceholder}
+                  maxLength={countryProfile.accountNumberLength || 35}
                   value={settings.bankDetails.accountNumber}
                   onChange={(e) =>
                     handleBankOrAccountChange(settings.bankDetails.bankName, e.target.value)
@@ -349,8 +389,8 @@ export const BusinessSettingsPage: React.FC = () => {
               </div>
 
               <Input
-                label="Sort Code / Branch (Optional)"
-                placeholder="Optional branch or routing code"
+                label={countryProfile.routingCodeLabel}
+                placeholder={countryProfile.routingCodePlaceholder}
                 value={settings.bankDetails.routingCode}
                 onChange={(e) =>
                   setSettings({
@@ -379,7 +419,7 @@ export const BusinessSettingsPage: React.FC = () => {
               >
                 <div>
                   <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
-                    Live Preview on Issued Invoices
+                    Live Preview on Invoices ({countryProfile.flagEmoji} {countryProfile.countryName})
                   </div>
                   <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
                     {settings.bankDetails.bankName || 'Selected Bank'} • <span style={{ fontFamily: 'var(--font-mono)' }}>{settings.bankDetails.accountNumber || '0000000000'}</span> • {settings.bankDetails.accountName || 'Beneficiary'}
