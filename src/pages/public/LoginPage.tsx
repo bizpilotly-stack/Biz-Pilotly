@@ -23,6 +23,20 @@ export const LoginPage: React.FC = () => {
   // Determine redirect destination if user was redirected from a protected route
   const fromPath = (location.state as { from?: { pathname: string } })?.from?.pathname || '/app';
 
+  // Detect OAuth error parameters in URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const errorDesc = params.get('error_description') || hashParams.get('error_description');
+    const errorCode = params.get('error') || hashParams.get('error');
+
+    if (errorDesc) {
+      showToast(decodeURIComponent(errorDesc.replace(/\+/g, ' ')), 'error');
+    } else if (errorCode) {
+      showToast(`Authentication error: ${errorCode}`, 'error');
+    }
+  }, [showToast]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -38,6 +52,8 @@ export const LoginPage: React.FC = () => {
           showToast('Invalid email or password. Please check your credentials.', 'error');
         } else if (error.message.includes('Email not confirmed')) {
           showToast('Please confirm your email address before signing in.', 'info');
+        } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+          showToast('Network error: Unable to reach authentication service. Please check your internet or ad-blockers.', 'error');
         } else {
           showToast(error.message || 'Login failed. Please try again.', 'error');
         }
@@ -49,7 +65,12 @@ export const LoginPage: React.FC = () => {
         navigate(fromPath, { replace: true });
       }
     } catch (err: any) {
-      showToast(err?.message || 'An unexpected connection error occurred.', 'error');
+      const msg = err?.message || '';
+      if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+        showToast('Connection failed: Unable to connect to authentication server.', 'error');
+      } else {
+        showToast(msg || 'An unexpected connection error occurred.', 'error');
+      }
     } finally {
       setLoading(false);
     }

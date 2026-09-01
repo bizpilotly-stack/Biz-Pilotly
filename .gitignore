@@ -30,6 +30,10 @@ dist-ssr
 .env.production
 .env.development
 
+# Temporary files
+supabase/.temp/
+.temp/
+
 # Temporary Vite timestamps
 vite.config.ts.timestamp-*
 

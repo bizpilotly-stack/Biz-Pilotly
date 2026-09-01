@@ -21,6 +21,20 @@ export const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Detect OAuth error parameters in URL (e.g. returned from Google/Supabase)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const errorDesc = params.get('error_description') || hashParams.get('error_description');
+    const errorCode = params.get('error') || hashParams.get('error');
+
+    if (errorDesc) {
+      showToast(decodeURIComponent(errorDesc.replace(/\+/g, ' ')), 'error');
+    } else if (errorCode) {
+      showToast(`Authentication error: ${errorCode}`, 'error');
+    }
+  }, [showToast]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password) {
@@ -46,6 +60,8 @@ export const SignupPage: React.FC = () => {
       if (error) {
         if (error.message.includes('User already registered')) {
           showToast('An account with this email already exists. Please sign in.', 'error');
+        } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+          showToast('Network error: Unable to connect to authentication server. Check your connection or disable ad-blockers.', 'error');
         } else {
           showToast(error.message || 'Failed to create account. Please try again.', 'error');
         }
@@ -62,7 +78,12 @@ export const SignupPage: React.FC = () => {
         navigate('/app');
       }
     } catch (err: any) {
-      showToast(err?.message || 'An unexpected error occurred during signup.', 'error');
+      const msg = err?.message || '';
+      if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+        showToast('Connection failed: Unable to reach authentication service. Please check your network or Safari content blockers.', 'error');
+      } else {
+        showToast(msg || 'An unexpected error occurred during signup.', 'error');
+      }
     } finally {
       setLoading(false);
     }
