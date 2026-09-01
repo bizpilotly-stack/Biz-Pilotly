@@ -10,7 +10,8 @@ import {
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
-import { COUNTRIES_BANKING_PROFILES, getCountryProfile } from '../../constants/internationalBanks';
+import { getCountryProfile } from '../../constants/internationalBanks';
+import { ALL_WORLD_COUNTRIES } from '../../constants/allCountries';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
 import { bankResolutionService } from '../../services/bankResolutionService';
@@ -25,6 +26,7 @@ export const BusinessSettingsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [resolvingBank, setResolvingBank] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>('NG');
+  const [isCustomBankMode, setIsCustomBankMode] = useState<boolean>(false);
 
   const countryProfile = getCountryProfile(selectedCountry);
 
@@ -280,7 +282,7 @@ export const BusinessSettingsPage: React.FC = () => {
             <div className="form-group" style={{ marginBottom: '1.25rem' }}>
               <label className="form-label" style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <Globe size={15} color="#0B1F3A" />
-                <span>Settlement Country & Banking System <span className="required">*</span></span>
+                <span>Settlement Country & Banking System ({ALL_WORLD_COUNTRIES.length} Countries Available) <span className="required">*</span></span>
               </label>
               <select
                 className="form-select"
@@ -289,6 +291,7 @@ export const BusinessSettingsPage: React.FC = () => {
                 onChange={(e) => {
                   const newCountry = e.target.value;
                   setSelectedCountry(newCountry);
+                  setIsCustomBankMode(false);
                   if (settings) {
                     setSettings({
                       ...settings,
@@ -302,9 +305,9 @@ export const BusinessSettingsPage: React.FC = () => {
                   }
                 }}
               >
-                {COUNTRIES_BANKING_PROFILES.map((c) => (
-                  <option key={c.countryCode} value={c.countryCode}>
-                    {c.flagEmoji} {c.countryName} ({c.currencyCode})
+                {ALL_WORLD_COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.name} ({c.currency})
                   </option>
                 ))}
               </select>
@@ -312,26 +315,69 @@ export const BusinessSettingsPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group">
-                <label className="form-label" style={{ fontWeight: 600 }}>
-                  Bank Institution ({countryProfile.countryName}) <span className="required">*</span>
-                </label>
-                <select
-                  className="form-select"
-                  style={{ height: '42px', fontSize: '0.875rem' }}
-                  value={settings.bankDetails.bankName || ''}
-                  onChange={(e) =>
-                    handleBankOrAccountChange(e.target.value, settings.bankDetails.accountNumber)
-                  }
-                  required
-                >
-                  <option value="">-- Select Bank in {countryProfile.countryName} --</option>
-                  {countryProfile.banks.map((b, idx) => (
-                    <option key={`${b.name}-${idx}`} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                  <option value="Other Bank">Other / International Institution</option>
-                </select>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                  <label className="form-label" style={{ fontWeight: 600, margin: 0 }}>
+                    Bank Institution ({countryProfile.countryName}) <span className="required">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextMode = !isCustomBankMode;
+                      setIsCustomBankMode(nextMode);
+                      if (nextMode) {
+                        handleBankOrAccountChange('', settings.bankDetails.accountNumber);
+                      }
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--brand-primary)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {isCustomBankMode ? '← Choose from Directory' : '✏️ Type Bank Manually'}
+                  </button>
+                </div>
+
+                {isCustomBankMode ? (
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ height: '42px', fontSize: '0.875rem' }}
+                    placeholder={`Type your bank name in ${countryProfile.countryName} (e.g. Apex Community Bank)`}
+                    value={settings.bankDetails.bankName || ''}
+                    onChange={(e) =>
+                      handleBankOrAccountChange(e.target.value, settings.bankDetails.accountNumber)
+                    }
+                    required
+                  />
+                ) : (
+                  <select
+                    className="form-select"
+                    style={{ height: '42px', fontSize: '0.875rem' }}
+                    value={settings.bankDetails.bankName || ''}
+                    onChange={(e) => {
+                      if (e.target.value === 'Other Bank') {
+                        setIsCustomBankMode(true);
+                        handleBankOrAccountChange('', settings.bankDetails.accountNumber);
+                      } else {
+                        handleBankOrAccountChange(e.target.value, settings.bankDetails.accountNumber);
+                      }
+                    }}
+                    required
+                  >
+                    <option value="">-- Select Bank in {countryProfile.countryName} --</option>
+                    {countryProfile.banks.map((b, idx) => (
+                      <option key={`${b.name}-${idx}`} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                    <option value="Other Bank">✏️ Other / Type Bank Name Manually...</option>
+                  </select>
+                )}
               </div>
 
               <Input

@@ -1,4 +1,5 @@
 import { NIGERIAN_BANKS } from './nigerianBanks';
+import { ALL_WORLD_COUNTRIES } from './allCountries';
 
 export interface BankInstitution {
   name: string;
@@ -724,5 +725,33 @@ export function getCountryProfile(countryCode: string = 'NG'): CountryBankingPro
   const match = COUNTRIES_BANKING_PROFILES.find(
     (c) => c.countryCode.toUpperCase() === countryCode.toUpperCase()
   );
-  return match || COUNTRIES_BANKING_PROFILES[0];
+  if (match) return match;
+
+  const worldMatch = ALL_WORLD_COUNTRIES.find(
+    (c) => c.code.toUpperCase() === countryCode.toUpperCase()
+  );
+
+  if (worldMatch) {
+    return {
+      countryCode: worldMatch.code,
+      countryName: worldMatch.name,
+      flagEmoji: worldMatch.flag,
+      currencyCode: worldMatch.currency,
+      currencySymbol: worldMatch.currencySymbol,
+      accountNumberLabel: 'Bank Account Number / IBAN',
+      accountNumberPlaceholder: 'Account or IBAN string',
+      routingCodeLabel: 'SWIFT / BIC / Bank Branch Code',
+      routingCodePlaceholder: 'SWIFT / BIC or branch routing code',
+      banks: [
+        { name: 'Direct Commercial Bank Wire' },
+        { name: 'Wise Business (TransferWise)' },
+        { name: 'Payoneer' },
+        { name: 'Revolut Business Multi-Currency' },
+        { name: 'Stripe Settlement Account' },
+        { name: 'PayPal Merchant Account' },
+      ],
+    };
+  }
+
+  return COUNTRIES_BANKING_PROFILES[0];
 }
