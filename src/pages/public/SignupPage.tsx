@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Layers, ArrowRight } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../services/supabase';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -36,7 +37,8 @@ export const SignupPage: React.FC = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!name.trim() || !cleanEmail || !password) {
       showToast('Please fill out all required fields.', 'error');
       return;
     }
@@ -51,7 +53,33 @@ export const SignupPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const { user, session, error } = await signUp(email.trim(), password, name.trim());
+      // 1. Guard check: Pre-check if this email is already registered in profiles or businesses
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (existingProfile) {
+        showToast('This email is already registered. Please sign in to your existing account.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      const { data: existingBusiness } = await supabase
+        .from('businesses')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (existingBusiness) {
+        showToast('This email is already registered. Please sign in to your existing account.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Perform Supabase signup
+      const { user, session, error } = await signUp(cleanEmail, password, name.trim());
       if (error) {
         const errorLower = error.message.toLowerCase();
         if (
@@ -94,6 +122,7 @@ export const SignupPage: React.FC = () => {
   };
 
   const handleGoogleSignup = async () => {
+    sessionStorage.setItem('bizpilotly_auth_intent', 'signup');
     setGoogleLoading(true);
     try {
       const { error } = await signInWithGoogle();

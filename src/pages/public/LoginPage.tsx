@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Layers, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../services/supabase';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -39,17 +40,40 @@ export const LoginPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
       showToast('Please enter both email and password.', 'error');
       return;
     }
 
     setLoading(true);
     try {
-      const { user, error } = await signIn(email, password);
+      // 1. Guard check: Verify that this account is already registered
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        const { data: existingBusiness } = await supabase
+          .from('businesses')
+          .select('id, email')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (!existingBusiness) {
+          showToast('No account found for this email. You must sign up first before signing in.', 'error');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Perform authentication
+      const { user, error } = await signIn(cleanEmail, password);
       if (error) {
         if (error.message.toLowerCase().includes('invalid login credentials') || error.message.toLowerCase().includes('user not found')) {
-          showToast('No account found with this email, or password incorrect. If you have not registered yet, please sign up first.', 'error');
+          showToast('Invalid password. Please check your credentials or reset your password.', 'error');
         } else if (error.message.toLowerCase().includes('email not confirmed')) {
           showToast('Please confirm your email address before signing in.', 'info');
         } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
@@ -77,6 +101,7 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
+    sessionStorage.setItem('bizpilotly_auth_intent', 'login');
     setGoogleLoading(true);
     try {
       const { error } = await signInWithGoogle();
