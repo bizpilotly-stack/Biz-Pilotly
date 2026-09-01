@@ -42,7 +42,7 @@ export const ClientsPage: React.FC = () => {
   const [newEmail, setNewEmail] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newAddress, setNewAddress] = useState('');
-  const [newCurrency, setNewCurrency] = useState('USD');
+  const [newCurrency, setNewCurrency] = useState('NGN');
 
   const loadClients = async () => {
     setLoading(true);
@@ -389,6 +389,7 @@ export const ClientsPage: React.FC = () => {
               value={newCurrency}
               onChange={(e) => setNewCurrency(e.target.value)}
             >
+              <option value="NGN">NGN (₦)</option>
               <option value="USD">USD ($)</option>
               <option value="EUR">EUR (€)</option>
               <option value="GBP">GBP (£)</option>

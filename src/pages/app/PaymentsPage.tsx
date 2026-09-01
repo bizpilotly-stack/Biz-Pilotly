@@ -23,7 +23,7 @@ import { BRAND_NAME } from '../../constants/brand';
 export const PaymentsPage: React.FC = () => {
   const { showToast } = useToast();
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [summary, setSummary] = useState({ totalReceived: 0, pendingAmount: 0, completedCount: 0, pendingCount: 0 });
+  const [summary, setSummary] = useState({ totalReceived: 0, pendingAmount: 0, overdueAmount: 0, overdueCount: 0, completedCount: 0, pendingCount: 0 });
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
@@ -72,8 +72,8 @@ export const PaymentsPage: React.FC = () => {
         clientId: 'cli-manual',
         clientName,
         amount: Number(amount),
-        currency: 'USD',
-        currencySymbol: '$',
+        currency: 'NGN',
+        currencySymbol: '₦',
         method,
         date,
         status: 'completed',
@@ -150,11 +150,11 @@ export const PaymentsPage: React.FC = () => {
               <AlertCircle size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: '#b91c1c' }}>
-            $4,700.00
+          <div className="metric-card-value" style={{ color: summary.overdueCount > 0 ? '#b91c1c' : 'inherit' }}>
+            {formatCurrency(summary.overdueAmount, 'NGN', '₦')}
           </div>
           <div className="metric-card-subtext">
-            <span>1 invoice past 15-day terms</span>
+            <span>{summary.overdueCount} {summary.overdueCount === 1 ? 'invoice' : 'invoices'} past due terms</span>
           </div>
         </div>
       </div>
@@ -263,10 +263,10 @@ export const PaymentsPage: React.FC = () => {
               onChange={(e) => setInvoiceNumber(e.target.value)}
             />
             <Input
-              label="Amount Received ($)"
+              label="Amount Received (₦)"
               type="number"
               min="1"
-              step="10"
+              step="100"
               value={amount || ''}
               onChange={(e) => setAmount(Number(e.target.value))}
               required

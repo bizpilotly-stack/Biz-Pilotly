@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   Layers,
   ArrowRight,
+  Copy,
+  Check,
+  Zap,
 } from 'lucide-react';
 import {
   BusinessDocument,
@@ -58,7 +61,17 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [draftSaved, setDraftSaved] = useState<boolean>(true);
   const [isSavingToCloud, setIsSavingToCloud] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState<'gateway' | 'manual'>('gateway');
   const saveTimeoutRef = useRef<number | null>(null);
+
+  const handleCopyField = (text: string, fieldName: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    showToast(`Copied ${fieldName} to clipboard!`, 'success');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   // Auto-fetch database sequential document number for authenticated users
   useEffect(() => {
@@ -909,6 +922,210 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Interactive Client Settlement & Payment Hub */}
+            {documentType === 'invoice' && (
+              <div
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '1.25rem',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CreditCard size={18} color="#00C0F3" />
+                    <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--brand-black)' }}>
+                      Client Payment Portal
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.375rem', background: 'var(--bg-surface-muted)', padding: '3px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPaymentMode('gateway')}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-sm)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: selectedPaymentMode === 'gateway' ? '#0B1F3A' : 'transparent',
+                        color: selectedPaymentMode === 'gateway' ? '#ffffff' : 'var(--text-secondary)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      ⚡ Paystack Gateway
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPaymentMode('manual')}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-sm)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: selectedPaymentMode === 'manual' ? '#0B1F3A' : 'transparent',
+                        color: selectedPaymentMode === 'manual' ? '#ffffff' : 'var(--text-secondary)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      🏛️ Direct Bank Transfer
+                    </button>
+                  </div>
+                </div>
+
+                {selectedPaymentMode === 'gateway' ? (
+                  <div style={{ background: 'linear-gradient(135deg, #091e3a 0%, #0d284f 100%)', color: '#ffffff', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#93c5fd' }}>Instant Online Checkout</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '2px' }}>
+                          {formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '0.6875rem', background: 'rgba(0, 192, 243, 0.2)', color: '#38bdf8', padding: '3px 8px', borderRadius: '999px', fontWeight: 600 }}>
+                        Auto-Reconciled
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1rem', lineHeight: 1.4 }}>
+                      Clients can pay this invoice instantly using Nigerian Debit Cards (Mastercard, Visa, Verve), Bank Transfer (Virtual NUBAN), USSD codes, or OPay/Kuda.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => showToast('Opening Paystack instant checkout simulation for ' + formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol), 'info')}
+                      style={{
+                        width: '100%',
+                        padding: '0.625rem 1rem',
+                        background: '#00C0F3',
+                        color: '#090d16',
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        boxShadow: '0 2px 8px rgba(0, 192, 243, 0.3)',
+                      }}
+                    >
+                      <Zap size={16} />
+                      <span>Pay {formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} with Paystack</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                      Transfer to Seller's Verified Nigerian Account
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div style={{ background: 'var(--bg-surface)', padding: '0.625rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Bank Name</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginTop: '2px' }}>
+                          {doc.paymentDetails?.bankName || 'Guaranty Trust Bank (GTBank)'}
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'var(--bg-surface)', padding: '0.625rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Beneficiary Account Name</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginTop: '2px' }}>
+                          {doc.paymentDetails?.accountName || doc.business?.name || 'Business Account'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* NUBAN Account & 1-Click Copy */}
+                    <div style={{ background: 'var(--bg-surface)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>NUBAN Account Number</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '0.08em', color: 'var(--brand-black)', marginTop: '2px' }}>
+                          {doc.paymentDetails?.accountNumber || '0123456789'}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyField(doc.paymentDetails?.accountNumber || '0123456789', 'Account Number')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          padding: '0.375rem 0.75rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          background: copiedField === 'Account Number' ? '#10b981' : 'var(--bg-surface-muted)',
+                          color: copiedField === 'Account Number' ? '#ffffff' : 'var(--text-primary)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-md)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {copiedField === 'Account Number' ? <Check size={14} /> : <Copy size={14} />}
+                        <span>{copiedField === 'Account Number' ? 'Copied!' : 'Copy Account'}</span>
+                      </button>
+                    </div>
+
+                    {/* Transfer Amount & Reference */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div style={{ background: 'var(--bg-surface)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Exact Amount</div>
+                          <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                            {formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyField(String(doc.total), 'Amount')}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.6875rem',
+                            border: '1px solid var(--border-color)',
+                            background: copiedField === 'Amount' ? '#10b981' : 'transparent',
+                            color: copiedField === 'Amount' ? '#ffffff' : 'var(--text-secondary)',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {copiedField === 'Amount' ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+
+                      <div style={{ background: 'var(--bg-surface)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Reference / Narration</div>
+                          <div style={{ fontWeight: 700, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                            {doc.documentNumber}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyField(doc.documentNumber, 'Reference')}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.6875rem',
+                            border: '1px solid var(--border-color)',
+                            background: copiedField === 'Reference' ? '#10b981' : 'transparent',
+                            color: copiedField === 'Reference' ? '#ffffff' : 'var(--text-secondary)',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {copiedField === 'Reference' ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Conversion Bridge for Anonymous Visitors */}
             {!user && !isApp && (

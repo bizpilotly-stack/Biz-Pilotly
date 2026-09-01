@@ -151,8 +151,8 @@ class PaymentService {
         customer_id: customerId,
         payment_number: paymentNumber,
         amount: paymentData.amount,
-        currency: paymentData.currency || 'USD',
-        currency_symbol: paymentData.currencySymbol || '$',
+        currency: paymentData.currency || 'NGN',
+        currency_symbol: paymentData.currencySymbol || '₦',
         method: paymentData.method,
         date: paymentData.date || new Date().toISOString().split('T')[0],
         status: paymentData.status as any,
@@ -249,6 +249,7 @@ class PaymentService {
   }
 
   async getPaymentSummary() {
+    const business = await businessService.getCurrentBusiness();
     const payments = await this.getPayments();
     const totalReceived = payments
       .filter((p) => p.status === 'completed')
@@ -258,9 +259,27 @@ class PaymentService {
       .filter((p) => p.status === 'pending')
       .reduce((sum, p) => sum + p.amount, 0);
 
+    let overdueAmount = 0;
+    let overdueCount = 0;
+
+    if (business) {
+      const { data: overdueDocs } = await supabase
+        .from('documents')
+        .select('total')
+        .eq('business_id', business.id)
+        .eq('status', 'overdue');
+
+      if (overdueDocs) {
+        overdueAmount = overdueDocs.reduce((sum, d) => sum + (Number(d.total) || 0), 0);
+        overdueCount = overdueDocs.length;
+      }
+    }
+
     return {
       totalReceived,
       pendingAmount,
+      overdueAmount,
+      overdueCount,
       completedCount: payments.filter((p) => p.status === 'completed').length,
       pendingCount: payments.filter((p) => p.status === 'pending').length,
     };

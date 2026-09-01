@@ -82,8 +82,8 @@ export const ExpensesPage: React.FC = () => {
         title,
         category,
         amount: Number(amount),
-        currency: 'USD',
-        currencySymbol: '$',
+        currency: 'NGN',
+        currencySymbol: '₦',
         vendor,
         paymentMethod,
         date,
@@ -308,10 +308,10 @@ export const ExpensesPage: React.FC = () => {
             </div>
 
             <Input
-              label="Amount ($)"
+              label="Amount (₦)"
               type="number"
               min="0.01"
-              step="0.01"
+              step="100"
               value={amount || ''}
               onChange={(e) => setAmount(Number(e.target.value))}
               required
