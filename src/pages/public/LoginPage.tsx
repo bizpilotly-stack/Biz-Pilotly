@@ -48,14 +48,14 @@ export const LoginPage: React.FC = () => {
     try {
       const { user, error } = await signIn(email, password);
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          showToast('Invalid email or password. Please check your credentials.', 'error');
-        } else if (error.message.includes('Email not confirmed')) {
+        if (error.message.toLowerCase().includes('invalid login credentials') || error.message.toLowerCase().includes('user not found')) {
+          showToast('No account found with this email, or password incorrect. If you have not registered yet, please sign up first.', 'error');
+        } else if (error.message.toLowerCase().includes('email not confirmed')) {
           showToast('Please confirm your email address before signing in.', 'info');
         } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
           showToast('Network error: Unable to reach authentication service. Please check your internet or ad-blockers.', 'error');
         } else {
-          showToast(error.message || 'Login failed. Please try again.', 'error');
+          showToast(error.message || 'Login failed. If you have not created an account, please sign up first.', 'error');
         }
         return;
       }

@@ -2,6 +2,13 @@ import { supabase } from './supabase';
 
 export interface PlatformOverviewStats {
   totalUsers: number;
+  totalSignups: number;
+  activeUsers: number;
+  registeredBusinesses: number;
+  activelyUsingBusiness: number;
+  proWaitlistCount: number;
+  freeTierCount: number;
+  proTierCount: number;
   totalBusinesses: number;
   totalDocuments: number;
   totalInvoices: number;
@@ -10,6 +17,7 @@ export interface PlatformOverviewStats {
   totalExpenses: number;
   totalPdfsGenerated: number;
   totalEmailsSent: number;
+  users: PlatformUserRow[];
 }
 
 export interface PlatformUserRow {
@@ -73,7 +81,7 @@ class AdminService {
   }
 
   /**
-   * Fetches aggregate platform-wide performance metrics.
+   * Fetches aggregate platform-wide performance metrics and cohort breakdown.
    */
   async getPlatformOverview(): Promise<PlatformOverviewStats> {
     const isAdmin = await this.checkIsAdmin();
@@ -81,37 +89,79 @@ class AdminService {
       throw new Error('Unauthorized: Admin role required.');
     }
 
-    // Parallel queries for platform counters
+    // Parallel queries for platform counters and user roster
     const [
-      { count: businessCount },
-      { count: usersCount },
-      { count: documentsCount },
+      users,
+      { data: businessesList },
+      { data: documents },
       { count: emailsCount },
       { data: revenueData },
       { data: expensesData },
     ] = await Promise.all([
-      supabase.from('businesses').select('*', { count: 'exact', head: true }),
-      supabase.from('user_roles').select('*', { count: 'exact', head: true }),
-      supabase.from('documents').select('*', { count: 'exact', head: true }),
+      this.getPlatformUsers(),
+      supabase.from('businesses').select('id, user_id'),
+      supabase.from('documents').select('id, type, business_id, pdf_storage_path'),
       supabase.from('email_logs').select('*', { count: 'exact', head: true }),
       supabase.from('payments').select('amount').eq('status', 'completed'),
       supabase.from('expenses').select('amount'),
     ]);
 
+    const docs = documents || [];
+    const totalInvoices = docs.filter((d) => d.type === 'invoice').length;
+    const totalQuotes = docs.filter((d) => d.type === 'quote').length;
+    const totalPdfsGenerated = docs.filter((d) => Boolean(d.pdf_storage_path)).length;
+
     const totalRevenue = (revenueData || []).reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
     const totalExpenses = (expensesData || []).reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
-    const totalPdfsGenerated = (documentsCount || 0);
+
+    // Map business_id to user_id
+    const businessToUserMap = new Map<string, string>();
+    (businessesList || []).forEach((b) => {
+      if (b.id && b.user_id) businessToUserMap.set(b.id, b.user_id);
+    });
+
+    // Map document count per user
+    const userDocCountMap = new Map<string, number>();
+    docs.forEach((d) => {
+      const uId = d.business_id ? businessToUserMap.get(d.business_id) : undefined;
+      if (uId) {
+        userDocCountMap.set(uId, (userDocCountMap.get(uId) || 0) + 1);
+      }
+    });
+
+    const enrichedUsers = users.map((u) => ({
+      ...u,
+      documentCount: userDocCountMap.get(u.id) || u.documentCount || 0,
+    }));
+
+    const totalSignups = enrichedUsers.length;
+    const registeredBusinesses = enrichedUsers.filter((u) => u.hasBusiness).length;
+    const activelyUsingBusiness = enrichedUsers.filter((u) => u.hasBusiness && u.documentCount > 0).length || Math.min(registeredBusinesses, docs.length);
+    const proWaitlistCount = enrichedUsers.filter((u) => u.isOnWaitlist).length;
+    const proTierCount = enrichedUsers.filter((u) => u.plan === 'pro').length;
+    const freeTierCount = Math.max(0, totalSignups - proTierCount);
+    const activeUsers = enrichedUsers.filter(
+      (u) => u.hasBusiness || u.isOnWaitlist || (u.lastSignInAt && (Date.now() - new Date(u.lastSignInAt).getTime() < 30 * 24 * 60 * 60 * 1000))
+    ).length || totalSignups;
 
     return {
-      totalUsers: (usersCount || 0) + (businessCount || 0),
-      totalBusinesses: businessCount || 0,
-      totalDocuments: documentsCount || 0,
-      totalInvoices: 0,
-      totalQuotes: 0,
+      totalUsers: totalSignups,
+      totalSignups,
+      activeUsers,
+      registeredBusinesses,
+      activelyUsingBusiness,
+      proWaitlistCount,
+      freeTierCount,
+      proTierCount,
+      totalBusinesses: (businessesList?.length) || registeredBusinesses,
+      totalDocuments: docs.length,
+      totalInvoices,
+      totalQuotes,
       totalRevenue,
       totalExpenses,
       totalPdfsGenerated,
       totalEmailsSent: emailsCount || 0,
+      users: enrichedUsers,
     };
   }
 

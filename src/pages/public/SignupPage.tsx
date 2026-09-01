@@ -53,13 +53,24 @@ export const SignupPage: React.FC = () => {
     try {
       const { user, session, error } = await signUp(email.trim(), password, name.trim());
       if (error) {
-        if (error.message.includes('User already registered')) {
-          showToast('An account with this email already exists. Please sign in.', 'error');
-        } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+        const errorLower = error.message.toLowerCase();
+        if (
+          errorLower.includes('already registered') ||
+          errorLower.includes('already exists') ||
+          errorLower.includes('user already registered')
+        ) {
+          showToast('This email is already registered. Please sign in to your existing account.', 'error');
+        } else if (errorLower.includes('fetch') || errorLower.includes('network')) {
           showToast('Network error: Unable to connect to authentication server. Check your connection or disable ad-blockers.', 'error');
         } else {
           showToast(error.message || 'Failed to create account. Please try again.', 'error');
         }
+        return;
+      }
+
+      // Check if Supabase returned a user without creating a new session (existing user with email confirmation enabled)
+      if (user && user.identities && user.identities.length === 0) {
+        showToast('This email is already registered. Please sign in instead.', 'error');
         return;
       }
 
