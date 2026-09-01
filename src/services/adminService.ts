@@ -193,8 +193,14 @@ class AdminService {
       // Proceed to fallback
     }
 
-    // 2. Fallback query (businesses + user_roles + pro_waitlist)
-    const [{ data: businesses }, { data: roles }, { data: waitlist }] = await Promise.all([
+    // 2. Query profiles (primary source for all registered accounts), businesses, roles, and waitlist
+    const [
+      { data: profiles },
+      { data: businesses },
+      { data: roles },
+      { data: waitlist },
+    ] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, email, avatar_url, created_at'),
       supabase.from('businesses').select('user_id, name, email, currency, created_at'),
       supabase.from('user_roles').select('user_id, role'),
       (supabase as any).from('pro_waitlist').select('user_id, email'),
@@ -202,6 +208,9 @@ class AdminService {
 
     const roleMap = new Map<string, string>();
     (roles || []).forEach((r) => roleMap.set(r.user_id, r.role));
+
+    const businessMap = new Map<string, any>();
+    (businesses || []).forEach((b) => businessMap.set(b.user_id, b));
 
     const waitlistSet = new Set<string>();
     (waitlist || []).forEach((w: any) => {
@@ -211,22 +220,48 @@ class AdminService {
 
     const userMap = new Map<string, PlatformUserRow>();
 
-    // Add registered business accounts
-    (businesses || []).forEach((b) => {
-      userMap.set(b.user_id, {
-        id: b.user_id,
-        email: b.email || `user-${b.user_id.slice(0, 8)}@bizpilotly.com`,
-        name: b.name || `User (${b.user_id.slice(0, 6)})`,
-        role: (roleMap.get(b.user_id) as any) || 'user',
-        hasBusiness: true,
-        businessName: b.name,
-        businessCurrency: b.currency || 'NGN',
-        isOnWaitlist: waitlistSet.has(b.user_id) || (b.email ? waitlistSet.has(b.email.toLowerCase()) : false),
+    // Add all registered user profiles
+    (profiles || []).forEach((p) => {
+      const b = businessMap.get(p.id);
+      const email = p.email || (b ? b.email : `user-${p.id.slice(0, 8)}@bizpilotly.com`);
+      const name = p.full_name || (b ? b.name : `User (${p.id.slice(0, 6)})`);
+      const role = (roleMap.get(p.id) as any) || 'user';
+      const isOnWaitlist = waitlistSet.has(p.id) || (email ? waitlistSet.has(email.toLowerCase()) : false);
+
+      userMap.set(p.id, {
+        id: p.id,
+        email,
+        name,
+        role,
+        hasBusiness: Boolean(b),
+        businessName: b ? b.name : undefined,
+        businessCurrency: b ? (b.currency || 'NGN') : 'NGN',
+        isOnWaitlist,
         plan: 'free',
-        createdAt: b.created_at,
-        businessCount: 1,
+        createdAt: p.created_at || new Date().toISOString(),
+        businessCount: b ? 1 : 0,
         documentCount: 0,
       });
+    });
+
+    // Add any registered business accounts not in profiles
+    (businesses || []).forEach((b) => {
+      if (!userMap.has(b.user_id)) {
+        userMap.set(b.user_id, {
+          id: b.user_id,
+          email: b.email || `user-${b.user_id.slice(0, 8)}@bizpilotly.com`,
+          name: b.name || `User (${b.user_id.slice(0, 6)})`,
+          role: (roleMap.get(b.user_id) as any) || 'user',
+          hasBusiness: true,
+          businessName: b.name,
+          businessCurrency: b.currency || 'NGN',
+          isOnWaitlist: waitlistSet.has(b.user_id) || (b.email ? waitlistSet.has(b.email.toLowerCase()) : false),
+          plan: 'free',
+          createdAt: b.created_at,
+          businessCount: 1,
+          documentCount: 0,
+        });
+      }
     });
 
     // Add explicit role accounts
