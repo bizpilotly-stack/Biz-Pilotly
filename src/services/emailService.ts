@@ -8,6 +8,7 @@ export interface SendEmailOptions {
     | 'receipt_sent'
     | 'welcome'
     | 'payment_received'
+    | 'payment_reported'
     | 'payment_reminder';
   recipientEmail: string;
   recipientName?: string;

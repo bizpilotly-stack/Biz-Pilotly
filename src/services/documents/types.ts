@@ -4,7 +4,7 @@
 
 export type DocumentType = 'invoice' | 'quote' | 'receipt' | 'proposal';
 
-export type DocumentStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'paid' | 'overdue' | 'cancelled';
+export type DocumentStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'paid' | 'pending_confirmation' | 'overdue' | 'cancelled';
 
 export interface BusinessEntity {
   name: string;
@@ -43,6 +43,10 @@ export interface PaymentDetails {
   paypalOrStripeLink?: string;
   paymentMethod?: 'Bank Transfer' | 'Credit Card' | 'PayPal' | 'Cash' | 'Stripe' | 'Other';
   paymentReference?: string;
+  paymentPreference?: 'both' | 'manual' | 'gateway';
+  reportedSenderName?: string;
+  reportedTransferNote?: string;
+  reportedAt?: string;
 }
 
 export interface DocumentTotals {

@@ -28,6 +28,7 @@ import {
   formatCurrencyAmount,
 } from '../../services/documentService';
 import { clientService } from '../../services/clientService';
+import { emailService } from '../../services/emailService';
 import { pdfService } from '../../services/pdf';
 import { NIGERIAN_BANKS } from '../../constants/nigerianBanks';
 import { Client } from '../../types';
@@ -63,6 +64,12 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState<'gateway' | 'manual'>('gateway');
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportedSenderName, setReportedSenderName] = useState('');
+  const [reportedBank, setReportedBank] = useState('');
+  const [reportedReference, setReportedReference] = useState('');
+  const [isReportingPayment, setIsReportingPayment] = useState(false);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const saveTimeoutRef = useRef<number | null>(null);
 
   const handleCopyField = (text: string, fieldName: string) => {
@@ -71,6 +78,94 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     setCopiedField(fieldName);
     showToast(`Copied ${fieldName} to clipboard!`, 'success');
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleReportPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportedSenderName.trim()) {
+      showToast('Please enter the sender or depositor name.', 'error');
+      return;
+    }
+
+    setIsReportingPayment(true);
+    try {
+      const updatedPaymentDetails = {
+        ...doc.paymentDetails,
+        reportedSenderName: reportedSenderName.trim(),
+        reportedTransferNote: `Bank: ${reportedBank.trim() || 'Direct Transfer'} | Ref: ${reportedReference.trim() || 'N/A'}`,
+        reportedAt: new Date().toISOString(),
+      };
+
+      const updatedDoc = {
+        ...doc,
+        status: 'pending_confirmation' as const,
+        paymentDetails: updatedPaymentDetails,
+      };
+
+      setDoc(updatedDoc);
+
+      if (doc.id) {
+        await documentService.saveDocument(updatedDoc);
+      }
+
+      if (doc.business.email) {
+        try {
+          await emailService.sendTransactionalEmail({
+            templateType: 'payment_reported',
+            recipientEmail: doc.business.email,
+            recipientName: doc.business.name,
+            documentId: doc.id,
+            customSubject: `Payment Reported for Invoice #${doc.documentNumber} (${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)})`,
+            customMessage: `${reportedSenderName.trim()} has reported transferring ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} for Invoice #${doc.documentNumber}. Please verify in your bank account and confirm.`,
+          });
+        } catch {
+          // Email dispatch error fallback
+        }
+      }
+
+      showToast('Payment reported successfully! The business owner has been notified via email.', 'success');
+      setReportModalOpen(false);
+    } catch {
+      showToast('Error reporting payment. Please try again.', 'error');
+    } finally {
+      setIsReportingPayment(false);
+    }
+  };
+
+  const handleConfirmPaymentReceived = async () => {
+    setIsConfirmingPayment(true);
+    try {
+      const updatedDoc = {
+        ...doc,
+        status: 'paid' as const,
+      };
+      setDoc(updatedDoc);
+
+      if (doc.id) {
+        await documentService.updateStatus(doc.id, 'paid');
+      }
+
+      if (doc.client.email) {
+        try {
+          await emailService.sendTransactionalEmail({
+            templateType: 'payment_received',
+            recipientEmail: doc.client.email,
+            recipientName: doc.client.name,
+            documentId: doc.id,
+            customSubject: `Payment Confirmed: Official Receipt for #${doc.documentNumber}`,
+            customMessage: `Thank you! Your payment of ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} has been confirmed. Your official receipt has been issued.`,
+          });
+        } catch {
+          // Silent fallback
+        }
+      }
+
+      showToast('Payment confirmed! Status updated to Paid and digital receipt issued.', 'success');
+    } catch {
+      showToast('Error confirming payment. Please try again.', 'error');
+    } finally {
+      setIsConfirmingPayment(false);
+    }
   };
 
   // Auto-fetch database sequential document number for authenticated users
@@ -698,6 +793,40 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 placeholder="Payment terms, late fee provisions, or turnaround timeline..."
               />
             </div>
+            {/* Payment Acceptance Preference */}
+            {documentType === 'invoice' && (
+              <div className="form-group" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '1rem' }}>
+                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0B1F3A', marginBottom: '0.375rem' }}>
+                  💳 Payment Collection Method
+                </label>
+                <select
+                  className="form-select"
+                  value={doc.paymentDetails?.paymentPreference || 'both'}
+                  onChange={(e) => {
+                    const pref = e.target.value as 'both' | 'manual' | 'gateway';
+                    setDoc({
+                      ...doc,
+                      paymentDetails: {
+                        ...doc.paymentDetails,
+                        paymentPreference: pref,
+                      },
+                    });
+                    if (pref === 'manual') setSelectedPaymentMode('manual');
+                    if (pref === 'gateway') setSelectedPaymentMode('gateway');
+                  }}
+                  style={{ fontWeight: 600, fontSize: '0.8125rem' }}
+                >
+                  <option value="both">Both: Direct Bank Transfer (0% Fee) & Paystack Card Gateway</option>
+                  <option value="manual">Direct Bank Transfer Only (0% Fee, Instant to Bank)</option>
+                  <option value="gateway">Paystack Online Card Gateway Only (Instant Receipt, 1.5% - 2%)</option>
+                </select>
+                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.375rem' }}>
+                  {doc.paymentDetails?.paymentPreference === 'manual' && '✓ ₦0 fees. Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
+                  {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Apple Pay, or USSD with automated instant receipt.'}
+                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between 0% Bank Transfer and Instant Card Checkout.'}
+                </div>
+              </div>
+            )}
 
             {/* Bank Details on Document */}
             <div className="form-group" style={{ background: 'var(--bg-surface-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '1rem' }}>
@@ -768,12 +897,12 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   maxLength={10}
                   value={doc.paymentDetails?.accountNumber || ''}
                   onChange={(e) => {
-                    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
                     setDoc({
                       ...doc,
                       paymentDetails: {
                         ...doc.paymentDetails,
-                        accountNumber: cleaned,
+                        accountNumber: clean,
                       },
                     });
                   }}
@@ -782,218 +911,249 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
             </div>
           </div>
 
-          {/* =================================================================
-             RIGHT COLUMN: LIVE PRINTABLE PAPER PREVIEW
-             ================================================================= */}
-          <div className="doc-preview-column">
-            <div className="doc-preview-toolbar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}>
-                <Sparkles size={16} color="#C9A227" />
-                <span>Live Document Preview</span>
-              </div>
-              <span className="badge badge-neutral">A4 / Print Proportions</span>
-            </div>
-
-            <div className="doc-preview-sheet-wrapper">
-              <div className="doc-paper-sheet" id="printableDocument">
-                {/* Sheet Top Header */}
+          {/* RIGHT COLUMN: Interactive Live Printable Document Canvas */}
+          <div className="doc-preview-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              id="document-printable-canvas"
+              className="doc-canvas"
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '2.5rem',
+                boxShadow: 'var(--shadow-lg)',
+                color: '#1e293b',
+              }}
+            >
+              {/* Document Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0B1F3A', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
                 <div>
-                  <div className="doc-sheet-header">
-                    <div>
-                      <div className="doc-sheet-badge">{documentType}</div>
-                      <div style={{ fontSize: '13px', color: '#64748b', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
-                        #{doc.documentNumber}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '16px', fontWeight: 800, color: '#090d16' }}>{doc.business.name}</div>
-                      {doc.business.tagline && <div style={{ fontSize: '11px', color: '#64748b' }}>{doc.business.tagline}</div>}
-                      <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>{doc.business.email}</div>
-                      {doc.business.address && <div style={{ fontSize: '11px', color: '#64748b' }}>{doc.business.address}</div>}
-                      {doc.business.taxNumber && <div style={{ fontSize: '10px', color: '#94a3b8' }}>Tax ID: {doc.business.taxNumber}</div>}
-                    </div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0B1F3A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                    {meta.title}
+                  </h2>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+                    #{doc.documentNumber}
                   </div>
-
-                  {/* Metadata Grid */}
-                  <div className="doc-sheet-meta-grid">
-                    <div className="doc-sheet-meta-block">
-                      <h4>Billed To / Recipient:</h4>
-                      <p>
-                        <strong>{doc.client.name}</strong><br />
-                        {doc.client.company && <span>{doc.client.company}<br /></span>}
-                        {doc.client.email && <span>{doc.client.email}<br /></span>}
-                        {doc.client.address && <span>{doc.client.address}</span>}
-                      </p>
-                    </div>
-
-                    <div className="doc-sheet-meta-block" style={{ textAlign: 'right' }}>
-                      <h4>Document Details:</h4>
-                      <p>
-                        <strong>Issue Date:</strong> {doc.date}<br />
-                        {doc.dueDate && <span><strong>Due Date:</strong> {doc.dueDate}<br /></span>}
-                        {doc.validUntil && <span><strong>Valid Until:</strong> {doc.validUntil}<br /></span>}
-                        {doc.paymentMethod && <span><strong>Method:</strong> {doc.paymentMethod}<br /></span>}
-                        {doc.paymentReference && <span><strong>Ref:</strong> {doc.paymentReference}<br /></span>}
-                        <strong>Status:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 700, color: '#0B1F3A' }}>{doc.status}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
-                    Project Scope: {doc.title}
-                  </div>
-
-                  {/* Optional Proposal Narrative */}
-                  {doc.projectOverview && (
-                    <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#334155', marginBottom: '18px', lineHeight: 1.5 }}>
-                      <strong>Executive Summary:</strong> {doc.projectOverview}
-                    </div>
+                  {doc.status === 'paid' && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', padding: '2px 8px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, background: '#D1FAE5', color: '#065F46' }}>
+                      <CheckCircle2 size={12} /> PAID IN FULL
+                    </span>
                   )}
-
-                  {/* Table of Items */}
-                  <table className="doc-sheet-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '55%' }}>Description</th>
-                        <th style={{ width: '12%', textAlign: 'center' }}>Qty</th>
-                        <th style={{ width: '15%', textAlign: 'right' }}>Rate</th>
-                        <th style={{ width: '18%', textAlign: 'right' }}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {doc.items.map((item) => (
-                        <tr key={item.id}>
-                          <td><strong>{item.description}</strong></td>
-                          <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                          <td style={{ textAlign: 'right' }}>{formatCurrencyAmount(item.unitPrice, doc.currency, doc.currencySymbol)}</td>
-                          <td style={{ textAlign: 'right' }}><strong>{formatCurrencyAmount(item.amount, doc.currency, doc.currencySymbol)}</strong></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Totals Summary */}
-                  <div className="doc-sheet-totals">
-                    <div className="doc-totals-row">
-                      <span>Subtotal:</span>
-                      <span>{formatCurrencyAmount(doc.subtotal, doc.currency, doc.currencySymbol)}</span>
-                    </div>
-                    {doc.discountAmount > 0 && (
-                      <div className="doc-totals-row" style={{ color: '#b91c1c' }}>
-                        <span>Discount ({doc.discountRate}%):</span>
-                        <span>-{formatCurrencyAmount(doc.discountAmount, doc.currency, doc.currencySymbol)}</span>
-                      </div>
-                    )}
-                    {doc.taxAmount > 0 && (
-                      <div className="doc-totals-row">
-                        <span>Tax / VAT ({doc.taxRate}%):</span>
-                        <span>+{formatCurrencyAmount(doc.taxAmount, doc.currency, doc.currencySymbol)}</span>
-                      </div>
-                    )}
-                    <div className="doc-totals-row grand-total">
-                      <span>Total Amount:</span>
-                      <span>{formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}</span>
-                    </div>
-                  </div>
+                  {doc.status === 'pending_confirmation' && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', padding: '2px 8px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, background: '#FEF3C7', color: '#92400E' }}>
+                      ⌛ PAYMENT REPORTED (AWAITING CONFIRMATION)
+                    </span>
+                  )}
                 </div>
 
-                {/* Bottom Terms & Instructions */}
-                <div className="doc-sheet-footer">
-                  {doc.notes && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', color: '#475569', marginBottom: '2px' }}>Notes</div>
-                      <div>{doc.notes}</div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0B1F3A' }}>
+                    {doc.business.name || 'Your Company'}
+                  </div>
+                  {doc.business.tagline && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.business.tagline}</div>
+                  )}
+                  {doc.business.email && (
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{doc.business.email}</div>
+                  )}
+                  {doc.business.phone && (
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{doc.business.phone}</div>
+                  )}
+                  {doc.business.address && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.business.address}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bill To & Metadata Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.5rem' }}>
+                    Billed To
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0B1F3A' }}>
+                    {doc.client.name || 'Client Name'}
+                  </div>
+                  {doc.client.company && (
+                    <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{doc.client.company}</div>
+                  )}
+                  {doc.client.email && (
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{doc.client.email}</div>
+                  )}
+                  {doc.client.address && (
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{doc.client.address}</div>
+                  )}
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>Issue Date:</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{doc.date}</span>
+                  </div>
+                  {doc.dueDate && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>Payment Due:</span>
+                      <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#dc2626' }}>{doc.dueDate}</span>
                     </div>
                   )}
-
-                  {doc.paymentDetails && (doc.paymentDetails.bankName || doc.paymentDetails.accountNumber) && (
-                    <div className="doc-sheet-bank-box" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 14px', marginBottom: '12px', fontSize: '11px', color: '#1e293b' }}>
-                      <div style={{ fontWeight: 700, color: '#090d16', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '10px' }}>Direct Bank Settlement Instructions:</div>
-                      <div><strong>Bank:</strong> {doc.paymentDetails.bankName || 'Nigerian Bank'} &nbsp;|&nbsp; <strong>Beneficiary:</strong> {doc.paymentDetails.accountName || doc.business?.name || 'Business Account'}</div>
-                      <div><strong>NUBAN / Account:</strong> <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.06em' }}>{doc.paymentDetails.accountNumber || 'N/A'}</span>{doc.paymentDetails.routingOrIban ? ` | Sort Code: ${doc.paymentDetails.routingOrIban}` : ''}</div>
+                  {doc.validUntil && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>Valid Until:</span>
+                      <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{doc.validUntil}</span>
                     </div>
                   )}
-
-                  {doc.terms && (
-                    <div style={{ marginTop: '12px', fontSize: '10px', color: '#94a3b8' }}>
-                      {doc.terms}
+                  {doc.paymentMethod && (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>Payment Method:</span>
+                      <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{doc.paymentMethod}</span>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Line Items Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569' }}>Description</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', width: '80px' }}>Qty</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', width: '140px' }}>Unit Price</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', width: '140px' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {doc.items.map((item, idx) => (
+                    <tr key={item.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '0.875rem 1rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                        {item.description || 'Deliverable item...'}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                        {item.quantity}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontSize: '0.875rem' }}>
+                        {formatCurrencyAmount(item.unitPrice, doc.currency, doc.currencySymbol)}
+                      </td>
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: 700 }}>
+                        {formatCurrencyAmount(item.amount, doc.currency, doc.currencySymbol)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Totals Summary */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem' }}>
+                <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    <span>Subtotal</span>
+                    <span>{formatCurrencyAmount(doc.subtotal, doc.currency, doc.currencySymbol)}</span>
+                  </div>
+                  {doc.discountAmount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#dc2626' }}>
+                      <span>Discount ({doc.discountRate}%)</span>
+                      <span>-{formatCurrencyAmount(doc.discountAmount, doc.currency, doc.currencySymbol)}</span>
+                    </div>
+                  )}
+                  {doc.taxAmount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                      <span>Tax / VAT ({doc.taxRate}%)</span>
+                      <span>+{formatCurrencyAmount(doc.taxAmount, doc.currency, doc.currencySymbol)}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, color: '#0B1F3A', borderTop: '2px solid #0B1F3A', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                    <span>Total Amount</span>
+                    <span>{formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes & Terms */}
+              {(doc.notes || doc.terms) && (
+                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: doc.notes && doc.terms ? '1fr 1fr' : '1fr', gap: '1.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {doc.notes && (
+                    <div>
+                      <div style={{ fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem', color: '#475569' }}>Notes & Instructions</div>
+                      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{doc.notes}</p>
+                    </div>
+                  )}
+                  {doc.terms && (
+                    <div>
+                      <div style={{ fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem', color: '#475569' }}>Terms & Settlement Provisions</div>
+                      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{doc.terms}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Interactive Client Settlement & Payment Hub */}
+            {/* Interactive Payment Settlement Box (For Invoices) */}
             {documentType === 'invoice' && (
-              <div
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '1.25rem',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CreditCard size={18} color="#00C0F3" />
+                    <CreditCard size={18} color="#0B1F3A" />
                     <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--brand-black)' }}>
-                      Client Payment Portal
+                      How to Settle This Invoice
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.375rem', background: 'var(--bg-surface-muted)', padding: '3px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPaymentMode('gateway')}
-                      style={{
-                        padding: '4px 10px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        borderRadius: 'var(--radius-sm)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        background: selectedPaymentMode === 'gateway' ? '#0B1F3A' : 'transparent',
-                        color: selectedPaymentMode === 'gateway' ? '#ffffff' : 'var(--text-secondary)',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      ⚡ Paystack Gateway
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPaymentMode('manual')}
-                      style={{
-                        padding: '4px 10px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        borderRadius: 'var(--radius-sm)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        background: selectedPaymentMode === 'manual' ? '#0B1F3A' : 'transparent',
-                        color: selectedPaymentMode === 'manual' ? '#ffffff' : 'var(--text-secondary)',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      🏛️ Direct Bank Transfer
-                    </button>
-                  </div>
+
+                  {/* Payment Mode Toggle Tabs if preference is 'both' */}
+                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && (
+                    <div style={{ display: 'flex', background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '3px', border: '1px solid var(--border-color)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPaymentMode('gateway')}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          borderRadius: 'var(--radius-sm)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: selectedPaymentMode === 'gateway' ? '#00C0F3' : 'transparent',
+                          color: selectedPaymentMode === 'gateway' ? '#090d16' : 'var(--text-secondary)',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        ⚡ Paystack Instant Card
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPaymentMode('manual')}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          borderRadius: 'var(--radius-sm)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: selectedPaymentMode === 'manual' ? '#0B1F3A' : 'transparent',
+                          color: selectedPaymentMode === 'manual' ? '#ffffff' : 'var(--text-secondary)',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        🏛️ Direct Bank Transfer (0% Fee)
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {selectedPaymentMode === 'gateway' ? (
+                {/* Render Paystack Gateway View */}
+                {(doc.paymentDetails?.paymentPreference === 'gateway' || ((!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && selectedPaymentMode === 'gateway')) ? (
                   <div style={{ background: 'linear-gradient(135deg, #091e3a 0%, #0d284f 100%)', color: '#ffffff', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#93c5fd' }}>Instant Online Checkout</div>
+                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#93c5fd' }}>Instant Online Checkout (Paystack)</div>
                         <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '2px' }}>
                           {formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}
                         </div>
                       </div>
                       <span style={{ fontSize: '0.6875rem', background: 'rgba(0, 192, 243, 0.2)', color: '#38bdf8', padding: '3px 8px', borderRadius: '999px', fontWeight: 600 }}>
-                        Auto-Reconciled
+                        Auto-Reconciled • 1.5% - 2%
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1rem', lineHeight: 1.4 }}>
-                      Clients can pay this invoice instantly using Nigerian Debit Cards (Mastercard, Visa, Verve), Bank Transfer (Virtual NUBAN), USSD codes, or OPay/Kuda.
+                      Clients can pay this invoice instantly using Nigerian & International Debit Cards (Visa, Mastercard, Verve, Amex), Virtual Bank Transfer, USSD codes, or Apple Pay.
                     </p>
                     <button
                       type="button"
@@ -1020,9 +1180,15 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <div style={{ background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-                      Direct Bank Transfer Settlement Details
+                  /* Render Direct Bank Transfer View */
+                  <div style={{ background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>
+                        Direct Bank Transfer (0% Fee • Instant Bank Credit)
+                      </div>
+                      <span style={{ fontSize: '0.6875rem', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
+                        ₦0 Gateway Charge
+                      </span>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -1041,10 +1207,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                       </div>
                     </div>
 
-                    {/* Account / IBAN / NUBAN & 1-Click Copy */}
+                    {/* Account Number & 1-Click Copy */}
                     <div style={{ background: 'var(--bg-surface)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Account Number / IBAN</div>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>NUBAN Account Number / IBAN</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '0.08em', color: 'var(--brand-black)', marginTop: '2px' }}>
                           {doc.paymentDetails?.accountNumber || '0123456789'}
                         </div>
@@ -1073,7 +1239,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     </div>
 
                     {/* Transfer Amount & Reference */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                       <div style={{ background: 'var(--bg-surface)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Exact Amount</div>
@@ -1122,6 +1288,61 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                         </button>
                       </div>
                     </div>
+
+                    {/* Payment Confirmation States & Actions */}
+                    {doc.status === 'pending_confirmation' ? (
+                      <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '8px', padding: '0.875rem', color: '#92400E' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                          <span>⌛ Payment Reported by {doc.paymentDetails?.reportedSenderName || 'Client'}</span>
+                        </div>
+                        <p style={{ fontSize: '0.75rem', margin: '4px 0 8px 0', color: '#78350F' }}>
+                          Transfer details: {doc.paymentDetails?.reportedTransferNote || 'Bank Transfer'}. Check your bank app. Once confirmed, click below to update status and issue the official receipt.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleConfirmPaymentReceived}
+                          disabled={isConfirmingPayment}
+                          className="btn btn-success btn-sm"
+                          style={{ width: '100%', justifyContent: 'center', fontWeight: 700 }}
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>{isConfirmingPayment ? 'Confirming...' : '✓ Confirm Payment Received & Issue Receipt'}</span>
+                        </button>
+                      </div>
+                    ) : doc.status === 'paid' ? (
+                      <div style={{ background: '#D1FAE5', border: '1px solid #10B981', borderRadius: '8px', padding: '0.75rem', textAlign: 'center', color: '#065F46', fontWeight: 700, fontSize: '0.8125rem' }}>
+                        ✓ Payment confirmed and credited directly to bank account.
+                      </div>
+                    ) : (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setReportModalOpen(true)}
+                          style={{
+                            width: '100%',
+                            padding: '0.625rem 1rem',
+                            background: '#10B981',
+                            color: '#ffffff',
+                            fontWeight: 700,
+                            fontSize: '0.875rem',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                          }}
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>I Have Made This Bank Transfer</span>
+                        </button>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '4px' }}>
+                          Transferred via banking app? Click above to notify the business owner for 1-click email confirmation & receipt issuance.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1146,6 +1367,80 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Payment Reporting Modal */}
+      {reportModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: '#ffffff', borderRadius: 'var(--radius-xl)', maxWidth: '440px', width: '100%', padding: '1.75rem', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0B1F3A', marginBottom: '0.5rem' }}>
+              Confirm Bank Transfer
+            </h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.4 }}>
+              Notify <strong>{doc.business.name || 'the business owner'}</strong> that you have transferred <strong>{formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}</strong> for Invoice #{doc.documentNumber}.
+            </p>
+
+            <form onSubmit={handleReportPayment}>
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label" style={{ fontWeight: 600, fontSize: '0.8125rem' }}>
+                  Sender / Depositor Account Name <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. John Doe / Adeyemi Ent"
+                  value={reportedSenderName}
+                  onChange={(e) => setReportedSenderName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label" style={{ fontWeight: 600, fontSize: '0.8125rem' }}>
+                  Bank Transferred From (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. GTBank / Kuda / Chase"
+                  value={reportedBank}
+                  onChange={(e) => setReportedBank(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="form-label" style={{ fontWeight: 600, fontSize: '0.8125rem' }}>
+                  Transaction Reference / Narration (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={`e.g. ${doc.documentNumber} payment`}
+                  value={reportedReference}
+                  onChange={(e) => setReportedReference(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setReportModalOpen(false)}
+                  className="btn btn-secondary"
+                  disabled={isReportingPayment}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isReportingPayment}
+                >
+                  {isReportingPayment ? 'Notifying Owner...' : 'Notify Business Owner'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

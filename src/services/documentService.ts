@@ -323,11 +323,12 @@ class DocumentService {
     if (!currentDoc) throw new Error('Document not found');
 
     const validTransitions: Record<DocumentStatus, DocumentStatus[]> = {
-      draft: ['draft', 'sent', 'viewed', 'cancelled'],
-      sent: ['sent', 'viewed', 'accepted', 'paid', 'overdue', 'cancelled'],
-      viewed: ['viewed', 'accepted', 'paid', 'overdue', 'cancelled'],
-      accepted: ['accepted', 'paid', 'cancelled'],
-      overdue: ['overdue', 'paid', 'cancelled'],
+      draft: ['draft', 'sent', 'viewed', 'pending_confirmation', 'paid', 'cancelled'],
+      sent: ['sent', 'viewed', 'accepted', 'pending_confirmation', 'paid', 'overdue', 'cancelled'],
+      viewed: ['viewed', 'accepted', 'pending_confirmation', 'paid', 'overdue', 'cancelled'],
+      accepted: ['accepted', 'pending_confirmation', 'paid', 'cancelled'],
+      pending_confirmation: ['pending_confirmation', 'paid', 'sent', 'cancelled'],
+      overdue: ['overdue', 'pending_confirmation', 'paid', 'cancelled'],
       paid: ['paid'],
       cancelled: ['cancelled'],
     };

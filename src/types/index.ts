@@ -6,6 +6,7 @@ export type DocumentStatus =
   | 'viewed' 
   | 'accepted' 
   | 'paid' 
+  | 'pending_confirmation'
   | 'overdue' 
   | 'cancelled';
 
