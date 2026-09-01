@@ -53,7 +53,7 @@ export const AdminProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ 
   }
 
   if (!user) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (!isAdmin) {

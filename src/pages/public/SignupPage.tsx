@@ -17,7 +17,6 @@ export const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -49,10 +48,6 @@ export const SignupPage: React.FC = () => {
       showToast('Passwords do not match. Please verify.', 'error');
       return;
     }
-    if (!agreedToTerms) {
-      showToast('Please accept the terms of service to proceed.', 'error');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -68,19 +63,17 @@ export const SignupPage: React.FC = () => {
         return;
       }
 
-      if (user && !session) {
-        // Email confirmation is required by Supabase project settings
-        showToast('Registration successful! Please check your email to confirm your account.', 'info');
-        navigate('/login');
-      } else if (user && session) {
-        // Direct signup without email confirmation
+      if (user && session) {
         showToast('Account created successfully! Welcome to your workspace.', 'success');
+        navigate('/app');
+      } else if (user && !session) {
+        showToast('Account created successfully! Redirecting...', 'success');
         navigate('/app');
       }
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
-        showToast('Connection failed: Unable to reach authentication service. Please check your network or Safari content blockers.', 'error');
+        showToast('Connection failed: Unable to reach authentication service. Please check your network or content blockers.', 'error');
       } else {
         showToast(msg || 'An unexpected error occurred during signup.', 'error');
       }
@@ -117,11 +110,8 @@ export const SignupPage: React.FC = () => {
             <Layers size={22} color="#f59e0b" />
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em' }}>
-            Get Started Free
+            Create Account
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            No credit card required. Free tier access forever.
-          </p>
         </div>
 
         {/* Google Signup Button */}
@@ -165,7 +155,7 @@ export const SignupPage: React.FC = () => {
             required
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="form-group">
               <label className="form-label">
                 Password <span className="required">*</span>
@@ -195,21 +185,8 @@ export const SignupPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-            <input
-              type="checkbox"
-              id="termsCheckbox"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              style={{ marginTop: '3px' }}
-            />
-            <label htmlFor="termsCheckbox" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              I agree to the Terms of Service and understand this is a free foundational tier.
-            </label>
-          </div>
-
           <Button type="submit" variant="primary" isLoading={loading} style={{ width: '100%', padding: '0.75rem' }}>
-            <span>Create Free Account</span>
+            <span>Create Account</span>
             <ArrowRight size={16} />
           </Button>
         </form>
