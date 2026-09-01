@@ -17,7 +17,13 @@ export interface PlatformUserRow {
   email: string;
   name: string;
   role: string;
+  hasBusiness: boolean;
+  businessName?: string;
+  businessCurrency?: string;
+  isOnWaitlist: boolean;
+  plan: 'free' | 'pro';
   createdAt: string;
+  lastSignInAt?: string;
   businessCount: number;
   documentCount: number;
 }
@@ -78,40 +84,30 @@ class AdminService {
     // Parallel queries for platform counters
     const [
       { count: businessCount },
-      { data: documents },
-      { data: payments },
-      { data: expenses },
-      { count: emailsCount },
       { count: usersCount },
+      { count: documentsCount },
+      { count: emailsCount },
+      { data: revenueData },
+      { data: expensesData },
     ] = await Promise.all([
       supabase.from('businesses').select('*', { count: 'exact', head: true }),
-      supabase.from('documents').select('type, total, pdf_storage_path'),
-      supabase.from('payments').select('amount, status'),
-      supabase.from('expenses').select('amount'),
-      supabase.from('email_logs').select('*', { count: 'exact', head: true }),
       supabase.from('user_roles').select('*', { count: 'exact', head: true }),
+      supabase.from('documents').select('*', { count: 'exact', head: true }),
+      supabase.from('email_logs').select('*', { count: 'exact', head: true }),
+      supabase.from('payments').select('amount').eq('status', 'completed'),
+      supabase.from('expenses').select('amount'),
     ]);
 
-    const docs = documents || [];
-    const totalInvoices = docs.filter((d) => d.type === 'invoice').length;
-    const totalQuotes = docs.filter((d) => d.type === 'quote').length;
-    const totalPdfsGenerated = docs.filter((d) => Boolean(d.pdf_storage_path)).length;
-
-    const totalRevenue = (payments || [])
-      .filter((p) => p.status === 'completed')
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-
-    const totalExpenses = (expenses || []).reduce(
-      (sum, e) => sum + (Number(e.amount) || 0),
-      0
-    );
+    const totalRevenue = (revenueData || []).reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+    const totalExpenses = (expensesData || []).reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+    const totalPdfsGenerated = (documentsCount || 0);
 
     return {
-      totalUsers: Math.max(1, usersCount || 0),
+      totalUsers: (usersCount || 0) + (businessCount || 0),
       totalBusinesses: businessCount || 0,
-      totalDocuments: docs.length,
-      totalInvoices,
-      totalQuotes,
+      totalDocuments: documentsCount || 0,
+      totalInvoices: 0,
+      totalQuotes: 0,
       totalRevenue,
       totalExpenses,
       totalPdfsGenerated,
@@ -120,42 +116,70 @@ class AdminService {
   }
 
   /**
-   * Fetches platform users for administration.
+   * Fetches platform users with business status, waitlist status, and plans.
    */
   async getPlatformUsers(): Promise<PlatformUserRow[]> {
-    // 1. Fetch all registered businesses (which represent platform user accounts)
-    const { data: businesses, error: busError } = await supabase
-      .from('businesses')
-      .select('user_id, name, email, created_at');
+    // 1. Try secure Postgres RPC Function (fetches complete auth.users roster for admins)
+    try {
+      const { data: rpcData, error: rpcError } = await (supabase.rpc as any)('get_platform_admin_roster');
+      if (!rpcError && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+        return rpcData.map((u: any) => ({
+          id: u.id,
+          email: u.email,
+          name: u.full_name || u.email.split('@')[0],
+          role: u.role || 'user',
+          hasBusiness: Boolean(u.has_business),
+          businessName: u.business_name || undefined,
+          businessCurrency: u.business_currency || 'NGN',
+          isOnWaitlist: Boolean(u.is_on_waitlist),
+          plan: (u.plan || 'free') as 'free' | 'pro',
+          createdAt: u.created_at,
+          lastSignInAt: u.last_sign_in_at || undefined,
+          businessCount: u.has_business ? 1 : 0,
+          documentCount: 0,
+        }));
+      }
+    } catch {
+      // Proceed to fallback
+    }
 
-    // 2. Fetch all role records
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('user_id, role');
+    // 2. Fallback query (businesses + user_roles + pro_waitlist)
+    const [{ data: businesses }, { data: roles }, { data: waitlist }] = await Promise.all([
+      supabase.from('businesses').select('user_id, name, email, currency, created_at'),
+      supabase.from('user_roles').select('user_id, role'),
+      (supabase as any).from('pro_waitlist').select('user_id, email'),
+    ]);
 
     const roleMap = new Map<string, string>();
     (roles || []).forEach((r) => roleMap.set(r.user_id, r.role));
 
-    if (busError) {
-      console.error('Error fetching platform users:', busError);
-    }
+    const waitlistSet = new Set<string>();
+    (waitlist || []).forEach((w: any) => {
+      if (w.user_id) waitlistSet.add(w.user_id);
+      if (w.email) waitlistSet.add(w.email.toLowerCase());
+    });
 
     const userMap = new Map<string, PlatformUserRow>();
 
-    // Add all registered business accounts as users
+    // Add registered business accounts
     (businesses || []).forEach((b) => {
       userMap.set(b.user_id, {
         id: b.user_id,
         email: b.email || `user-${b.user_id.slice(0, 8)}@bizpilotly.com`,
         name: b.name || `User (${b.user_id.slice(0, 6)})`,
         role: (roleMap.get(b.user_id) as any) || 'user',
+        hasBusiness: true,
+        businessName: b.name,
+        businessCurrency: b.currency || 'NGN',
+        isOnWaitlist: waitlistSet.has(b.user_id) || (b.email ? waitlistSet.has(b.email.toLowerCase()) : false),
+        plan: 'free',
         createdAt: b.created_at,
         businessCount: 1,
         documentCount: 0,
       });
     });
 
-    // Add any explicit role accounts
+    // Add explicit role accounts
     (roles || []).forEach((r) => {
       if (!userMap.has(r.user_id)) {
         userMap.set(r.user_id, {
@@ -163,6 +187,9 @@ class AdminService {
           email: `admin-${r.user_id.slice(0, 8)}@bizpilotly.com`,
           name: `Admin Account (${r.user_id.slice(0, 6)})`,
           role: r.role as any,
+          hasBusiness: false,
+          isOnWaitlist: waitlistSet.has(r.user_id),
+          plan: 'free',
           createdAt: new Date().toISOString(),
           businessCount: 0,
           documentCount: 0,
