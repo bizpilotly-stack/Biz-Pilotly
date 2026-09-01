@@ -1,9 +1,18 @@
 export function formatCurrency(
   amount: number,
-  currencyCode: string = 'USD',
+  currencyCode: string = 'NGN',
   currencySymbol?: string
 ): string {
-  const symbol = currencySymbol || (currencyCode === 'USD' ? '$' : currencyCode === 'EUR' ? '€' : currencyCode === 'GBP' ? '£' : '$');
+  const symbol = currencySymbol || (
+    currencyCode === 'NGN' ? '₦' :
+    currencyCode === 'USD' ? '$' :
+    currencyCode === 'GBP' ? '£' :
+    currencyCode === 'EUR' ? '€' :
+    currencyCode === 'CAD' ? 'CA$' :
+    currencyCode === 'GHS' ? 'GH₵' :
+    currencyCode === 'KES' ? 'KSh' :
+    currencyCode === 'ZAR' ? 'R' : '₦'
+  );
   const formattedNumber = Math.abs(amount).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

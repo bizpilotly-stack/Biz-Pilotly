@@ -1,10 +1,10 @@
 import { CurrencyConfig } from './types';
 
 export const SUPPORTED_CURRENCIES: CurrencyConfig[] = [
-  { code: 'USD', symbol: '$', name: 'US Dollar', locale: 'en-US' },
-  { code: 'EUR', symbol: '€', name: 'Euro', locale: 'de-DE' },
-  { code: 'GBP', symbol: '£', name: 'British Pound', locale: 'en-GB' },
   { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', locale: 'en-NG' },
+  { code: 'USD', symbol: '$', name: 'US Dollar', locale: 'en-US' },
+  { code: 'GBP', symbol: '£', name: 'British Pound', locale: 'en-GB' },
+  { code: 'EUR', symbol: '€', name: 'Euro', locale: 'de-DE' },
   { code: 'CAD', symbol: 'CA$', name: 'Canadian Dollar', locale: 'en-CA' },
   { code: 'AUD', symbol: 'AU$', name: 'Australian Dollar', locale: 'en-AU' },
   { code: 'ZAR', symbol: 'R', name: 'South African Rand', locale: 'en-ZA' },
@@ -17,7 +17,7 @@ export const SUPPORTED_CURRENCIES: CurrencyConfig[] = [
 
 export function getCurrencyConfig(code: string): CurrencyConfig {
   const match = SUPPORTED_CURRENCIES.find((c) => c.code.toUpperCase() === code.toUpperCase());
-  return match || { code: code.toUpperCase(), symbol: '$', name: code, locale: 'en-US' };
+  return match || { code: code.toUpperCase(), symbol: '₦', name: code, locale: 'en-NG' };
 }
 
 /**
@@ -25,7 +25,7 @@ export function getCurrencyConfig(code: string): CurrencyConfig {
  */
 export function formatCurrencyAmount(
   amount: number,
-  currencyCode: string = 'USD',
+  currencyCode: string = 'NGN',
   customSymbol?: string
 ): string {
   const safeAmt = Number.isFinite(amount) ? amount : 0;

@@ -9,6 +9,7 @@ import {
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
+import { NIGERIAN_BANKS } from '../../constants/nigerianBanks';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -216,23 +217,41 @@ export const BusinessSettingsPage: React.FC = () => {
           <div className="card-header">
             <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <CreditCard size={18} color="#1d4ed8" />
-              <span>Bank Settlement Details (Appears on Invoices)</span>
+              <span>Nigerian Bank Settlement Details (Printed on Invoices)</span>
             </h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+              These bank account details will appear clearly at the bottom of all generated invoices for direct client bank transfers.
+            </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input
-              label="Bank Institution Name"
-              value={settings.bankDetails.bankName}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  bankDetails: { ...settings.bankDetails, bankName: e.target.value },
-                })
-              }
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label">
+                Bank Institution (Nigeria) <span className="required">*</span>
+              </label>
+              <select
+                className="form-select"
+                value={settings.bankDetails.bankName || ''}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    bankDetails: { ...settings.bankDetails, bankName: e.target.value },
+                  })
+                }
+              >
+                <option value="">-- Select Nigerian Bank --</option>
+                {NIGERIAN_BANKS.map((b) => (
+                  <option key={b.code} value={b.name}>
+                    {b.name}
+                  </option>
+                ))}
+                <option value="Other Bank">Other / International Bank</option>
+              </select>
+            </div>
+
             <Input
               label="Account Beneficiary Name"
+              placeholder="e.g. Adeyemi Design Ltd / John Doe"
               value={settings.bankDetails.accountName}
               onChange={(e) =>
                 setSettings({
@@ -240,22 +259,46 @@ export const BusinessSettingsPage: React.FC = () => {
                   bankDetails: { ...settings.bankDetails, accountName: e.target.value },
                 })
               }
+              required
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>NUBAN Account Number (10 Digits) <span className="required">*</span></span>
+                {settings.bankDetails.accountNumber && (
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: settings.bankDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b',
+                    }}
+                  >
+                    {settings.bankDetails.accountNumber.length}/10 digits
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. 0123456789"
+                maxLength={10}
+                value={settings.bankDetails.accountNumber}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setSettings({
+                    ...settings,
+                    bankDetails: { ...settings.bankDetails, accountNumber: cleaned },
+                  });
+                }}
+                required
+              />
+            </div>
+
             <Input
-              label="Account / IBAN Number"
-              value={settings.bankDetails.accountNumber}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  bankDetails: { ...settings.bankDetails, accountNumber: e.target.value },
-                })
-              }
-            />
-            <Input
-              label="Routing Code / SWIFT / BIC"
+              label="Sort Code / Branch (Optional)"
+              placeholder="Optional branch or routing code"
               value={settings.bankDetails.routingCode}
               onChange={(e) =>
                 setSettings({

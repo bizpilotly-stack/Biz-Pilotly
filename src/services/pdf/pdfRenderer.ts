@@ -295,7 +295,7 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
       notesY += 3.5;
     }
     if (doc.paymentDetails.accountNumber) {
-      pdf.text(`Account / IBAN: ${doc.paymentDetails.accountNumber}`, margin, notesY);
+      pdf.text(`Account (NUBAN): ${doc.paymentDetails.accountNumber}`, margin, notesY);
       notesY += 3.5;
     }
     const routing = doc.paymentDetails.routingOrIban || (doc.paymentDetails as any).routingCode;

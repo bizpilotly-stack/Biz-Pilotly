@@ -26,6 +26,7 @@ import {
 } from '../../services/documentService';
 import { clientService } from '../../services/clientService';
 import { pdfService } from '../../services/pdf';
+import { NIGERIAN_BANKS } from '../../constants/nigerianBanks';
 import { Client } from '../../types';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
@@ -684,6 +685,88 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 placeholder="Payment terms, late fee provisions, or turnaround timeline..."
               />
             </div>
+
+            {/* Bank Details on Document */}
+            <div className="form-group" style={{ background: 'var(--bg-surface-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '1rem' }}>
+              <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Building size={16} color="#0B1F3A" />
+                <span>Bank Settlement Details (Appears on Document)</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Bank Name (Nigeria)</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.8125rem' }}
+                    value={doc.paymentDetails?.bankName || ''}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        paymentDetails: {
+                          ...doc.paymentDetails,
+                          bankName: e.target.value,
+                        },
+                      })
+                    }
+                  >
+                    <option value="">-- Select Bank --</option>
+                    {NIGERIAN_BANKS.map((b) => (
+                      <option key={b.code} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                    <option value="Other Bank">Other / International Bank</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Beneficiary Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ fontSize: '0.8125rem' }}
+                    placeholder="Account Name"
+                    value={doc.paymentDetails?.accountName || ''}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        paymentDetails: {
+                          ...doc.paymentDetails,
+                          accountName: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>NUBAN Account Number (10 Digits)</span>
+                  {doc.paymentDetails?.accountNumber && (
+                    <span style={{ color: doc.paymentDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b', fontWeight: 600 }}>
+                      {doc.paymentDetails.accountNumber.length}/10 digits
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}
+                  placeholder="e.g. 0123456789"
+                  maxLength={10}
+                  value={doc.paymentDetails?.accountNumber || ''}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setDoc({
+                      ...doc,
+                      paymentDetails: {
+                        ...doc.paymentDetails,
+                        accountNumber: cleaned,
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* =================================================================
@@ -810,11 +893,11 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     </div>
                   )}
 
-                  {doc.paymentDetails && (
-                    <div className="doc-sheet-bank-box">
-                      <div style={{ fontWeight: 700, color: '#090d16', marginBottom: '2px' }}>Payment Instructions:</div>
-                      <div>Bank: {doc.paymentDetails.bankName} | Beneficiary: {doc.paymentDetails.accountName}</div>
-                      <div>Account: {doc.paymentDetails.accountNumber} | Routing / IBAN: {doc.paymentDetails.routingOrIban}</div>
+                  {doc.paymentDetails && (doc.paymentDetails.bankName || doc.paymentDetails.accountNumber) && (
+                    <div className="doc-sheet-bank-box" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 14px', marginBottom: '12px', fontSize: '11px', color: '#1e293b' }}>
+                      <div style={{ fontWeight: 700, color: '#090d16', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '10px' }}>Direct Bank Settlement Instructions:</div>
+                      <div><strong>Bank:</strong> {doc.paymentDetails.bankName || 'Nigerian Bank'} &nbsp;|&nbsp; <strong>Beneficiary:</strong> {doc.paymentDetails.accountName || doc.business?.name || 'Business Account'}</div>
+                      <div><strong>NUBAN / Account:</strong> <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.06em' }}>{doc.paymentDetails.accountNumber || 'N/A'}</span>{doc.paymentDetails.routingOrIban ? ` | Sort Code: ${doc.paymentDetails.routingOrIban}` : ''}</div>
                     </div>
                   )}
 

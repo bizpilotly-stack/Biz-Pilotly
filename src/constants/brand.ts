@@ -7,13 +7,13 @@ export const BRAND_SUBTITLE = 'Simple tools for freelancers and small businesses
 export const SUPPORT_EMAIL = 'support@bizpilotly.com';
 
 export const CURRENCIES = [
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira (₦)' },
   { code: 'USD', symbol: '$', name: 'US Dollar ($)' },
-  { code: 'EUR', symbol: '€', name: 'Euro (€)' },
   { code: 'GBP', symbol: '£', name: 'British Pound (£)' },
+  { code: 'EUR', symbol: '€', name: 'Euro (€)' },
   { code: 'CAD', symbol: 'CA$', name: 'Canadian Dollar (CA$)' },
   { code: 'AUD', symbol: 'AU$', name: 'Australian Dollar (AU$)' },
   { code: 'ZAR', symbol: 'R', name: 'South African Rand (R)' },
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira (₦)' },
   { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling (KSh)' },
   { code: 'GHS', symbol: 'GH₵', name: 'Ghanaian Cedi (GH₵)' },
   { code: 'INR', symbol: '₹', name: 'Indian Rupee (₹)' },
