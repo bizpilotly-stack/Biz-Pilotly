@@ -9,7 +9,9 @@ import {
   UploadCloud,
   Trash2,
   Image as ImageIcon,
+  PenTool,
 } from 'lucide-react';
+import { DigitalSignatureCanvas } from '../../components/documents/DigitalSignatureCanvas';
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
@@ -30,6 +32,7 @@ export const BusinessSettingsPage: React.FC = () => {
   const [resolvingBank, setResolvingBank] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>('NG');
   const [isCustomBankMode, setIsCustomBankMode] = useState<boolean>(false);
+  const [sigModalOpen, setSigModalOpen] = useState(false);
 
   const countryProfile = getCountryProfile(selectedCountry);
 
@@ -217,6 +220,80 @@ export const BusinessSettingsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleRemoveLogo}
+                  className="btn btn-secondary btn-sm"
+                  style={{ color: '#EF4444' }}
+                >
+                  <Trash2 size={14} />
+                  <span>Remove</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Official Default Digital E-Signature */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div
+                style={{
+                  width: '72px',
+                  height: '72px',
+                  borderRadius: '12px',
+                  border: '2px dashed #CBD5E1',
+                  background: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                {settings.signature?.image ? (
+                  <img
+                    src={settings.signature.image}
+                    alt="Digital Signature"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                  />
+                ) : (
+                  <PenTool size={26} color="#94A3B8" />
+                )}
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0B1F3A' }}>Official Default E-Signature</div>
+                  {settings.signature?.image && (
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, background: '#D1FAE5', color: '#065F46', padding: '2px 6px', borderRadius: '4px' }}>
+                      Auto-Applied
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '2px' }}>
+                  {settings.signature?.image
+                    ? `Signed by ${settings.signature.signerName}. Automatically applied to all new invoices, contracts & proposals.`
+                    : 'Draw or type your legal digital signature once to auto-sign all documents.'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <button
+                type="button"
+                onClick={() => setSigModalOpen(true)}
+                className="btn btn-secondary btn-sm"
+                style={{ gap: '0.375rem' }}
+              >
+                <PenTool size={14} />
+                <span>{settings.signature?.image ? 'Edit Signature' : 'Add E-Signature'}</span>
+              </button>
+
+              {settings.signature?.image && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettings({ ...settings, signature: undefined });
+                    showToast('Signature removed.', 'info');
+                  }}
                   className="btn btn-secondary btn-sm"
                   style={{ color: '#EF4444' }}
                 >
@@ -591,6 +668,20 @@ export const BusinessSettingsPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      {/* Digital Signature Canvas Modal */}
+      <DigitalSignatureCanvas
+        isOpen={sigModalOpen}
+        onClose={() => setSigModalOpen(false)}
+        defaultSignerName={settings.name || ''}
+        onSave={(sig) => {
+          setSettings({
+            ...settings,
+            signature: sig,
+          });
+          showToast('✓ Official signature captured! Click "Save All Settings" to store.', 'success');
+        }}
+      />
     </div>
   );
 };

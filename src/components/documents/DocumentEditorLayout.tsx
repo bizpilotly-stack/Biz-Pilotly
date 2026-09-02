@@ -39,10 +39,11 @@ import {
   formatCurrencyAmount,
 } from '../../services/documentService';
 import { clientService } from '../../services/clientService';
+import { businessService } from '../../services/businessService';
 import { emailService } from '../../services/emailService';
 import { pdfService } from '../../services/pdf';
 import { NIGERIAN_BANKS } from '../../constants/nigerianBanks';
-import { Client } from '../../types';
+import { Client, BusinessSettings } from '../../types';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { useToast } from '../common/Toast';
@@ -199,9 +200,31 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
   }, [documentType, user, isApp]);
 
-  // Load clients asynchronously from service boundary
+  // Load clients & business settings asynchronously (auto-apply signature & logo)
   useEffect(() => {
     clientService.getClients().then(setClients).catch(console.error);
+    businessService.getSettings().then((settings: BusinessSettings | null) => {
+      if (settings) {
+        setDoc((prev) => ({
+          ...prev,
+          business: {
+            ...prev.business,
+            name: prev.business.name || settings.name,
+            logo: prev.business.logo || settings.logo,
+            email: prev.business.email || settings.email,
+            phone: prev.business.phone || settings.phone,
+            address: prev.business.address || settings.address,
+          },
+          signature: prev.signature || settings.signature,
+          paymentDetails: {
+            ...prev.paymentDetails,
+            bankName: prev.paymentDetails?.bankName || settings.bankDetails?.bankName,
+            accountName: prev.paymentDetails?.accountName || settings.bankDetails?.accountName,
+            accountNumber: prev.paymentDetails?.accountNumber || settings.bankDetails?.accountNumber,
+          },
+        }));
+      }
+    }).catch(console.error);
   }, []);
 
   // Auto-save draft on doc state changes (debounced by 300ms)
@@ -988,7 +1011,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 </select>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.375rem' }}>
                   {doc.paymentDetails?.paymentPreference === 'manual' && '✓ ₦0 fees. Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
-                  {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Apple Pay, or USSD with automated instant receipt.'}
+                  {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Bank Transfer, or USSD with automated instant receipt.'}
                   {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between 0% Bank Transfer and Instant Card Checkout.'}
                 </div>
               </div>
@@ -1362,7 +1385,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1rem', lineHeight: 1.4 }}>
-                      Clients can pay this invoice instantly using Nigerian & International Debit Cards (Visa, Mastercard, Verve, Amex), Virtual Bank Transfer, USSD codes, or Apple Pay.
+                      Clients can pay this invoice instantly using Nigerian & International Debit Cards (Visa, Mastercard, Verve), Bank Transfer, or USSD codes.
                     </p>
                     <button
                       type="button"

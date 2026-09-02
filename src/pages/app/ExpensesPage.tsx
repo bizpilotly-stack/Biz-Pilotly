@@ -4,6 +4,7 @@ import {
   Plus,
   Search,
   Trash2,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Expense, ExpenseCategory } from '../../types';
 import { expenseService } from '../../services/expenseService';
@@ -114,6 +115,36 @@ export const ExpensesPage: React.FC = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    if (expenses.length === 0) {
+      showToast('No expense records available to export.', 'info');
+      return;
+    }
+
+    const headers = ['Date', 'Title / Description', 'Category', 'Vendor / Supplier', 'Amount', 'Currency', 'Payment Method', 'Notes'];
+    const rows = expenses.map((e) => [
+      e.date,
+      `"${e.title.replace(/"/g, '""')}"`,
+      e.category,
+      `"${(e.vendor || '').replace(/"/g, '""')}"`,
+      e.amount,
+      e.currency,
+      e.paymentMethod,
+      `"${(e.notes || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `bizpilotly-expenses-tax-report-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✓ Tax Deductible Expenses CSV exported successfully!', 'success');
+  };
+
   return (
     <div>
       <SEO
@@ -125,10 +156,16 @@ export const ExpensesPage: React.FC = () => {
         title="Expenses"
         description="Monitor operating overheads, software licenses, contractor payouts, and tax deductible costs."
         actions={
-          <Button variant="primary" size="sm" onClick={() => setAddModalOpen(true)}>
-            <Plus size={14} />
-            <span>Add Expense</span>
-          </Button>
+          <div style={{ display: 'flex', gap: '0.625rem' }}>
+            <Button variant="secondary" size="sm" onClick={handleExportCSV} title="Export accountant-ready tax CSV">
+              <FileSpreadsheet size={14} />
+              <span>Export Tax CSV</span>
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setAddModalOpen(true)}>
+              <Plus size={14} />
+              <span>Add Expense</span>
+            </Button>
+          </div>
         }
       />
 

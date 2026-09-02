@@ -11,6 +11,9 @@ import {
   Trash2,
   AlertCircle,
   X,
+  Globe,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 import { Client } from '../../types';
 import { clientService } from '../../services/clientService';
@@ -216,17 +219,43 @@ export const ClientsPage: React.FC = () => {
                         <Badge status={c.status}>{c.status}</Badge>
                       </td>
                       <td>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClient(c.id, c.name);
-                          }}
-                          className="btn btn-ghost btn-sm btn-icon"
-                          style={{ color: '#ef4444' }}
-                          title="Delete client"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`/portal/${c.id}`, '_blank');
+                            }}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            title="Open Client Portal Statement"
+                          >
+                            <ExternalLink size={15} color="#1d4ed8" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(`${window.location.origin}/portal/${c.id}`);
+                              showToast(`✓ Copied Portal link for ${c.name}!`, 'success');
+                            }}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            title="Copy Client Portal Link"
+                          >
+                            <Copy size={15} color="#475569" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClient(c.id, c.name);
+                            }}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            style={{ color: '#ef4444' }}
+                            title="Delete client"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -275,6 +304,41 @@ export const ClientsPage: React.FC = () => {
                     <span>{selectedClient.address}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Client Portal Action Banner */}
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--radius-md)', padding: '0.875rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Globe size={16} color="#16A34A" />
+                  <div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#166534' }}>Passwordless Client Portal</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#15803D' }}>Live statement of accounts & invoice history</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.375rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/portal/${selectedClient.id}`);
+                      showToast(`✓ Copied Client Portal Link!`, 'success');
+                    }}
+                    className="btn btn-sm"
+                    style={{ background: '#ffffff', color: '#166534', border: '1px solid #86EFAC', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 700 }}
+                  >
+                    <Copy size={12} />
+                    <span>Copy Link</span>
+                  </button>
+                  <a
+                    href={`/portal/${selectedClient.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-sm"
+                    style={{ background: '#16A34A', color: '#ffffff', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    <ExternalLink size={12} />
+                    <span>View</span>
+                  </a>
+                </div>
               </div>
 
               {/* Financial Stats */}

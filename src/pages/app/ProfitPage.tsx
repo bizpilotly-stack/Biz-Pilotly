@@ -4,7 +4,10 @@ import {
   DollarSign,
   Receipt,
   Percent,
+  FileSpreadsheet,
 } from 'lucide-react';
+import { Button } from '../../components/common/Button';
+import { useToast } from '../../components/common/Toast';
 import { ProfitMetrics, MonthlyFinancialSummary } from '../../types';
 import { profitService } from '../../services/profitService';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
@@ -37,6 +40,46 @@ export const ProfitPage: React.FC = () => {
     loadProfitData();
   }, []);
 
+  const { showToast } = useToast();
+
+  const handleExportPnLCSV = () => {
+    if (!metrics || financials.length === 0) {
+      showToast('No financial records available to export.', 'info');
+      return;
+    }
+
+    const headers = ['Month', 'Total Revenue', 'Total Operating Expenses', 'Gross Profit', 'Net Profit', 'Profit Margin (%)'];
+    const rows = financials.map((f) => [
+      f.month,
+      f.revenue,
+      f.expenses,
+      f.grossProfit,
+      f.netProfit,
+      `${f.profitMargin.toFixed(1)}%`,
+    ]);
+
+    // Add summary row
+    rows.push([
+      'TOTAL / YTD',
+      metrics.totalRevenue,
+      metrics.totalExpenses,
+      metrics.grossProfit,
+      metrics.netProfit,
+      `${metrics.profitMargin.toFixed(1)}%`,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `bizpilotly-pnl-accounting-statement-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✓ Profit & Loss Accounting Statement exported successfully!', 'success');
+  };
+
   if (loading || !metrics) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -57,6 +100,12 @@ export const ProfitPage: React.FC = () => {
       <PageHeader
         title="Profit & Performance"
         description="Comprehensive analysis of your realized revenue, expense overheads, and net profit margins."
+        actions={
+          <Button variant="secondary" size="sm" onClick={handleExportPnLCSV} title="Export P&L Statement for tax filing">
+            <FileSpreadsheet size={14} />
+            <span>Export P&L Statement CSV</span>
+          </Button>
+        }
       />
 
       {/* Top 4 KPI Metric Cards */}

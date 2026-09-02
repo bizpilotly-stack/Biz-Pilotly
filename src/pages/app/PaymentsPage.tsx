@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Payment } from '../../types';
 import { paymentService } from '../../services/paymentService';
@@ -93,6 +94,36 @@ export const PaymentsPage: React.FC = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    if (payments.length === 0) {
+      showToast('No payment records available to export.', 'info');
+      return;
+    }
+
+    const headers = ['Date', 'Invoice Number', 'Client Name', 'Amount', 'Currency', 'Payment Method', 'Reference', 'Status'];
+    const rows = payments.map((p) => [
+      p.date,
+      p.invoiceNumber,
+      `"${p.clientName.replace(/"/g, '""')}"`,
+      p.amount,
+      p.currency,
+      p.method,
+      `"${(p.reference || '').replace(/"/g, '""')}"`,
+      p.status,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `bizpilotly-payments-accounting-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✓ Accounting CSV exported successfully!', 'success');
+  };
+
   return (
     <div>
       <SEO
@@ -104,10 +135,16 @@ export const PaymentsPage: React.FC = () => {
         title="Payments"
         description="Comprehensive ledger of all incoming settlements, client deposits, and outstanding receivables."
         actions={
-          <Button variant="primary" size="sm" onClick={() => setRecordModalOpen(true)}>
-            <Plus size={14} />
-            <span>Record Payment</span>
-          </Button>
+          <div style={{ display: 'flex', gap: '0.625rem' }}>
+            <Button variant="secondary" size="sm" onClick={handleExportCSV} title="Export accountant-ready CSV ledger">
+              <FileSpreadsheet size={14} />
+              <span>Export Accounting CSV</span>
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setRecordModalOpen(true)}>
+              <Plus size={14} />
+              <span>Record Payment</span>
+            </Button>
+          </div>
         }
       />
 

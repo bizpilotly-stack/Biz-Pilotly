@@ -207,6 +207,19 @@ export interface BusinessSettings {
     accountNumber: string;
     routingCode: string;
   };
+  signature?: {
+    image: string;
+    signerName: string;
+    signedAt: string;
+  };
+  brands?: {
+    id: string;
+    name: string;
+    email: string;
+    currency: string;
+    logo?: string;
+    isDefault?: boolean;
+  }[];
 }
 
 export interface CalculatorMeta {
