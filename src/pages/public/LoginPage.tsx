@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Layers, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../services/supabase';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -48,38 +47,22 @@ export const LoginPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // 1. Guard check: Verify that this account is already registered
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-
-      if (!existingProfile) {
-        const { data: existingBusiness } = await supabase
-          .from('businesses')
-          .select('id, email')
-          .eq('email', cleanEmail)
-          .maybeSingle();
-
-        if (!existingBusiness) {
-          showToast('No account found for this email. You must sign up first before signing in.', 'error');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 2. Perform authentication
+      // 1. Direct Supabase authentication
       const { user, error } = await signIn(cleanEmail, password);
       if (error) {
-        if (error.message.toLowerCase().includes('invalid login credentials') || error.message.toLowerCase().includes('user not found')) {
-          showToast('Invalid password. Please check your credentials or reset your password.', 'error');
-        } else if (error.message.toLowerCase().includes('email not confirmed')) {
-          showToast('Please confirm your email address before signing in.', 'info');
-        } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
-          showToast('Network error: Unable to reach authentication service. Please check your internet or ad-blockers.', 'error');
+        const errorLower = error.message.toLowerCase();
+        if (
+          errorLower.includes('invalid login credentials') ||
+          errorLower.includes('user not found') ||
+          errorLower.includes('invalid grant')
+        ) {
+          showToast('Invalid email or password. Please verify your credentials or sign up if you do not have an account.', 'error');
+        } else if (errorLower.includes('email not confirmed')) {
+          showToast('Please verify your email address before signing in.', 'info');
+        } else if (errorLower.includes('fetch') || errorLower.includes('network')) {
+          showToast('Network error: Unable to reach authentication service. Please check your connection.', 'error');
         } else {
-          showToast(error.message || 'Login failed. If you have not created an account, please sign up first.', 'error');
+          showToast(error.message || 'Sign in failed. Please try again.', 'error');
         }
         return;
       }
@@ -121,7 +104,7 @@ export const LoginPage: React.FC = () => {
       return;
     }
     try {
-      const { error } = await resetPassword(email);
+      const { error } = await resetPassword(email.trim().toLowerCase());
       if (error) {
         showToast(error.message, 'error');
       } else {
@@ -142,18 +125,18 @@ export const LoginPage: React.FC = () => {
 
       <div style={{ width: '100%', maxWidth: '440px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
         <div className="text-center" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'inline-flex', width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-black)', color: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'inline-flex', width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-black)', color: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
             <Layers size={22} color="#f59e0b" />
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em' }}>
-            Welcome Back
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}>
+            Sign In
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            Enter your credentials to access your dashboard.
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.375rem' }}>
+            Access your tools, client ledgers, and documents.
           </p>
         </div>
 
-        {/* Google OAuth Button */}
+        {/* Google Login Button */}
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -167,7 +150,7 @@ export const LoginPage: React.FC = () => {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
           </svg>
-          <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+          <span>{googleLoading ? 'Connecting to Google...' : 'Sign in with Google'}</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -186,13 +169,15 @@ export const LoginPage: React.FC = () => {
             required
           />
 
-          <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <label className="form-label">Password</label>
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+              <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>
+                Password <span className="required">*</span>
+              </label>
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                style={{ background: 'none', border: 'none', color: 'var(--brand-navy-600)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.75rem', color: 'var(--brand-navy-600)', cursor: 'pointer', fontWeight: 600 }}
               >
                 Forgot password?
               </button>
@@ -201,7 +186,7 @@ export const LoginPage: React.FC = () => {
               <input
                 type={showPassword ? 'text' : 'password'}
                 className="form-input"
-                placeholder="Enter password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -210,16 +195,30 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          <Button type="submit" variant="primary" isLoading={loading} style={{ width: '100%', marginTop: '1rem', padding: '0.75rem' }}>
-            <span>Sign In</span>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={loading}
+            style={{ width: '100%', padding: '0.75rem' }}
+          >
+            <span>Sign In to Workspace</span>
             <ArrowRight size={16} />
           </Button>
         </form>
@@ -227,7 +226,7 @@ export const LoginPage: React.FC = () => {
         <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '1.5rem' }}>
           Don't have an account yet?{' '}
           <Link to="/signup" style={{ color: 'var(--brand-navy-600)', fontWeight: 600 }}>
-            Sign up free
+            Sign up
           </Link>
         </p>
       </div>

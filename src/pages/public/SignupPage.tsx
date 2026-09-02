@@ -3,9 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers, ArrowRight, Eye, EyeOff, Check, X, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../services/supabase';
 import { PRICING_PLANS, PlanTier, PricingCurrency, getStoredCurrency } from '../../config/pricing';
-import { PlanConfirmationModal } from '../../components/subscription/PlanConfirmationModal';
+import { subscriptionService } from '../../services/subscriptionService';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -33,10 +32,6 @@ export const SignupPage: React.FC = () => {
   const [currency] = useState<PricingCurrency>(getStoredCurrency());
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  // Plan Confirmation Modal State
-  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
-  const [createdUser, setCreatedUser] = useState<{ id: string; email?: string | null; name?: string } | null>(null);
 
   // Live password validation
   const pwdValidation = useMemo(() => validatePasswordStrength(password), [password]);
@@ -83,32 +78,7 @@ export const SignupPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // 1. Guard check: Pre-check if this email is already registered in profiles or businesses
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-
-      if (existingProfile) {
-        showToast('This email is already registered. Please sign in to your existing account.', 'error');
-        setLoading(false);
-        return;
-      }
-
-      const { data: existingBusiness } = await supabase
-        .from('businesses')
-        .select('id, email')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-
-      if (existingBusiness) {
-        showToast('This email is already registered. Please sign in to your existing account.', 'error');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Perform Supabase signup
+      // 1. Perform Supabase signup
       const { user, error } = await signUp(cleanEmail, password, name.trim());
       if (error) {
         const errorLower = error.message.toLowerCase();
@@ -131,17 +101,26 @@ export const SignupPage: React.FC = () => {
         return;
       }
 
-      const userInfo = { id: user?.id || `user_${Date.now()}`, email: cleanEmail, name: name.trim() };
+      const userId = user?.id || `user_${Date.now()}`;
 
-      // 3. Free Starter signup vs Paid Trial signup
-      if (selectedPlanId === 'free') {
-        showToast('Welcome to BizPilotly! Your free account is ready.', 'success');
-        navigate('/app');
+      // 2. Automatically start 15-Day Free Trial if Pro or Business Suite selected
+      if (selectedPlanId !== 'free') {
+        try {
+          await subscriptionService.start15DayTrial(
+            { id: userId, email: cleanEmail, name: name.trim() },
+            selectedPlanId,
+            currency
+          );
+        } catch {
+          // Graceful fallback
+        }
+        showToast(`🎉 Account created! 15-Day ${selectedPlanId === 'business' ? 'Business Suite' : 'Professional'} Trial activated.`, 'success');
       } else {
-        // Open the 15-day trial confirmation modal
-        setCreatedUser(userInfo);
-        setConfirmationModalOpen(true);
+        showToast('🎉 Welcome to BizPilotly! Your account is ready.', 'success');
       }
+
+      // 3. Smooth transition to dashboard
+      navigate('/app', { replace: true });
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
@@ -186,7 +165,7 @@ export const SignupPage: React.FC = () => {
             Create Your Account
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.375rem' }}>
-            Choose your plan to start with all financial calculators and document builders.
+            Start with all financial calculators, document builders, and client tools.
           </p>
         </div>
 
@@ -194,7 +173,7 @@ export const SignupPage: React.FC = () => {
         <div style={{ marginBottom: '1.75rem' }}>
           <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             <Sparkles size={14} color="#F59E0B" />
-            <span>Select Your Starting Plan:</span>
+            <span>Select Your Plan:</span>
           </label>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem' }}>
@@ -421,18 +400,6 @@ export const SignupPage: React.FC = () => {
           </Link>
         </p>
       </div>
-
-      {/* Plan Confirmation Modal for 15-Day Trial */}
-      {createdUser && selectedPlanId !== 'free' && (
-        <PlanConfirmationModal
-          isOpen={confirmationModalOpen}
-          planTier={selectedPlanId as 'pro' | 'business'}
-          currency={currency}
-          user={createdUser}
-          onConfirm={() => navigate('/app')}
-          onCancel={() => navigate('/app')}
-        />
-      )}
     </div>
   );
 };
