@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers, ArrowRight, Eye, EyeOff, Check, X, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
-import { subscriptionService } from '../../services/subscriptionService';
-import { waitlistService } from '../../services/waitlistService';
+import { PRICING_PLANS, PlanTier, PricingCurrency, getStoredCurrency } from '../../config/pricing';
+import { PlanConfirmationModal } from '../../components/subscription/PlanConfirmationModal';
 import { SEO } from '../../components/common/SEO';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -14,9 +14,14 @@ import { validatePasswordStrength } from '../../utils/formatters';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signUp, signInWithGoogle } = useAuth();
   const { showToast } = useToast();
-  const plans = subscriptionService.getPlans();
+
+  const planFromUrl = (searchParams.get('plan') || '').toLowerCase();
+  const initialPlan: PlanTier = planFromUrl === 'free' || planFromUrl === 'pro' || planFromUrl === 'business'
+    ? planFromUrl
+    : 'pro';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,15 +29,27 @@ export const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<'free' | 'pro' | 'business'>('pro');
+  const [selectedPlanId, setSelectedPlanId] = useState<PlanTier>(initialPlan);
+  const [currency] = useState<PricingCurrency>(getStoredCurrency());
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Plan Confirmation Modal State
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
+  const [createdUser, setCreatedUser] = useState<{ id: string; email?: string | null; name?: string } | null>(null);
 
   // Live password validation
   const pwdValidation = useMemo(() => validatePasswordStrength(password), [password]);
 
-  // Detect OAuth error parameters in URL (e.g. returned from Google/Supabase)
-  React.useEffect(() => {
+  // Sync plan if URL param changes
+  useEffect(() => {
+    if (planFromUrl === 'free' || planFromUrl === 'pro' || planFromUrl === 'business') {
+      setSelectedPlanId(planFromUrl);
+    }
+  }, [planFromUrl]);
+
+  // Detect OAuth error parameters in URL
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const errorDesc = params.get('error_description') || hashParams.get('error_description');
@@ -92,7 +109,7 @@ export const SignupPage: React.FC = () => {
       }
 
       // 2. Perform Supabase signup
-      const { user, session, error } = await signUp(cleanEmail, password, name.trim());
+      const { user, error } = await signUp(cleanEmail, password, name.trim());
       if (error) {
         const errorLower = error.message.toLowerCase();
         if (
@@ -102,43 +119,33 @@ export const SignupPage: React.FC = () => {
         ) {
           showToast('This email is already registered. Please sign in to your existing account.', 'error');
         } else if (errorLower.includes('fetch') || errorLower.includes('network')) {
-          showToast('Network error: Unable to connect to authentication server. Check your connection or disable ad-blockers.', 'error');
+          showToast('Network error: Unable to connect to authentication server. Check your connection.', 'error');
         } else {
           showToast(error.message || 'Failed to create account. Please try again.', 'error');
         }
         return;
       }
 
-      // Check if Supabase returned a user without creating a new session (existing user with email confirmation enabled)
       if (user && user.identities && user.identities.length === 0) {
         showToast('This email is already registered. Please sign in instead.', 'error');
         return;
       }
 
-      // 3. If user selected Pro or Business Suite, record 15-day trial reservation
-      if (selectedPlanId !== 'free') {
-        try {
-          await waitlistService.joinWaitlist({
-            email: cleanEmail,
-            plan: selectedPlanId === 'business' ? 'Business Suite (15-Day Free Trial)' : 'Professional (15-Day Free Trial)',
-            source: 'signup_tier_selector',
-          });
-        } catch {
-          // Non-blocking fallback
-        }
-      }
+      const userInfo = { id: user?.id || `user_${Date.now()}`, email: cleanEmail, name: name.trim() };
 
-      if (user && session) {
-        showToast(`Account created! 15-day trial activated for ${selectedPlanId.toUpperCase()} tier.`, 'success');
+      // 3. Free Starter signup vs Paid Trial signup
+      if (selectedPlanId === 'free') {
+        showToast('Welcome to BizPilotly! Your free account is ready.', 'success');
         navigate('/app');
-      } else if (user && !session) {
-        showToast('Account created successfully! Redirecting...', 'success');
-        navigate('/app');
+      } else {
+        // Open the 15-day trial confirmation modal
+        setCreatedUser(userInfo);
+        setConfirmationModalOpen(true);
       }
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
-        showToast('Connection failed: Unable to reach authentication service. Please check your network or content blockers.', 'error');
+        showToast('Connection failed: Unable to reach authentication service.', 'error');
       } else {
         showToast(msg || 'An unexpected error occurred during signup.', 'error');
       }
@@ -170,7 +177,7 @@ export const SignupPage: React.FC = () => {
         canonical="https://bizpilotly.com/signup"
       />
 
-      <div style={{ width: '100%', maxWidth: '580px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
+      <div style={{ width: '100%', maxWidth: '580px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl, 20px)', padding: '2.5rem', boxShadow: 'var(--shadow-md)' }}>
         <div className="text-center" style={{ marginBottom: '1.75rem' }}>
           <div style={{ display: 'inline-flex', width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-black)', color: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
             <Layers size={22} color="#f59e0b" />
@@ -183,24 +190,26 @@ export const SignupPage: React.FC = () => {
           </p>
         </div>
 
-        {/* 3-Tier Plan Selector with 15-Day Free Trial */}
+        {/* 3-Tier Plan Selector with 15-Day Free Trial Badges */}
         <div style={{ marginBottom: '1.75rem' }}>
           <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             <Sparkles size={14} color="#F59E0B" />
-            <span>Select Your Starting Tier (15-Day Free Trial on Paid Plans):</span>
+            <span>Select Your Starting Plan:</span>
           </label>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem' }}>
-            {plans.map((p) => {
+            {PRICING_PLANS.map((p) => {
               const isSelected = selectedPlanId === p.id;
+              const price = p.prices[currency];
+
               return (
                 <div
                   key={p.id}
                   onClick={() => setSelectedPlanId(p.id)}
                   style={{
                     border: isSelected ? '2px solid #0B1F3A' : '1px solid #E2E8F0',
-                    background: isSelected ? '#F8FAFC' : '#ffffff',
-                    borderRadius: 'var(--radius-lg)',
+                    background: isSelected ? 'var(--bg-surface-muted, #F8FAFC)' : '#ffffff',
+                    borderRadius: 'var(--radius-lg, 12px)',
                     padding: '0.75rem 0.5rem',
                     textAlign: 'center',
                     cursor: 'pointer',
@@ -208,14 +217,14 @@ export const SignupPage: React.FC = () => {
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  {p.badge && (
+                  {p.trialDays > 0 && (
                     <div style={{ position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#F59E0B', color: '#ffffff', fontSize: '0.5625rem', fontWeight: 800, padding: '1px 6px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
                       15D Trial
                     </div>
                   )}
                   <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: '#0B1F3A' }}>{p.name}</div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0B1F3A', marginTop: '2px' }}>{p.priceNGN}</div>
-                  <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>({p.priceUSD}) / mo</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0B1F3A', marginTop: '2px' }}>{price.formatted}</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>/ month</div>
                 </div>
               );
             })}
@@ -399,7 +408,7 @@ export const SignupPage: React.FC = () => {
             <span>
               {selectedPlanId === 'free'
                 ? 'Create Free Account'
-                : `Start 15-Day Free Trial (${selectedPlanId === 'pro' ? 'Pro' : 'Business'})`}
+                : `Start 15-Day Free Trial (${selectedPlanId === 'pro' ? 'Professional' : 'Business Suite'})`}
             </span>
             <ArrowRight size={16} />
           </Button>
@@ -412,6 +421,18 @@ export const SignupPage: React.FC = () => {
           </Link>
         </p>
       </div>
+
+      {/* Plan Confirmation Modal for 15-Day Trial */}
+      {createdUser && selectedPlanId !== 'free' && (
+        <PlanConfirmationModal
+          isOpen={confirmationModalOpen}
+          planTier={selectedPlanId as 'pro' | 'business'}
+          currency={currency}
+          user={createdUser}
+          onConfirm={() => navigate('/app')}
+          onCancel={() => navigate('/app')}
+        />
+      )}
     </div>
   );
 };

@@ -15,12 +15,22 @@ import {
   FileText,
   FileCheck,
   Receipt,
+  Crown,
+  Check,
 } from 'lucide-react';
 import { BRAND_NAME, BRAND_TAGLINE, BRAND_SUBTITLE, FAQ_ITEMS } from '../../constants/brand';
 import { SEO } from '../../components/common/SEO';
+import { PRICING_PLANS, PricingCurrency, getStoredCurrency, setStoredCurrency } from '../../config/pricing';
+import { CurrencySelector } from '../../components/common/CurrencySelector';
 
 export const HomePage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [currency, setCurrency] = useState<PricingCurrency>(getStoredCurrency());
+
+  const handleCurrencyChange = (newCurrency: PricingCurrency) => {
+    setCurrency(newCurrency);
+    setStoredCurrency(newCurrency);
+  };
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -425,48 +435,164 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 8. FREE VS PRO POSITIONING */}
-      <section className="section-py" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
+      {/* 8. PRICING SECTION */}
+      <section className="section-py" id="pricing" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
         <div className="container">
-          <div className="text-center" style={{ maxWidth: '680px', margin: '0 auto 3.5rem' }}>
-            <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>Transparent Roadmap</div>
-            <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1rem' }}>
-              Free Tools First. Pro Automation Next.
+          <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
+            <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>
+              <Sparkles size={14} />
+              <span>Transparent Pricing</span>
+            </div>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
+              Simple pricing. Start free.
             </h2>
-            <p style={{ fontSize: '1rem', color: '#94a3b8' }}>
-              Our core calculators and essential document tools are 100% free. We are building advanced automation for our upcoming Pro tier.
+            <p style={{ fontSize: '1.0625rem', color: '#94a3b8', lineHeight: 1.6 }}>
+              Use BizPilotly for free, or unlock advanced business tools with a 15-day free trial. No credit card required.
             </p>
+
+            {/* Currency Selector */}
+            <div style={{ marginTop: '1.5rem' }}>
+              <CurrencySelector value={currency} onChange={handleCurrencyChange} />
+              <div style={{ fontSize: '0.6875rem', color: '#64748b', marginTop: '0.5rem' }}>
+                More currencies coming soon.
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '900px', margin: '0 auto' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 'var(--radius-xl)', padding: '2rem' }}>
-              <span className="badge badge-info" style={{ marginBottom: '1rem' }}>Available Today</span>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>Free Foundation</h3>
-              <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.5rem' }}>Everything required to calculate, quote, and organize client billing.</p>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '2rem' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#38bdf8" /> All 8 pricing & finance calculators</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#38bdf8" /> Invoice, Quote, Receipt & Proposal builders</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#38bdf8" /> Client directory & basic expense tracker</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#38bdf8" /> Multi-currency support ($ USD, € EUR, £ GBP, etc.)</li>
-              </ul>
-              <Link to="/signup" className="btn btn-primary" style={{ width: '100%' }}>Get Started Free</Link>
-            </div>
+          {/* Pricing Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1100px', margin: '0 auto 2.5rem', alignItems: 'stretch' }}>
+            {PRICING_PLANS.map((plan) => {
+              const price = plan.prices[currency];
 
-            <div style={{ background: 'linear-gradient(180deg, rgba(11, 31, 58, 0.4) 0%, rgba(10, 10, 10, 0.8) 100%)', border: '1px solid var(--brand-gold-500)', borderRadius: 'var(--radius-xl)', padding: '2rem' }}>
-              <span className="badge badge-gold" style={{ marginBottom: '1rem' }}>Coming Soon</span>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>Pro Automation</h3>
-              <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.5rem' }}>For scaling agencies and power freelancers who want end-to-end automation.</p>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '2rem' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#C9A227" /> Recurring subscriptions & automated billing</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#C9A227" /> Automated client payment reminders via email</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#C9A227" /> Custom white-label branding & custom domains</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} color="#C9A227" /> Multi-entity workspace switching</li>
-              </ul>
-              <Link to="/pricing" className="btn btn-gold" style={{ width: '100%' }}>View Roadmap Details</Link>
-            </div>
+              return (
+                <div
+                  key={plan.id}
+                  style={{
+                    backgroundColor: plan.isRecommended ? '#0B1F3A' : 'rgba(255, 255, 255, 0.04)',
+                    border: plan.isRecommended ? '2px solid #F59E0B' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 'var(--radius-2xl, 20px)',
+                    padding: '2.5rem 2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    boxShadow: plan.isRecommended ? '0 20px 40px -15px rgba(245, 158, 11, 0.25)' : 'none',
+                  }}
+                >
+                  {plan.badge && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '-12px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: '#F59E0B',
+                        color: '#0A0A0A',
+                        padding: '0.25rem 1rem',
+                        borderRadius: '999px',
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {plan.badge}
+                    </div>
+                  )}
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                        {plan.name}
+                      </h3>
+                      {plan.id === 'pro' && <Zap size={20} color="#F59E0B" />}
+                      {plan.id === 'business' && <Crown size={20} color="#6366F1" />}
+                    </div>
+
+                    <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.5rem', minHeight: '44px', lineHeight: 1.4 }}>
+                      {plan.description}
+                    </p>
+
+                    {/* Price */}
+                    <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.375rem' }}>
+                        <span style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
+                          {price.formatted}
+                        </span>
+                        <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
+                          / {plan.billingPeriod}
+                        </span>
+                      </div>
+                      {plan.trialDays > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700, marginTop: '4px' }}>
+                          ✓ {plan.trialText}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', marginBottom: '1rem' }}>
+                      Features Included:
+                    </div>
+
+                    {/* Feature list */}
+                    <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2.5rem', listStyle: 'none', padding: 0 }}>
+                      {plan.features.map((feat, idx) => (
+                        <li
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.625rem',
+                            fontSize: '0.875rem',
+                            color: feat.included ? '#e2e8f0' : '#64748b',
+                            opacity: feat.included ? 1 : 0.4,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: '50%',
+                              background: feat.included ? (plan.isRecommended ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.1)') : 'rgba(255, 255, 255, 0.03)',
+                              color: feat.included ? (plan.isRecommended ? '#F59E0B' : '#38bdf8') : '#64748b',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              marginTop: '2px',
+                            }}
+                          >
+                            <Check size={12} strokeWidth={3} />
+                          </div>
+                          <span>
+                            {feat.text}
+                            {feat.isNew && (
+                              <span className="badge badge-gold" style={{ marginLeft: '0.375rem', fontSize: '0.625rem', padding: '1px 6px' }}>
+                                NEW
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Link
+                    to={`/signup?plan=${plan.id}`}
+                    className={plan.isRecommended ? 'btn btn-gold btn-lg' : 'btn btn-primary btn-lg'}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    <span>{plan.ctaText}</span>
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
+
 
       {/* 9. FAQ SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>

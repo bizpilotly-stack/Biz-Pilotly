@@ -9,7 +9,10 @@ export interface SendEmailOptions {
     | 'welcome'
     | 'payment_received'
     | 'payment_reported'
-    | 'payment_reminder';
+    | 'payment_reminder'
+    | 'trial_started'
+    | 'trial_ending_soon'
+    | 'trial_expired';
   recipientEmail: string;
   recipientName?: string;
   documentId?: string;
