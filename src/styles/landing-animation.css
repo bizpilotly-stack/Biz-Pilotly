@@ -1,0 +1,338 @@
+/* ==========================================================================
+   BIZPILOTLY CINEMATIC SCROLL ANIMATION SYSTEM
+   ========================================================================== */
+
+/* Ambient Hero Glows */
+.ambient-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.ambient-glow-primary {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(11, 31, 58, 0.15) 0%, rgba(11, 31, 58, 0) 70%);
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ambient-glow-gold {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(201, 162, 39, 0.12) 0%, rgba(201, 162, 39, 0) 70%);
+  top: 150px;
+  right: 10%;
+}
+
+.ambient-glow-cyan {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, rgba(56, 189, 248, 0) 70%);
+  top: 250px;
+  left: 10%;
+}
+
+/* Main Cinematic Sticky Section */
+.cinematic-scroll-track {
+  position: relative;
+  height: 320vh;
+  background: #060B13;
+  color: #F8FAFC;
+}
+
+@media (max-width: 768px) {
+  .cinematic-scroll-track {
+    height: auto;
+    min-height: auto;
+    padding: 3rem 1rem 4rem;
+  }
+}
+
+.cinematic-sticky-viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .cinematic-sticky-viewport {
+    position: relative;
+    height: auto;
+    top: auto;
+    padding: 0;
+    overflow: visible;
+  }
+}
+
+/* Background Grid Lines */
+.cinematic-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Cinematic Story Text Header */
+.cinematic-header {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  max-width: 800px;
+  margin-bottom: 2rem;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cinematic-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.cinematic-headline {
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 0.5rem 0;
+  transition: all 0.3s ease;
+}
+
+.cinematic-subtext {
+  font-size: clamp(0.875rem, 1.5vw, 1.0625rem);
+  color: #94A3B8;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+}
+
+/* Stage Arena (Where cards move) */
+.cinematic-arena {
+  position: relative;
+  width: 100%;
+  max-width: 1080px;
+  height: 520px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .cinematic-arena {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+}
+
+/* Floating Chaos / Pipeline Card */
+.cinematic-card {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .cinematic-card {
+    position: relative !important;
+    transform: none !important;
+    width: 100% !important;
+    left: auto !important;
+    top: auto !important;
+    opacity: 1 !important;
+  }
+}
+
+.cinematic-card:hover {
+  border-color: rgba(201, 162, 39, 0.4);
+  box-shadow: 0 25px 50px -12px rgba(201, 162, 39, 0.15), 0 0 0 1px rgba(201, 162, 39, 0.2);
+}
+
+.cinematic-card-tag {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.cinematic-card-title {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0 0 0.25rem 0;
+}
+
+.cinematic-card-desc {
+  font-size: 0.8125rem;
+  color: #94A3B8;
+  line-height: 1.4;
+}
+
+.cinematic-card-metric {
+  font-size: 1.375rem;
+  font-weight: 800;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono, monospace);
+}
+
+/* Master Command Center Dashboard Assembly Frame */
+.cinematic-dashboard-frame {
+  position: absolute;
+  inset: 0;
+  background: #090F1B;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 60px rgba(201, 162, 39, 0.08);
+  display: flex;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+@media (max-width: 768px) {
+  .cinematic-dashboard-frame {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    margin-top: 1.5rem;
+    flex-direction: column;
+  }
+}
+
+/* Dashboard Mock Window Bar */
+.dashboard-window-header {
+  height: 38px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+/* SVG Flow Vectors */
+.cinematic-svg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.cinematic-flow-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  transition: stroke-dashoffset 0.3s ease;
+  will-change: stroke-dashoffset;
+}
+
+/* Scroll Progress Indicators */
+.scroll-step-indicator {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.875rem;
+  border-radius: 999px;
+  z-index: 20;
+}
+
+.scroll-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.scroll-step-dot.active {
+  width: 24px;
+  border-radius: 999px;
+  background: #C9A227;
+  box-shadow: 0 0 12px rgba(201, 162, 39, 0.6);
+}
+
+/* Smooth Entrance Reveal Utility for Features */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-scroll-track {
+    height: auto !important;
+  }
+
+  .cinematic-sticky-viewport {
+    position: relative !important;
+    height: auto !important;
+  }
+
+  .cinematic-card,
+  .cinematic-dashboard-frame,
+  .reveal-on-scroll {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}
