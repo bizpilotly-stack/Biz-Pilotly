@@ -5,8 +5,9 @@ import {
   Plus,
   Search,
   Download,
-  ExternalLink,
   Trash2,
+  Eye,
+  Edit3,
 } from 'lucide-react';
 import { BusinessDocument, DocumentType, DocumentStatus } from '../../types';
 import { documentService } from '../../services/documentService';
@@ -98,14 +99,22 @@ export const DocumentsPage: React.FC = () => {
         title="Documents"
         description="Centralized ledger of all issued and draft Invoices, Quotes, Receipts, and Proposals."
         actions={
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Link to="/documents/invoice" className="btn btn-primary btn-sm">
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Link to="/app/documents/invoice" className="btn btn-primary btn-sm">
               <Plus size={14} />
               <span>New Invoice</span>
             </Link>
-            <Link to="/documents/quote" className="btn btn-secondary btn-sm">
+            <Link to="/app/documents/quote" className="btn btn-secondary btn-sm">
               <Plus size={14} />
-              <span>New Quote</span>
+              <span>New Quote / Estimate</span>
+            </Link>
+            <Link to="/app/documents/proposal" className="btn btn-secondary btn-sm">
+              <Plus size={14} />
+              <span>New Proposal / Contract</span>
+            </Link>
+            <Link to="/app/documents/receipt" className="btn btn-secondary btn-sm">
+              <Plus size={14} />
+              <span>New Receipt</span>
             </Link>
           </div>
         }
@@ -192,7 +201,7 @@ export const DocumentsPage: React.FC = () => {
               {documents.map((d) => (
                 <tr key={d.id}>
                   <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                    <Link to={`/documents/${d.type}`} style={{ color: 'var(--brand-navy-600)' }}>
+                    <Link to={`/app/documents/${d.type}`} style={{ color: 'var(--brand-navy-600)' }}>
                       {d.documentNumber}
                     </Link>
                   </td>
@@ -234,7 +243,23 @@ export const DocumentsPage: React.FC = () => {
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                      <a
+                        href={d.type === 'invoice' ? `/invoice/${d.id}` : `/documents/${d.type}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-ghost btn-sm btn-icon"
+                        title="View Document (Opens in new tab)"
+                      >
+                        <Eye size={15} color="#2563EB" />
+                      </a>
+                      <Link
+                        to={`/app/documents/${d.type}`}
+                        className="btn btn-ghost btn-sm btn-icon"
+                        title="Edit in builder"
+                      >
+                        <Edit3 size={15} color="#475569" />
+                      </Link>
                       <button
                         onClick={() => handleDownloadPdf(d)}
                         className="btn btn-ghost btn-sm btn-icon"
@@ -243,13 +268,6 @@ export const DocumentsPage: React.FC = () => {
                       >
                         <Download size={15} color="#0B1F3A" />
                       </button>
-                      <Link
-                        to={`/documents/${d.type}`}
-                        className="btn btn-ghost btn-sm btn-icon"
-                        title="Edit in builder"
-                      >
-                        <ExternalLink size={15} />
-                      </Link>
                       <button
                         onClick={() => handleDelete(d.id, d.documentNumber)}
                         className="btn btn-ghost btn-sm btn-icon"

@@ -9,6 +9,7 @@ import {
   Clock,
   ShieldCheck,
   Check,
+  ArrowLeft,
 } from 'lucide-react';
 import { BusinessDocument, documentService } from '../../services/documentService';
 import { pdfService } from '../../services/pdf';
@@ -160,6 +161,14 @@ export const PublicInvoiceViewPage: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Link
+              to="/app/documents"
+              className="btn btn-secondary btn-sm"
+              style={{ gap: '0.375rem', textDecoration: 'none' }}
+            >
+              <ArrowLeft size={14} />
+              <span>Dashboard</span>
+            </Link>
             <button
               onClick={handleDownloadPdf}
               className="btn btn-primary btn-sm"

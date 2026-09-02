@@ -13,6 +13,8 @@ import {
   Calculator,
   ShieldCheck,
   RefreshCw,
+  FileCheck,
+  ScrollText,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
@@ -49,21 +51,23 @@ export const AppSidebar: React.FC = () => {
 
   const navItems = [
     { label: 'Overview', path: '/app', icon: <LayoutDashboard className="icon" />, end: true },
-    { label: 'Calculators', path: '/app/calculators', icon: <Calculator className="icon" /> },
-    { label: 'Documents', path: '/app/documents', icon: <FileText className="icon" /> },
-    { label: 'Recurring Retainers', path: '/app/recurring', icon: <RefreshCw className="icon" /> },
-    { label: 'Clients', path: '/app/clients', icon: <Users className="icon" /> },
-    { label: 'Payments', path: '/app/payments', icon: <CreditCard className="icon" /> },
-    { label: 'Expenses', path: '/app/expenses', icon: <Receipt className="icon" /> },
-    { label: 'Profit', path: '/app/profit', icon: <TrendingUp className="icon" /> },
+    { label: 'All Documents', path: '/app/documents', icon: <FileText className="icon" /> },
+    { label: 'Clients Directory', path: '/app/clients', icon: <Users className="icon" /> },
+    { label: 'Incoming Payments', path: '/app/payments', icon: <CreditCard className="icon" /> },
+    { label: 'Expense Ledger', path: '/app/expenses', icon: <Receipt className="icon" /> },
+    { label: 'Profit & Margins', path: '/app/profit', icon: <TrendingUp className="icon" /> },
   ];
 
-  const toolItems = [
-    { label: 'New Invoice', path: '/app/documents/invoice', icon: <FileText className="icon" /> },
-    { label: 'Profit Margin', path: '/app/calculators/profit-margin', icon: <TrendingUp className="icon" /> },
+  const documentStudioItems = [
+    { label: 'Invoices', path: '/app/documents/invoice', icon: <FileText className="icon" /> },
+    { label: 'Quotes & Estimates', path: '/app/documents/quote', icon: <FileCheck className="icon" /> },
+    { label: 'Proposals & Contracts', path: '/app/documents/proposal', icon: <ScrollText className="icon" /> },
+    { label: 'Official Receipts', path: '/app/documents/receipt', icon: <Receipt className="icon" /> },
+    { label: 'Recurring Retainers', path: '/app/recurring', icon: <RefreshCw className="icon" /> },
   ];
 
   const settingsItems = [
+    { label: '8 Pricing Calculators', path: '/app/calculators', icon: <Calculator className="icon" /> },
     { label: 'Team & Seats', path: '/app/team', icon: <Users className="icon" /> },
     { label: 'Business Settings', path: '/app/settings/business', icon: <Building className="icon" /> },
     { label: 'Account Settings', path: '/app/settings/account', icon: <UserIcon className="icon" /> },
@@ -91,19 +95,19 @@ export const AppSidebar: React.FC = () => {
           </NavLink>
         ))}
 
-        <div className="sidebar-nav-section-title" style={{ marginTop: '1rem' }}>Fast Tools</div>
-        {toolItems.map((item) => (
-          <Link
+        <div className="sidebar-nav-section-title" style={{ marginTop: '1.25rem' }}>Document Studio</div>
+        {documentStudioItems.map((item) => (
+          <NavLink
             key={item.path}
             to={item.path}
-            className="sidebar-nav-item"
+            className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
           >
             {item.icon}
             <span>{item.label}</span>
-          </Link>
+          </NavLink>
         ))}
 
-        <div className="sidebar-nav-section-title" style={{ marginTop: '1rem' }}>Preferences</div>
+        <div className="sidebar-nav-section-title" style={{ marginTop: '1.25rem' }}>Preferences & Tools</div>
         {settingsItems.map((item) => (
           <NavLink
             key={item.path}
