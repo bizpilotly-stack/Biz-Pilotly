@@ -12,6 +12,7 @@ import {
   LogOut,
   Calculator,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
@@ -50,6 +51,7 @@ export const AppSidebar: React.FC = () => {
     { label: 'Overview', path: '/app', icon: <LayoutDashboard className="icon" />, end: true },
     { label: 'Calculators', path: '/app/calculators', icon: <Calculator className="icon" /> },
     { label: 'Documents', path: '/app/documents', icon: <FileText className="icon" /> },
+    { label: 'Recurring Retainers', path: '/app/recurring', icon: <RefreshCw className="icon" /> },
     { label: 'Clients', path: '/app/clients', icon: <Users className="icon" /> },
     { label: 'Payments', path: '/app/payments', icon: <CreditCard className="icon" /> },
     { label: 'Expenses', path: '/app/expenses', icon: <Receipt className="icon" /> },
@@ -62,6 +64,7 @@ export const AppSidebar: React.FC = () => {
   ];
 
   const settingsItems = [
+    { label: 'Team & Seats', path: '/app/team', icon: <Users className="icon" /> },
     { label: 'Business Settings', path: '/app/settings/business', icon: <Building className="icon" /> },
     { label: 'Account Settings', path: '/app/settings/account', icon: <UserIcon className="icon" /> },
   ];

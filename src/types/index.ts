@@ -68,6 +68,11 @@ export interface BusinessDocument {
     routingOrIban?: string;
     paypalOrStripeLink?: string;
   };
+  signature?: {
+    image: string;
+    signerName: string;
+    signedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

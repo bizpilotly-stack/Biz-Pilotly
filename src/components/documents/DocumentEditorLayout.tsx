@@ -18,7 +18,10 @@ import {
   Copy,
   Check,
   Zap,
+  PenTool,
+  ShieldCheck,
 } from 'lucide-react';
+import { DigitalSignatureCanvas } from './DigitalSignatureCanvas';
 import {
   BusinessDocument,
   DocumentType,
@@ -70,6 +73,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [reportedReference, setReportedReference] = useState('');
   const [isReportingPayment, setIsReportingPayment] = useState(false);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [sigModalOpen, setSigModalOpen] = useState(false);
   const saveTimeoutRef = useRef<number | null>(null);
 
   const handleCopyField = (text: string, fieldName: string) => {
@@ -1084,6 +1088,49 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Digital E-Signature Section */}
+              <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '4px' }}>
+                    Authorized E-Signature
+                  </div>
+                  {doc.signature?.image ? (
+                    <div>
+                      <img
+                        src={doc.signature.image}
+                        alt="Digital Signature"
+                        style={{ height: '50px', maxHeight: '50px', objectFit: 'contain', display: 'block', marginBottom: '4px' }}
+                      />
+                      <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>{doc.signature.signerName}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <ShieldCheck size={12} />
+                        <span>Digitally Signed ({new Date(doc.signature.signedAt).toLocaleDateString()})</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSigModalOpen(true)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                    >
+                      <PenTool size={13} />
+                      <span>Apply Digital Signature</span>
+                    </button>
+                  )}
+                </div>
+
+                {doc.signature?.image && (
+                  <button
+                    type="button"
+                    onClick={() => setSigModalOpen(true)}
+                    style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.6875rem', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Change Signature
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Interactive Payment Settlement Box (For Invoices) */}
@@ -1441,6 +1488,20 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Digital Signature Canvas Modal */}
+      <DigitalSignatureCanvas
+        isOpen={sigModalOpen}
+        onClose={() => setSigModalOpen(false)}
+        defaultSignerName={doc.business.name || ''}
+        onSave={(sig) => {
+          setDoc({
+            ...doc,
+            signature: sig,
+          });
+          showToast('✓ Digital E-Signature applied to document!', 'success');
+        }}
+      />
     </div>
   );
 };

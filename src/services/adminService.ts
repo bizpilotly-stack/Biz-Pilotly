@@ -6,9 +6,10 @@ export interface PlatformOverviewStats {
   activeUsers: number;
   registeredBusinesses: number;
   activelyUsingBusiness: number;
-  proWaitlistCount: number;
+  trialUsersCount: number;
   freeTierCount: number;
-  proTierCount: number;
+  proSubscribersCount: number;
+  businessSuiteCount: number;
   totalBusinesses: number;
   totalDocuments: number;
   totalInvoices: number;
@@ -28,8 +29,9 @@ export interface PlatformUserRow {
   hasBusiness: boolean;
   businessName?: string;
   businessCurrency?: string;
-  isOnWaitlist: boolean;
-  plan: 'free' | 'pro';
+  subscriptionStatus: 'FREE' | 'TRIAL_ACTIVE' | 'TRIAL_EXPIRED' | 'ACTIVE';
+  plan: 'free' | 'pro' | 'business';
+  trialDaysLeft: number;
   createdAt: string;
   lastSignInAt?: string;
   businessCount: number;
@@ -81,7 +83,7 @@ class AdminService {
   }
 
   /**
-   * Fetches aggregate platform-wide performance metrics and cohort breakdown.
+   * Fetches aggregate platform-wide performance metrics and real subscription cohorts.
    */
   async getPlatformOverview(): Promise<PlatformOverviewStats> {
     const isAdmin = await this.checkIsAdmin();
@@ -99,261 +101,204 @@ class AdminService {
       { data: expensesData },
     ] = await Promise.all([
       this.getPlatformUsers(),
-      supabase.from('businesses').select('id, user_id'),
-      supabase.from('documents').select('id, type, business_id, pdf_storage_path'),
+      supabase.from('businesses').select('*'),
+      supabase.from('documents').select('id, type, total, currency, status'),
       supabase.from('email_logs').select('*', { count: 'exact', head: true }),
-      supabase.from('payments').select('amount').eq('status', 'completed'),
+      supabase.from('payments').select('amount, status').eq('status', 'completed'),
       supabase.from('expenses').select('amount'),
     ]);
 
-    const docs = documents || [];
-    const totalInvoices = docs.filter((d) => d.type === 'invoice').length;
-    const totalQuotes = docs.filter((d) => d.type === 'quote').length;
-    const totalPdfsGenerated = docs.filter((d) => Boolean(d.pdf_storage_path)).length;
+    const totalBusinesses = (businessesList || []).length;
+    const totalDocuments = (documents || []).length;
+    const totalInvoices = (documents || []).filter((d) => d.type === 'invoice').length;
+    const totalQuotes = (documents || []).filter((d) => d.type === 'quote').length;
 
     const totalRevenue = (revenueData || []).reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
     const totalExpenses = (expensesData || []).reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
 
-    // Map business_id to user_id
-    const businessToUserMap = new Map<string, string>();
-    (businessesList || []).forEach((b) => {
-      if (b.id && b.user_id) businessToUserMap.set(b.id, b.user_id);
-    });
+    const registeredBusinesses = users.filter((u) => u.hasBusiness).length;
+    const activelyUsingBusiness = users.filter((u) => u.documentCount > 0).length;
 
-    // Map document count per user
-    const userDocCountMap = new Map<string, number>();
-    docs.forEach((d) => {
-      const uId = d.business_id ? businessToUserMap.get(d.business_id) : undefined;
-      if (uId) {
-        userDocCountMap.set(uId, (userDocCountMap.get(uId) || 0) + 1);
-      }
-    });
-
-    const enrichedUsers = users.map((u) => ({
-      ...u,
-      documentCount: userDocCountMap.get(u.id) || u.documentCount || 0,
-    }));
-
-    const totalSignups = enrichedUsers.length;
-    const registeredBusinesses = enrichedUsers.filter((u) => u.hasBusiness).length;
-    const activelyUsingBusiness = enrichedUsers.filter((u) => u.hasBusiness && u.documentCount > 0).length || Math.min(registeredBusinesses, docs.length);
-    const proWaitlistCount = enrichedUsers.filter((u) => u.isOnWaitlist).length;
-    const proTierCount = enrichedUsers.filter((u) => u.plan === 'pro').length;
-    const freeTierCount = Math.max(0, totalSignups - proTierCount);
-    const activeUsers = enrichedUsers.filter(
-      (u) => u.hasBusiness || u.isOnWaitlist || (u.lastSignInAt && (Date.now() - new Date(u.lastSignInAt).getTime() < 30 * 24 * 60 * 60 * 1000))
-    ).length || totalSignups;
+    const trialUsersCount = users.filter((u) => u.subscriptionStatus === 'TRIAL_ACTIVE').length;
+    const freeTierCount = users.filter((u) => u.subscriptionStatus === 'FREE' || u.subscriptionStatus === 'TRIAL_EXPIRED').length;
+    const proSubscribersCount = users.filter((u) => u.plan === 'pro' && u.subscriptionStatus === 'ACTIVE').length;
+    const businessSuiteCount = users.filter((u) => u.plan === 'business' && u.subscriptionStatus === 'ACTIVE').length;
 
     return {
-      totalUsers: totalSignups,
-      totalSignups,
-      activeUsers,
+      totalUsers: users.length,
+      totalSignups: users.length,
+      activeUsers: users.filter((u) => u.hasBusiness || u.documentCount > 0).length,
       registeredBusinesses,
       activelyUsingBusiness,
-      proWaitlistCount,
+      trialUsersCount,
       freeTierCount,
-      proTierCount,
-      totalBusinesses: (businessesList?.length) || registeredBusinesses,
-      totalDocuments: docs.length,
+      proSubscribersCount,
+      businessSuiteCount,
+      totalBusinesses,
+      totalDocuments,
       totalInvoices,
       totalQuotes,
       totalRevenue,
       totalExpenses,
-      totalPdfsGenerated,
+      totalPdfsGenerated: totalDocuments,
       totalEmailsSent: emailsCount || 0,
-      users: enrichedUsers,
+      users,
     };
   }
 
   /**
-   * Fetches platform users with business status, waitlist status, and plans.
+   * Fetches the complete master user roster from Supabase profiles.
    */
   async getPlatformUsers(): Promise<PlatformUserRow[]> {
-    // 1. Try secure Postgres RPC Function (fetches complete auth.users roster for admins)
-    try {
-      const { data: rpcData, error: rpcError } = await (supabase.rpc as any)('get_platform_admin_roster');
-      if (!rpcError && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
-        return rpcData.map((u: any) => ({
-          id: u.id,
-          email: u.email,
-          name: u.full_name || u.email.split('@')[0],
-          role: u.role || 'user',
-          hasBusiness: Boolean(u.has_business),
-          businessName: u.business_name || undefined,
-          businessCurrency: u.business_currency || 'NGN',
-          isOnWaitlist: Boolean(u.is_on_waitlist),
-          plan: (u.plan || 'free') as 'free' | 'pro',
-          createdAt: u.created_at,
-          lastSignInAt: u.last_sign_in_at || undefined,
-          businessCount: u.has_business ? 1 : 0,
-          documentCount: 0,
-        }));
-      }
-    } catch {
-      // Proceed to fallback
+    const isAdmin = await this.checkIsAdmin();
+    if (!isAdmin) {
+      throw new Error('Unauthorized: Admin role required.');
     }
 
-    // 2. Query profiles (primary source for all registered accounts), businesses, roles, and waitlist
     const [
-      { data: profiles },
+      { data: profiles, error: profError },
       { data: businesses },
       { data: roles },
-      { data: waitlist },
+      { data: docs },
     ] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, avatar_url, created_at'),
-      supabase.from('businesses').select('user_id, name, email, currency, created_at'),
-      supabase.from('user_roles').select('user_id, role'),
-      (supabase as any).from('pro_waitlist').select('user_id, email'),
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('businesses').select('*'),
+      supabase.from('user_roles').select('*'),
+      supabase.from('documents').select('id, business_id'),
     ]);
 
-    const roleMap = new Map<string, string>();
-    (roles || []).forEach((r) => roleMap.set(r.user_id, r.role));
+    if (profError) {
+      console.error('Error fetching master profiles:', profError);
+      throw profError;
+    }
 
     const businessMap = new Map<string, any>();
-    (businesses || []).forEach((b) => businessMap.set(b.user_id, b));
-
-    const waitlistSet = new Set<string>();
-    (waitlist || []).forEach((w: any) => {
-      if (w.user_id) waitlistSet.add(w.user_id);
-      if (w.email) waitlistSet.add(w.email.toLowerCase());
-    });
-
-    const userMap = new Map<string, PlatformUserRow>();
-
-    // Add all registered user profiles
-    (profiles || []).forEach((p) => {
-      const b = businessMap.get(p.id);
-      const email = p.email || (b ? b.email : `user-${p.id.slice(0, 8)}@bizpilotly.com`);
-      const name = p.full_name || (b ? b.name : `User (${p.id.slice(0, 6)})`);
-      const role = (roleMap.get(p.id) as any) || 'user';
-      const isOnWaitlist = waitlistSet.has(p.id) || (email ? waitlistSet.has(email.toLowerCase()) : false);
-
-      userMap.set(p.id, {
-        id: p.id,
-        email,
-        name,
-        role,
-        hasBusiness: Boolean(b),
-        businessName: b ? b.name : undefined,
-        businessCurrency: b ? (b.currency || 'NGN') : 'NGN',
-        isOnWaitlist,
-        plan: 'free',
-        createdAt: p.created_at || new Date().toISOString(),
-        businessCount: b ? 1 : 0,
-        documentCount: 0,
-      });
-    });
-
-    // Add any registered business accounts not in profiles
     (businesses || []).forEach((b) => {
-      if (!userMap.has(b.user_id)) {
-        userMap.set(b.user_id, {
-          id: b.user_id,
-          email: b.email || `user-${b.user_id.slice(0, 8)}@bizpilotly.com`,
-          name: b.name || `User (${b.user_id.slice(0, 6)})`,
-          role: (roleMap.get(b.user_id) as any) || 'user',
-          hasBusiness: true,
-          businessName: b.name,
-          businessCurrency: b.currency || 'NGN',
-          isOnWaitlist: waitlistSet.has(b.user_id) || (b.email ? waitlistSet.has(b.email.toLowerCase()) : false),
-          plan: 'free',
-          createdAt: b.created_at,
-          businessCount: 1,
-          documentCount: 0,
-        });
-      }
+      businessMap.set(b.user_id, b);
     });
 
-    // Add explicit role accounts
+    const roleMap = new Map<string, string>();
     (roles || []).forEach((r) => {
-      if (!userMap.has(r.user_id)) {
-        userMap.set(r.user_id, {
-          id: r.user_id,
-          email: `admin-${r.user_id.slice(0, 8)}@bizpilotly.com`,
-          name: `Admin Account (${r.user_id.slice(0, 6)})`,
-          role: r.role as any,
-          hasBusiness: false,
-          isOnWaitlist: waitlistSet.has(r.user_id),
-          plan: 'free',
-          createdAt: new Date().toISOString(),
-          businessCount: 0,
-          documentCount: 0,
-        });
-      }
+      roleMap.set(r.user_id, r.role);
     });
 
-    return Array.from(userMap.values());
+    const docCountMap = new Map<string, number>();
+    (docs || []).forEach((d) => {
+      const count = docCountMap.get(d.business_id) || 0;
+      docCountMap.set(d.business_id, count + 1);
+    });
+
+    return (profiles || []).map((prof) => {
+      const business = businessMap.get(prof.id);
+      const role = roleMap.get(prof.id) || 'user';
+      const docCount = business ? docCountMap.get(business.id) || 0 : 0;
+
+      // Calculate trial status from created_at
+      const createdTime = new Date(prof.created_at).getTime();
+      const diffDays = Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24));
+      const trialDaysLeft = Math.max(0, 15 - diffDays);
+      const isTrial = trialDaysLeft > 0;
+
+      return {
+        id: prof.id,
+        email: prof.email || 'No email provided',
+        name: prof.full_name || (business ? business.name : 'Registered Member'),
+        role,
+        hasBusiness: !!business,
+        businessName: business?.name || undefined,
+        businessCurrency: business?.currency || 'NGN',
+        subscriptionStatus: isTrial ? 'TRIAL_ACTIVE' : 'FREE',
+        plan: isTrial ? 'pro' : 'free',
+        trialDaysLeft,
+        createdAt: prof.created_at,
+        businessCount: business ? 1 : 0,
+        documentCount: docCount,
+      };
+    });
   }
 
   /**
-   * Fetches platform businesses.
+   * Fetches all registered businesses on the platform.
    */
   async getPlatformBusinesses(): Promise<PlatformBusinessRow[]> {
-    const { data, error } = await supabase
-      .from('businesses')
-      .select(`
-        id,
-        name,
-        currency,
-        created_at,
-        customers (count),
-        documents (count)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching admin businesses:', error);
-      return [];
+    const isAdmin = await this.checkIsAdmin();
+    if (!isAdmin) {
+      throw new Error('Unauthorized: Admin role required.');
     }
 
-    return (data || []).map((b: any) => ({
+    const [
+      { data: businesses, error: bError },
+      { data: customers },
+      { data: documents },
+      { data: payments },
+    ] = await Promise.all([
+      supabase.from('businesses').select('*').order('created_at', { ascending: false }),
+      supabase.from('customers').select('id, business_id'),
+      supabase.from('documents').select('id, business_id'),
+      supabase.from('payments').select('amount, business_id, status').eq('status', 'completed'),
+    ]);
+
+    if (bError) {
+      throw bError;
+    }
+
+    const custCountMap = new Map<string, number>();
+    (customers || []).forEach((c) => {
+      custCountMap.set(c.business_id, (custCountMap.get(c.business_id) || 0) + 1);
+    });
+
+    const docCountMap = new Map<string, number>();
+    (documents || []).forEach((d) => {
+      docCountMap.set(d.business_id, (docCountMap.get(d.business_id) || 0) + 1);
+    });
+
+    const revMap = new Map<string, number>();
+    (payments || []).forEach((p) => {
+      revMap.set(p.business_id, (revMap.get(p.business_id) || 0) + (Number(p.amount) || 0));
+    });
+
+    return (businesses || []).map((b) => ({
       id: b.id,
       name: b.name,
-      ownerEmail: 'Verified Owner',
-      currency: b.currency || 'USD',
+      ownerEmail: b.email || 'No email',
+      currency: b.currency || 'NGN',
       createdAt: b.created_at,
-      customerCount: b.customers?.[0]?.count || 0,
-      documentCount: b.documents?.[0]?.count || 0,
-      revenueTotal: 0,
+      customerCount: custCountMap.get(b.id) || 0,
+      documentCount: docCountMap.get(b.id) || 0,
+      revenueTotal: revMap.get(b.id) || 0,
     }));
   }
 
   /**
-   * Fetches audit log records.
+   * Fetches administrative audit log entries.
    */
   async getAuditLogs(): Promise<AdminAuditLogRow[]> {
+    const isAdmin = await this.checkIsAdmin();
+    if (!isAdmin) {
+      throw new Error('Unauthorized: Admin role required.');
+    }
+
     const { data, error } = await supabase
       .from('admin_audit_logs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (error) return [];
-    return (data || []).map((log) => ({
-      id: log.id,
-      actorUserId: log.actor_user_id,
-      action: log.action,
-      targetType: log.target_type,
-      targetId: log.target_id,
-      metadata: log.metadata,
-      createdAt: log.created_at,
+    if (error) {
+      console.warn('Audit logs table not found or empty:', error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      actorUserId: row.actor_user_id,
+      actorEmail: row.actor_email,
+      action: row.action,
+      targetType: row.target_type,
+      targetId: row.target_id,
+      metadata: row.metadata,
+      createdAt: row.created_at,
     }));
-  }
-
-  /**
-   * Records an administrative action in the platform audit log.
-   */
-  async logAdminAction(action: string, targetType: string, targetId?: string, metadata?: Record<string, any>) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return;
-
-    await supabase.from('admin_audit_logs').insert({
-      actor_user_id: session.user.id,
-      action,
-      target_type: targetType,
-      target_id: targetId || null,
-      metadata: metadata || {},
-    });
   }
 }
 

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calculator, Bell, Layers, Sparkles } from 'lucide-react';
+import { Plus, Calculator, Bell, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { subscriptionService, UserSubscription } from '../../services/subscriptionService';
 import { notificationService } from '../../services/notificationService';
 import { NotificationDropdown } from '../common/NotificationDropdown';
 import { UpgradeModal } from '../subscription/UpgradeModal';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 export const AppHeader: React.FC = () => {
   const { user } = useAuth();
@@ -45,10 +46,7 @@ export const AppHeader: React.FC = () => {
     <>
       <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            <Layers size={16} color="#0B1F3A" />
-            <span>Workspace</span>
-          </div>
+          <WorkspaceSwitcher />
 
           {/* Compact Trial Status Component (Non-intrusive) */}
           {subscription && subscription.status === 'TRIAL_ACTIVE' && (

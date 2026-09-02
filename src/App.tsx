@@ -16,7 +16,6 @@ import { AdminDocumentsPage } from './pages/admin/AdminDocumentsPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminEmailsPage } from './pages/admin/AdminEmailsPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
-import { AdminWaitlistPage } from './pages/admin/AdminWaitlistPage';
 
 // Public Marketing Pages
 import { HomePage } from './pages/public/HomePage';
@@ -28,6 +27,7 @@ import { AboutPage } from './pages/public/AboutPage';
 import { ContactPage } from './pages/public/ContactPage';
 import { LoginPage } from './pages/public/LoginPage';
 import { SignupPage } from './pages/public/SignupPage';
+import { ClientPortalPage } from './pages/public/ClientPortalPage';
 
 // 8 Interactive Calculators
 import { ProfitCalculator } from './pages/calculators/ProfitCalculator';
@@ -49,6 +49,8 @@ import { ProposalBuilderPage } from './pages/documents/ProposalBuilderPage';
 import { OverviewPage } from './pages/app/OverviewPage';
 import { ClientsPage } from './pages/app/ClientsPage';
 import { DocumentsPage } from './pages/app/DocumentsPage';
+import { RecurringInvoicesPage } from './pages/app/RecurringInvoicesPage';
+import { TeamSeatsPage } from './pages/app/TeamSeatsPage';
 import { AppCalculatorsHubPage } from './pages/app/AppCalculatorsHubPage';
 import { PaymentsPage } from './pages/app/PaymentsPage';
 import { ExpensesPage } from './pages/app/ExpensesPage';
@@ -91,6 +93,9 @@ export const App: React.FC = () => {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+
+              {/* Dedicated Client Portal (Passwordless Statement Access) */}
+              <Route path="/portal/:clientId" element={<ClientPortalPage />} />
             </Route>
 
             {/* Protected Business Operations Dashboard Layout */}
@@ -105,12 +110,14 @@ export const App: React.FC = () => {
               <Route index element={<OverviewPage />} />
               <Route path="clients" element={<ClientsPage />} />
 
-              {/* In-App Documents Hub & Builders */}
+              {/* In-App Documents Hub, Retainers & Builders */}
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="documents/invoice" element={<InvoiceBuilderPage />} />
               <Route path="documents/quote" element={<QuoteBuilderPage />} />
               <Route path="documents/receipt" element={<ReceiptBuilderPage />} />
               <Route path="documents/proposal" element={<ProposalBuilderPage />} />
+              <Route path="recurring" element={<RecurringInvoicesPage />} />
+              <Route path="team" element={<TeamSeatsPage />} />
 
               {/* In-App Interactive Calculators Hub & Tools */}
               <Route path="calculators" element={<AppCalculatorsHubPage />} />
@@ -142,7 +149,6 @@ export const App: React.FC = () => {
             >
               <Route index element={<AdminOverviewPage />} />
               <Route path="users" element={<AdminUsersPage />} />
-              <Route path="waitlist" element={<AdminWaitlistPage />} />
               <Route path="businesses" element={<AdminBusinessesPage />} />
               <Route path="documents" element={<AdminDocumentsPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />

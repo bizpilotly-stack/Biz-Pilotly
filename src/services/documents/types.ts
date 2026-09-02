@@ -83,6 +83,11 @@ export interface BusinessDocument {
   notes?: string;
   terms?: string;
   paymentDetails?: PaymentDetails;
+  signature?: {
+    image: string;
+    signerName: string;
+    signedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
