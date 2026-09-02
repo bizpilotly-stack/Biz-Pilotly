@@ -36,7 +36,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast-container" aria-live="polite">
+      <div className="toast-container" style={{ zIndex: 100000 }} aria-live="polite">
         {toasts.map((toast) => (
           <div key={toast.id} className="toast" role="alert">
             {toast.type === 'success' && <CheckCircle2 size={18} color="#10b981" />}

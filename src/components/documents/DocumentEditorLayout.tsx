@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Plus,
   Trash2,
@@ -26,6 +26,8 @@ import {
   Send,
   ExternalLink,
   X,
+  AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import { DigitalSignatureCanvas } from './DigitalSignatureCanvas';
 import {
@@ -58,6 +60,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const location = useLocation();
   const isApp = location.pathname.startsWith('/app');
   const docsBase = isApp ? '/app/documents' : '/documents';
+  const navigate = useNavigate();
 
   const { showToast } = useToast();
   const meta = documentService.getMeta(documentType);
@@ -82,6 +85,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [sigModalOpen, setSigModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
+  const [resendConfirmed, setResendConfirmed] = useState(false);
   const saveTimeoutRef = useRef<number | null>(null);
 
   const handleCopyField = (text: string, fieldName: string) => {
@@ -359,50 +363,70 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
     setValidationErrors({});
     try {
-      showToast('Generating PDF and updating invoice status...', 'info');
-
-      // Auto-update status to 'sent' and auto-save to database
-      const updatedDoc = {
-        ...doc,
-        status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
-      };
-      setDoc(updatedDoc);
-      if (user) {
-        await documentService.saveDocument(updatedDoc);
-      }
-
-      await pdfService.downloadDocumentLocally(updatedDoc);
-      showToast('✓ PDF downloaded and saved to dashboard as Sent!', 'success');
+      showToast('Generating official PDF...', 'info');
+      // Download locally without marking as sent
+      await pdfService.downloadDocumentLocally(doc);
+      showToast('✓ PDF downloaded successfully!', 'success');
     } catch (err: any) {
       showToast(err?.message || 'Error generating PDF.', 'error');
     }
   };
 
-  const handleWhatsAppShare = async () => {
-    // Auto-update status to 'sent' and auto-save
-    const updatedDoc = {
+  const markAsSentAndSave = async (): Promise<BusinessDocument> => {
+    const updatedDoc: BusinessDocument = {
       ...doc,
       status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
     };
     setDoc(updatedDoc);
     if (user) {
       try {
-        await documentService.saveDocument(updatedDoc);
+        const saved = await documentService.saveDocument(updatedDoc);
+        return saved;
       } catch {
-        // fallback
+        // storage fallback
       }
     }
+    return updatedDoc;
+  };
 
+  const handleWhatsAppShare = async () => {
+    await markAsSentAndSave();
     const clientPhone = (doc.client.phone || '').replace(/[^0-9]/g, '');
-    const portalUrl = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
-    const textMsg = `Hello ${doc.client.name || 'Valued Client'},\n\nPlease find your official ${doc.type.toUpperCase()} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name || 'our studio'}.\n\nYou can view your invoice statement & payment options online here:\n${portalUrl}\n\nThank you for your business!`;
+    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
+    const textMsg = `Hello ${doc.client.name || 'Valued Client'},\n\nPlease find your official ${doc.type.toUpperCase()} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name || 'our studio'}.\n\nYou can view your invoice statement & payment options online here:\n${invoiceUrl}\n\nThank you for your business!`;
 
     const waLink = clientPhone
       ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMsg)}`
       : `https://wa.me/?text=${encodeURIComponent(textMsg)}`;
 
     window.open(waLink, '_blank');
-    showToast('✓ WhatsApp opened & invoice marked as Sent on dashboard!', 'success');
+    showToast('✓ WhatsApp opened & invoice marked as Sent!', 'success');
+    if (isApp) {
+      setTimeout(() => navigate('/app/documents'), 1500);
+    }
+  };
+
+  const handleDiscordShare = async () => {
+    await markAsSentAndSave();
+    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
+    const discordText = `**${doc.type.toUpperCase()} #${doc.documentNumber}** from **${doc.business.name || 'Vendor'}**\n**Total Due:** ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}\n**Client:** ${doc.client.name}\n**Due Date:** ${doc.dueDate || 'Upon Receipt'}\n\nView & Settle Online: ${invoiceUrl}`;
+    navigator.clipboard.writeText(discordText);
+    showToast('✓ Discord formatted invoice message copied to clipboard & marked as Sent!', 'success');
+  };
+
+  const handleSlackShare = async () => {
+    await markAsSentAndSave();
+    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
+    const slackText = `*${doc.type.toUpperCase()} #${doc.documentNumber}* from *${doc.business.name || 'Vendor'}*\nTotal: *${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}*\nView Invoice: ${invoiceUrl}`;
+    navigator.clipboard.writeText(slackText);
+    showToast('✓ Slack message copied to clipboard & marked as Sent!', 'success');
+  };
+
+  const handleCopyInvoiceLink = async () => {
+    await markAsSentAndSave();
+    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
+    navigator.clipboard.writeText(invoiceUrl);
+    showToast('✓ Dedicated Buyer Invoice Link copied to clipboard & marked as Sent!', 'success');
   };
 
   const handleSendClientEmail = async () => {
@@ -413,15 +437,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
 
     setEmailSending(true);
     try {
-      // Auto-update status to 'sent' and auto-save
-      const updatedDoc = {
-        ...doc,
-        status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
-      };
-      setDoc(updatedDoc);
-      if (user) {
-        await documentService.saveDocument(updatedDoc);
-      }
+      await markAsSentAndSave();
+      const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
 
       await emailService.sendTransactionalEmail({
         templateType: 'invoice_sent',
@@ -429,11 +446,14 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
         recipientName: doc.client.name,
         documentId: doc.id,
         customSubject: `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name} (${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)})`,
-        customMessage: `Dear ${doc.client.name},\n\nPlease find attached your ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}.\n\nPayment due date: ${doc.dueDate || 'Upon receipt'}. Thank you for your business!`,
+        customMessage: `Dear ${doc.client.name},\n\nPlease find attached your ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}.\n\nYou can also view and settle this invoice online here:\n${invoiceUrl}\n\nPayment due date: ${doc.dueDate || 'Upon receipt'}. Thank you for your business!`,
       });
 
-      showToast(`✓ Invoice sent to ${doc.client.email} and saved to dashboard as Sent!`, 'success');
+      showToast(`✓ Invoice dispatched to ${doc.client.email} & saved as Sent!`, 'success');
       setShareModalOpen(false);
+      if (isApp) {
+        setTimeout(() => navigate('/app/documents'), 1500);
+      }
     } catch {
       showToast('Email dispatch complete.', 'success');
       setShareModalOpen(false);
@@ -442,19 +462,13 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
   };
 
-  const handleOpenGmail = () => {
-    const portalUrl = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
+  const handleOpenGmail = async () => {
+    await markAsSentAndSave();
+    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
     const subject = `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name}`;
-    const body = `Dear ${doc.client.name},\n\nPlease find your official ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name}.\n\nYou can review your statement online here:\n${portalUrl}\n\nThank you!`;
+    const body = `Dear ${doc.client.name},\n\nPlease find your official ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name}.\n\nYou can review your invoice online here:\n${invoiceUrl}\n\nThank you!`;
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(doc.client.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, '_blank');
-  };
-
-  const handleOpenDefaultMail = () => {
-    const portalUrl = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
-    const subject = `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name}`;
-    const body = `Dear ${doc.client.name},\n\nPlease find your official ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name}.\n\nYou can review your statement online here:\n${portalUrl}`;
-    window.location.href = `mailto:${encodeURIComponent(doc.client.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const handlePrint = () => {
@@ -1640,9 +1654,12 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
       {/* Multi-Channel Share & Send Modal */}
       {shareModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(9, 13, 22, 0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
-          <div style={{ background: '#ffffff', borderRadius: 'var(--radius-2xl, 20px)', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+          <div style={{ background: '#ffffff', borderRadius: 'var(--radius-2xl, 20px)', maxWidth: '500px', width: '100%', padding: '2rem', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
             <button
-              onClick={() => setShareModalOpen(false)}
+              onClick={() => {
+                setShareModalOpen(false);
+                setResendConfirmed(false);
+              }}
               style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '4px' }}
             >
               <X size={20} />
@@ -1654,41 +1671,100 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 Share & Dispatch {doc.type.toUpperCase()} #{doc.documentNumber}
               </h3>
             </div>
-            <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: '0 0 1.5rem 0' }}>
-              Choose how you'd like to deliver this document to <strong>{doc.client.name || 'your client'}</strong>.
+            <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: '0 0 1.25rem 0' }}>
+              Send an interactive payment link or dispatch via your client's favorite channel.
             </p>
 
-            {/* In-App Direct Email Form */}
-            <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                <Mail size={14} color="#0B1F3A" />
-                <span>Send Official Invoice Email</span>
+            {/* Duplicate Resend Safeguard Warning */}
+            {doc.status === 'sent' && !resendConfirmed && (
+              <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#92400E' }}>
+                    This Invoice Has Already Been Sent
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#78350F', marginTop: '2px', lineHeight: 1.4 }}>
+                    Invoice #{doc.documentNumber} is already marked as Sent on your dashboard. Are you sure you want to resend this invoice link to <strong>{doc.client.name || 'this client'}</strong>?
+                  </div>
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setResendConfirmed(true)}
+                      className="btn btn-sm"
+                      style={{ background: '#D97706', color: '#ffffff', border: 'none', padding: '5px 12px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      Yes, Resend Invoice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShareModalOpen(false)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
-              <input
-                type="email"
-                className="form-input"
-                placeholder="client@company.com"
-                value={doc.client.email || ''}
-                onChange={(e) => setDoc({ ...doc, client: { ...doc.client, email: e.target.value } })}
-                style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}
-              />
-              <button
-                type="button"
-                onClick={handleSendClientEmail}
-                disabled={emailSending}
-                className="btn btn-primary btn-sm"
-                style={{ width: '100%', justifyContent: 'center' }}
-              >
-                <Send size={14} />
-                <span>{emailSending ? 'Sending PDF Invoice...' : 'Send Invoice Email Directly'}</span>
-              </button>
+            )}
+
+            {/* Dedicated Buyer Link Box */}
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '0.375rem', letterSpacing: '0.05em' }}>
+                Dedicated Buyer Payment Link (Shows Invoice Alone)
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/invoice/${doc.id}`}
+                  style={{ flex: 1, padding: '6px 10px', fontSize: '0.8125rem', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#ffffff', color: '#0B1F3A', fontWeight: 600 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyInvoiceLink}
+                  className="btn btn-primary btn-sm"
+                  style={{ gap: '0.25rem', whiteSpace: 'nowrap' }}
+                >
+                  <Copy size={13} />
+                  <span>Copy Link</span>
+                </button>
+              </div>
             </div>
 
-            {/* Quick Multi-Channel Shortcuts */}
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.625rem' }}>
-              Or Dispatch Via Other Channels:
+            {/* Direct In-App Email Dispatch */}
+            <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Mail size={13} color="#0B1F3A" />
+                <span>Send Official Invoice to Client Email</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="email"
+                  className="form-input"
+                  placeholder="client@company.com"
+                  value={doc.client.email || ''}
+                  onChange={(e) => setDoc({ ...doc, client: { ...doc.client, email: e.target.value } })}
+                  style={{ fontSize: '0.8125rem', padding: '6px 10px', flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSendClientEmail}
+                  disabled={emailSending}
+                  className="btn btn-secondary btn-sm"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  <Send size={13} />
+                  <span>{emailSending ? 'Sending...' : 'Send Email'}</span>
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '1.25rem' }}>
+
+            {/* Freelance Share Shortcuts */}
+            <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
+              Instant Freelancer Share Channels:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
               <button
                 type="button"
                 onClick={handleWhatsAppShare}
@@ -1712,6 +1788,48 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
 
               <button
                 type="button"
+                onClick={handleDiscordShare}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #C7D2FE',
+                  background: '#EEF2FF',
+                  color: '#3730A3',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <HelpCircle size={16} color="#5865F2" />
+                <span>Discord</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSlackShare}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #FED7AA',
+                  background: '#FFF7ED',
+                  color: '#9A3412',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <Share2 size={16} color="#EA580C" />
+                <span>Slack</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleOpenGmail}
                 style={{
                   display: 'flex',
@@ -1730,56 +1848,34 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 <ExternalLink size={16} color="#DC2626" />
                 <span>Open Gmail</span>
               </button>
+            </div>
 
-              <button
-                type="button"
-                onClick={handleOpenDefaultMail}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
-                  background: '#F8FAFC',
-                  color: '#334155',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
-              >
-                <Mail size={16} color="#475569" />
-                <span>Mail App</span>
-              </button>
-
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={() => {
-                  const url = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
-                  handleCopyField(url, 'Invoice Statement Link');
+                  setShareModalOpen(false);
+                  setResendConfirmed(false);
                 }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #DBEAFE',
-                  background: '#EFF6FF',
-                  color: '#1E40AF',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
+                className="btn btn-ghost btn-sm"
               >
-                <Copy size={16} color="#2563EB" />
-                <span>Copy Link</span>
+                Close
               </button>
-            </div>
 
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setShareModalOpen(false)} className="btn btn-secondary btn-sm">
-                Done
+              <button
+                type="button"
+                onClick={async () => {
+                  await markAsSentAndSave();
+                  showToast('✓ Invoice marked as Sent and saved to dashboard!', 'success');
+                  setShareModalOpen(false);
+                  if (isApp) {
+                    navigate('/app/documents');
+                  }
+                }}
+                className="btn btn-primary btn-sm"
+              >
+                <span>Done & View in Invoices</span>
+                <ArrowRight size={14} />
               </button>
             </div>
           </div>

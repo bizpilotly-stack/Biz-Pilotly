@@ -24,9 +24,8 @@ export const SupportWidget: React.FC<SupportWidgetProps> = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // WhatsApp Support Direct Link
-  const whatsappNumber = '+2348000000000'; // Default support WhatsApp line
-  const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+  // Official WhatsApp Support Direct Link
+  const whatsappUrl = `https://wa.me/2347079722429?text=${encodeURIComponent(
     `Hello BizPilotly Support, my name is ${name || 'User'} (${email || 'No email'}). I need assistance with: `
   )}`;
 
@@ -39,11 +38,11 @@ export const SupportWidget: React.FC<SupportWidgetProps> = () => {
 
     setIsSubmitting(true);
     try {
-      // Save support ticket locally or send via emailService
+      // Send support ticket directly to bizpilotly@gmail.com
       try {
         await emailService.sendTransactionalEmail({
           templateType: 'payment_reported',
-          recipientEmail: 'support@bizpilotly.com',
+          recipientEmail: 'bizpilotly@gmail.com',
           recipientName: 'BizPilotly Support Team',
           customSubject: `[Support Ticket - ${category.toUpperCase()}] ${subject.trim() || 'User Request'}`,
           customMessage: `From: ${name.trim()} (${email.trim()})\nCategory: ${category}\n\nMessage:\n${message.trim()}`,

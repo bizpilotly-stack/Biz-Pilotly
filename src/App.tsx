@@ -28,6 +28,7 @@ import { ContactPage } from './pages/public/ContactPage';
 import { LoginPage } from './pages/public/LoginPage';
 import { SignupPage } from './pages/public/SignupPage';
 import { ClientPortalPage } from './pages/public/ClientPortalPage';
+import { PublicInvoiceViewPage } from './pages/public/PublicInvoiceViewPage';
 
 // 8 Interactive Calculators
 import { ProfitCalculator } from './pages/calculators/ProfitCalculator';
@@ -96,6 +97,9 @@ export const App: React.FC = () => {
 
               {/* Dedicated Client Portal (Passwordless Statement Access) */}
               <Route path="/portal/:clientId" element={<ClientPortalPage />} />
+              {/* Standalone Public Invoice Showcase */}
+              <Route path="/invoice/:id" element={<PublicInvoiceViewPage />} />
+              <Route path="/portal/invoice/:id" element={<PublicInvoiceViewPage />} />
             </Route>
 
             {/* Protected Business Operations Dashboard Layout */}
