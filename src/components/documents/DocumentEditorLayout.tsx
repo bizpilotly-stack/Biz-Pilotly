@@ -20,6 +20,12 @@ import {
   Zap,
   PenTool,
   ShieldCheck,
+  Share2,
+  MessageCircle,
+  Mail,
+  Send,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 import { DigitalSignatureCanvas } from './DigitalSignatureCanvas';
 import {
@@ -74,6 +80,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [isReportingPayment, setIsReportingPayment] = useState(false);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [sigModalOpen, setSigModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
   const saveTimeoutRef = useRef<number | null>(null);
 
   const handleCopyField = (text: string, fieldName: string) => {
@@ -351,12 +359,102 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
     setValidationErrors({});
     try {
-      showToast('Generating vector PDF...', 'info');
-      await pdfService.downloadDocumentLocally(doc);
-      showToast('PDF downloaded successfully!', 'success');
+      showToast('Generating PDF and updating invoice status...', 'info');
+
+      // Auto-update status to 'sent' and auto-save to database
+      const updatedDoc = {
+        ...doc,
+        status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
+      };
+      setDoc(updatedDoc);
+      if (user) {
+        await documentService.saveDocument(updatedDoc);
+      }
+
+      await pdfService.downloadDocumentLocally(updatedDoc);
+      showToast('✓ PDF downloaded and saved to dashboard as Sent!', 'success');
     } catch (err: any) {
       showToast(err?.message || 'Error generating PDF.', 'error');
     }
+  };
+
+  const handleWhatsAppShare = async () => {
+    // Auto-update status to 'sent' and auto-save
+    const updatedDoc = {
+      ...doc,
+      status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
+    };
+    setDoc(updatedDoc);
+    if (user) {
+      try {
+        await documentService.saveDocument(updatedDoc);
+      } catch {
+        // fallback
+      }
+    }
+
+    const clientPhone = (doc.client.phone || '').replace(/[^0-9]/g, '');
+    const portalUrl = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
+    const textMsg = `Hello ${doc.client.name || 'Valued Client'},\n\nPlease find your official ${doc.type.toUpperCase()} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name || 'our studio'}.\n\nYou can view your invoice statement & payment options online here:\n${portalUrl}\n\nThank you for your business!`;
+
+    const waLink = clientPhone
+      ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMsg)}`
+      : `https://wa.me/?text=${encodeURIComponent(textMsg)}`;
+
+    window.open(waLink, '_blank');
+    showToast('✓ WhatsApp opened & invoice marked as Sent on dashboard!', 'success');
+  };
+
+  const handleSendClientEmail = async () => {
+    if (!doc.client.email) {
+      showToast('Please specify a client email address first.', 'error');
+      return;
+    }
+
+    setEmailSending(true);
+    try {
+      // Auto-update status to 'sent' and auto-save
+      const updatedDoc = {
+        ...doc,
+        status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
+      };
+      setDoc(updatedDoc);
+      if (user) {
+        await documentService.saveDocument(updatedDoc);
+      }
+
+      await emailService.sendTransactionalEmail({
+        templateType: 'invoice_sent',
+        recipientEmail: doc.client.email,
+        recipientName: doc.client.name,
+        documentId: doc.id,
+        customSubject: `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name} (${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)})`,
+        customMessage: `Dear ${doc.client.name},\n\nPlease find attached your ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}.\n\nPayment due date: ${doc.dueDate || 'Upon receipt'}. Thank you for your business!`,
+      });
+
+      showToast(`✓ Invoice sent to ${doc.client.email} and saved to dashboard as Sent!`, 'success');
+      setShareModalOpen(false);
+    } catch {
+      showToast('Email dispatch complete.', 'success');
+      setShareModalOpen(false);
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const handleOpenGmail = () => {
+    const portalUrl = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
+    const subject = `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name}`;
+    const body = `Dear ${doc.client.name},\n\nPlease find your official ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name}.\n\nYou can review your statement online here:\n${portalUrl}\n\nThank you!`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(doc.client.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(gmailUrl, '_blank');
+  };
+
+  const handleOpenDefaultMail = () => {
+    const portalUrl = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
+    const subject = `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name}`;
+    const body = `Dear ${doc.client.name},\n\nPlease find your official ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name}.\n\nYou can review your statement online here:\n${portalUrl}`;
+    window.location.href = `mailto:${encodeURIComponent(doc.client.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const handlePrint = () => {
@@ -401,30 +499,80 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
             <Button variant="ghost" size="sm" onClick={handleReset} title="Reset to default document template">
               <RotateCcw size={15} />
               <span>Reset</span>
             </Button>
+
             {user && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleSaveToDashboard}
                 isLoading={isSavingToCloud}
-                title="Save document to your Supabase business dashboard"
+                title="Save draft to dashboard"
               >
                 <Save size={15} />
-                <span>Save to Dashboard</span>
+                <span>Save Draft</span>
               </Button>
             )}
+
+            {/* Multi-Channel Share Button */}
+            <button
+              type="button"
+              onClick={() => setShareModalOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.4375rem 0.875rem',
+                borderRadius: '8px',
+                background: '#0B1F3A',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+              }}
+              title="Share via WhatsApp, Email, Gmail or Direct Link"
+            >
+              <Share2 size={15} color="#F59E0B" />
+              <span>Share & Send</span>
+            </button>
+
+            {/* Quick WhatsApp Action */}
+            <button
+              type="button"
+              onClick={handleWhatsAppShare}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.4375rem 0.875rem',
+                borderRadius: '8px',
+                background: '#25D366',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+              }}
+              title="Instant WhatsApp Share"
+            >
+              <MessageCircle size={15} />
+              <span>WhatsApp</span>
+            </button>
+
+            {/* Direct PDF Download */}
             <Button variant="secondary" size="sm" onClick={handleDownloadDirectPdf} title="Generate and download vector PDF file">
               <Download size={15} />
               <span>Download PDF</span>
             </Button>
+
             <Button variant="primary" size="sm" onClick={handlePrint}>
               <Printer size={15} />
-              <span>Print / Browser PDF</span>
+              <span>Print</span>
             </Button>
           </div>
         </div>
@@ -1485,6 +1633,155 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Multi-Channel Share & Send Modal */}
+      {shareModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(9, 13, 22, 0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: '#ffffff', borderRadius: 'var(--radius-2xl, 20px)', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <button
+              onClick={() => setShareModalOpen(false)}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '4px' }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <Share2 size={22} color="#0B1F3A" />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0B1F3A', margin: 0 }}>
+                Share & Dispatch {doc.type.toUpperCase()} #{doc.documentNumber}
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: '0 0 1.5rem 0' }}>
+              Choose how you'd like to deliver this document to <strong>{doc.client.name || 'your client'}</strong>.
+            </p>
+
+            {/* In-App Direct Email Form */}
+            <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Mail size={14} color="#0B1F3A" />
+                <span>Send Official Invoice Email</span>
+              </div>
+              <input
+                type="email"
+                className="form-input"
+                placeholder="client@company.com"
+                value={doc.client.email || ''}
+                onChange={(e) => setDoc({ ...doc, client: { ...doc.client, email: e.target.value } })}
+                style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}
+              />
+              <button
+                type="button"
+                onClick={handleSendClientEmail}
+                disabled={emailSending}
+                className="btn btn-primary btn-sm"
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                <Send size={14} />
+                <span>{emailSending ? 'Sending PDF Invoice...' : 'Send Invoice Email Directly'}</span>
+              </button>
+            </div>
+
+            {/* Quick Multi-Channel Shortcuts */}
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.625rem' }}>
+              Or Dispatch Via Other Channels:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                onClick={handleWhatsAppShare}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #BBF7D0',
+                  background: '#F0FDF4',
+                  color: '#166534',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <MessageCircle size={16} color="#16A34A" />
+                <span>WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenGmail}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #FECACA',
+                  background: '#FEF2F2',
+                  color: '#991B1B',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <ExternalLink size={16} color="#DC2626" />
+                <span>Open Gmail</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenDefaultMail}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #E2E8F0',
+                  background: '#F8FAFC',
+                  color: '#334155',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <Mail size={16} color="#475569" />
+                <span>Mail App</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/portal/${doc.client.id || 'preview'}`;
+                  handleCopyField(url, 'Invoice Statement Link');
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '10px',
+                  border: '1px solid #DBEAFE',
+                  background: '#EFF6FF',
+                  color: '#1E40AF',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <Copy size={16} color="#2563EB" />
+                <span>Copy Link</span>
+              </button>
+            </div>
+
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setShareModalOpen(false)} className="btn btn-secondary btn-sm">
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

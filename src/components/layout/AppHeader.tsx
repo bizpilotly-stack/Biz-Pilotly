@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calculator, Bell, Sparkles } from 'lucide-react';
+import { Plus, Calculator, Bell, Sparkles, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { subscriptionService, UserSubscription } from '../../services/subscriptionService';
 import { notificationService } from '../../services/notificationService';
@@ -8,7 +8,11 @@ import { NotificationDropdown } from '../common/NotificationDropdown';
 import { UpgradeModal } from '../subscription/UpgradeModal';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
-export const AppHeader: React.FC = () => {
+interface AppHeaderProps {
+  onOpenFeedback?: () => void;
+}
+
+export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenFeedback }) => {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -90,7 +94,20 @@ export const AppHeader: React.FC = () => {
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          {onOpenFeedback && (
+            <button
+              type="button"
+              onClick={onOpenFeedback}
+              className="btn btn-ghost btn-sm"
+              title="Give Feedback or Request Features"
+              style={{ fontSize: '0.8125rem', color: '#64748B' }}
+            >
+              <MessageSquare size={14} />
+              <span>Feedback</span>
+            </button>
+          )}
+
           <Link to="/app/calculators" className="btn btn-secondary btn-sm">
             <Calculator size={14} />
             <span>Calculators</span>

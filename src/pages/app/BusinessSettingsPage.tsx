@@ -6,6 +6,9 @@ import {
   FileText,
   CreditCard,
   Globe,
+  UploadCloud,
+  Trash2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
@@ -90,6 +93,33 @@ export const BusinessSettingsPage: React.FC = () => {
     }
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Logo file size must be under 2MB.', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      if (settings && base64) {
+        setSettings({ ...settings, logo: base64 });
+        showToast('Logo uploaded! Click "Save Settings" to apply.', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    if (settings) {
+      setSettings({ ...settings, logo: '' });
+      showToast('Logo removed.', 'info');
+    }
+  };
+
   if (loading || !settings) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -118,6 +148,83 @@ export const BusinessSettingsPage: React.FC = () => {
               <Building size={18} color="#1d4ed8" />
               <span>Studio & Entity Profile</span>
             </h3>
+          </div>
+
+          {/* Friendly Logo Uploader */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div
+                style={{
+                  width: '72px',
+                  height: '72px',
+                  borderRadius: '12px',
+                  border: '2px dashed #CBD5E1',
+                  background: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                {settings.logo ? (
+                  <img
+                    src={settings.logo}
+                    alt="Company Logo"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <ImageIcon size={28} color="#94A3B8" />
+                )}
+              </div>
+
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0B1F3A' }}>Official Studio Logo</div>
+                <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '2px' }}>
+                  PNG, JPG, or SVG up to 2MB. Appears on all invoices, quotes & receipts.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  background: '#0B1F3A',
+                  color: '#ffffff',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                <UploadCloud size={15} />
+                <span>{settings.logo ? 'Change Logo' : 'Upload Logo'}</span>
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                  onChange={handleLogoUpload}
+                  style={{ display: 'none' }}
+                />
+              </label>
+
+              {settings.logo && (
+                <button
+                  type="button"
+                  onClick={handleRemoveLogo}
+                  className="btn btn-secondary btn-sm"
+                  style={{ color: '#EF4444' }}
+                >
+                  <Trash2 size={14} />
+                  <span>Remove</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
