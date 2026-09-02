@@ -103,6 +103,50 @@ class DocumentService {
   }
 
   /**
+   * Fetch document by id for unauthenticated public buyers.
+   */
+  async getPublicDocumentById(id: string): Promise<BusinessDocument | null> {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select(`
+          *,
+          document_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            amount,
+            sort_order
+          )
+        `)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (data && !error) {
+        return this.mapRowToDocument(data);
+      }
+    } catch (err) {
+      console.warn('Public doc fetch fallback:', err);
+    }
+
+    // Check localStorage cache
+    try {
+      const local = localStorage.getItem(`bizpilotly_public_doc_${id}`);
+      if (local) return JSON.parse(local);
+      const draft = localStorage.getItem(`bizpilotly_draft_invoice`);
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (parsed.id === id) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+
+    return null;
+  }
+
+  /**
    * Save (create or update) a document and its line items in Supabase.
    */
   async saveDocument(doc: BusinessDocument): Promise<BusinessDocument> {
@@ -218,6 +262,11 @@ class DocumentService {
 
     const saved = await this.getDocumentById(documentId!);
     if (!saved) throw new Error('Failed to retrieve saved document');
+    try {
+      localStorage.setItem(`bizpilotly_public_doc_${saved.id}`, JSON.stringify(saved));
+    } catch {
+      // ignore
+    }
     return saved;
   }
 

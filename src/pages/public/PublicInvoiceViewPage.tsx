@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Download,
-  Printer,
   CreditCard,
   Building,
   CheckCircle2,
@@ -31,19 +30,9 @@ export const PublicInvoiceViewPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    documentService.getDocumentById(id).then((found) => {
+    documentService.getPublicDocumentById(id).then((found) => {
       if (found) {
         setDoc(found);
-      } else {
-        // Fallback: check local storage drafts
-        try {
-          const stored = localStorage.getItem(`bizpilotly_draft_${id}`);
-          if (stored) {
-            setDoc(JSON.parse(stored));
-          }
-        } catch {
-          // fallback
-        }
       }
       setLoading(false);
     });
@@ -173,19 +162,11 @@ export const PublicInvoiceViewPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
             <button
               onClick={handleDownloadPdf}
-              className="btn btn-secondary btn-sm"
+              className="btn btn-primary btn-sm"
               style={{ gap: '0.375rem' }}
             >
               <Download size={15} />
               <span>Download PDF</span>
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="btn btn-ghost btn-sm"
-              style={{ gap: '0.375rem' }}
-            >
-              <Printer size={15} />
-              <span>Print</span>
             </button>
           </div>
         </div>

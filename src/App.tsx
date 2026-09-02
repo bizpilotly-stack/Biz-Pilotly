@@ -94,13 +94,14 @@ export const App: React.FC = () => {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-
-              {/* Dedicated Client Portal (Passwordless Statement Access) */}
-              <Route path="/portal/:clientId" element={<ClientPortalPage />} />
-              {/* Standalone Public Invoice Showcase */}
-              <Route path="/invoice/:id" element={<PublicInvoiceViewPage />} />
-              <Route path="/portal/invoice/:id" element={<PublicInvoiceViewPage />} />
             </Route>
+
+            {/* Standalone Public Invoice Showcase (No Marketing Header/Footer) */}
+            <Route path="/invoice/:id" element={<PublicInvoiceViewPage />} />
+            <Route path="/portal/invoice/:id" element={<PublicInvoiceViewPage />} />
+
+            {/* Standalone Client Portal (Passwordless Statement Access) */}
+            <Route path="/portal/:clientId" element={<ClientPortalPage />} />
 
             {/* Protected Business Operations Dashboard Layout */}
             <Route

@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Plus,
   Trash2,
-  Printer,
   RotateCcw,
   Save,
   Download,
@@ -24,7 +23,6 @@ import {
   MessageCircle,
   Mail,
   Send,
-  ExternalLink,
   X,
   AlertTriangle,
   HelpCircle,
@@ -437,12 +435,11 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     showToast('✓ Discord formatted invoice message copied to clipboard & marked as Sent!', 'success');
   };
 
-  const handleSlackShare = async () => {
+  const handleTelegramShare = async () => {
     await markAsSentAndSave();
     const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
-    const slackText = `*${doc.type.toUpperCase()} #${doc.documentNumber}* from *${doc.business.name || 'Vendor'}*\nTotal: *${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}*\nView Invoice: ${invoiceUrl}`;
-    navigator.clipboard.writeText(slackText);
-    showToast('✓ Slack message copied to clipboard & marked as Sent!', 'success');
+    const text = `Official ${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name || 'Vendor'} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}: ${invoiceUrl}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(invoiceUrl)}&text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleCopyInvoiceLink = async () => {
@@ -485,25 +482,6 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
   };
 
-  const handleOpenGmail = async () => {
-    await markAsSentAndSave();
-    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
-    const subject = `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name}`;
-    const body = `Dear ${doc.client.name},\n\nPlease find your official ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name}.\n\nYou can review your invoice online here:\n${invoiceUrl}\n\nThank you!`;
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(doc.client.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(gmailUrl, '_blank');
-  };
-
-  const handlePrint = () => {
-    const validation = documentService.validate(doc);
-    if (!validation.isValid) {
-      setValidationErrors(validation.errors);
-      showToast('Please fix required validation fields before printing.', 'error');
-      return;
-    }
-    setValidationErrors({});
-    window.print();
-  };
 
   return (
     <div className="section-py-sm">
@@ -578,38 +556,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               <span>Share & Send</span>
             </button>
 
-            {/* Quick WhatsApp Action */}
-            <button
-              type="button"
-              onClick={handleWhatsAppShare}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                padding: '0.4375rem 0.875rem',
-                borderRadius: '8px',
-                background: '#25D366',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-              }}
-              title="Instant WhatsApp Share"
-            >
-              <MessageCircle size={15} />
-              <span>WhatsApp</span>
-            </button>
-
             {/* Direct PDF Download */}
             <Button variant="secondary" size="sm" onClick={handleDownloadDirectPdf} title="Generate and download vector PDF file">
               <Download size={15} />
               <span>Download PDF</span>
-            </Button>
-
-            <Button variant="primary" size="sm" onClick={handlePrint}>
-              <Printer size={15} />
-              <span>Print</span>
             </Button>
           </div>
         </div>
@@ -1783,9 +1733,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               </div>
             </div>
 
-            {/* Freelance Share Shortcuts */}
+            {/* Freelance Share Shortcuts: WhatsApp, Discord, Telegram, Copy Link */}
             <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
-              Instant Freelancer Share Channels:
+              Instant Share Channels:
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
               <button
@@ -1832,44 +1782,44 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
 
               <button
                 type="button"
-                onClick={handleSlackShare}
+                onClick={handleTelegramShare}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.625rem 0.875rem',
                   borderRadius: '10px',
-                  border: '1px solid #FED7AA',
-                  background: '#FFF7ED',
-                  color: '#9A3412',
+                  border: '1px solid #BAE6FD',
+                  background: '#F0F9FF',
+                  color: '#0369A1',
                   fontWeight: 700,
                   fontSize: '0.8125rem',
                   cursor: 'pointer',
                 }}
               >
-                <Share2 size={16} color="#EA580C" />
-                <span>Slack</span>
+                <Send size={16} color="#0284C7" />
+                <span>Telegram</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleOpenGmail}
+                onClick={handleCopyInvoiceLink}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.625rem 0.875rem',
                   borderRadius: '10px',
-                  border: '1px solid #FECACA',
-                  background: '#FEF2F2',
-                  color: '#991B1B',
+                  border: '1px solid #E2E8F0',
+                  background: '#F8FAFC',
+                  color: '#334155',
                   fontWeight: 700,
                   fontSize: '0.8125rem',
                   cursor: 'pointer',
                 }}
               >
-                <ExternalLink size={16} color="#DC2626" />
-                <span>Open Gmail</span>
+                <Copy size={16} color="#475569" />
+                <span>Copy Link</span>
               </button>
             </div>
 
