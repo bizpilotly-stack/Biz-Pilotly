@@ -88,6 +88,8 @@ export const SignupPage: React.FC = () => {
           errorLower.includes('user already registered')
         ) {
           showToast('This email is already registered. Please sign in to your existing account.', 'error');
+        } else if (errorLower.includes('rate limit') || errorLower.includes('too many requests')) {
+          showToast('Email rate limit reached by authentication provider. Please wait a couple of minutes before retrying, or disable "Confirm email" in Supabase Auth settings.', 'error');
         } else if (errorLower.includes('fetch') || errorLower.includes('network')) {
           showToast('Network error: Unable to connect to authentication server. Check your connection.', 'error');
         } else {
