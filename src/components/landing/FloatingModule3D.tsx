@@ -22,7 +22,6 @@ interface FloatingModule3DProps {
   rotateZ?: number;
   scale?: number;
   floatDelay?: string;
-  isHero?: boolean;
 }
 
 export const FloatingModule3D: React.FC<FloatingModule3DProps> = ({

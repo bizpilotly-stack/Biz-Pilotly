@@ -63,7 +63,7 @@ export const Ecosystem3DHero: React.FC = () => {
         }}
       >
         {/* Dynamic Vector Connections */}
-        <ConnectionLines3D isHero progress={1} />
+        <ConnectionLines3D progress={1} />
 
         {/* Central BizPilotly Engine Node */}
         <div className="ecosystem-central-anchor" title="BizPilotly Unified Engine">
