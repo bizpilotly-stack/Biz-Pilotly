@@ -13,12 +13,11 @@ export const KineticText: React.FC<KineticTextProps> = ({
   className = '',
   style = {},
 }) => {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<any>(null);
   const [progress, setProgress] = useState(0);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
 
   useEffect(() => {
-    // Check prefers-reduced-motion
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setIsReducedMotion(true);
       return;
@@ -32,7 +31,6 @@ export const KineticText: React.FC<KineticTextProps> = ({
           if (!ref.current) return;
           const rect = ref.current.getBoundingClientRect();
           const windowHeight = window.innerHeight;
-          // Progress: 0 when top is at bottom of viewport, 1 when element is past lower third
           const start = windowHeight;
           const end = windowHeight * 0.35;
           const current = rect.top;
@@ -50,20 +48,20 @@ export const KineticText: React.FC<KineticTextProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const Component = Tag as any;
+
   if (isReducedMotion) {
     return (
-      // @ts-ignore
-      <Tag className={className} style={style}>
+      <Component className={className} style={style}>
         {children}
-      </Tag>
+      </Component>
     );
   }
 
   const words = children.split(' ');
 
   return (
-    // @ts-ignore
-    <Tag
+    <Component
       ref={ref}
       className={`kinetic-text-wrapper ${className}`}
       style={{
@@ -74,7 +72,6 @@ export const KineticText: React.FC<KineticTextProps> = ({
       }}
     >
       {words.map((word, index) => {
-        // Differential timing per word for subtle inertia
         const wordOffset = (index / Math.max(1, words.length - 1)) * 0.15;
         const wordProgress = Math.max(0, Math.min(1, (progress - wordOffset) / 0.85));
 
@@ -99,6 +96,6 @@ export const KineticText: React.FC<KineticTextProps> = ({
           </span>
         );
       })}
-    </Tag>
+    </Component>
   );
 };
