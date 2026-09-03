@@ -8,8 +8,6 @@ import {
   AlertCircle,
   FileSpreadsheet,
   MoreVertical,
-  User,
-  Trash2,
 } from 'lucide-react';
 import { Payment } from '../../types';
 import { paymentService } from '../../services/paymentService';
