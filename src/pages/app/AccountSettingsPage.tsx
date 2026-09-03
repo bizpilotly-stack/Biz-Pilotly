@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon, Lock, Bell } from 'lucide-react';
+import { User as UserIcon, Lock, Bell, ShieldCheck, Mail, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
@@ -30,6 +30,13 @@ export const AccountSettingsPage: React.FC = () => {
       setEmail(user.email || '');
     }
   }, [user]);
+
+  const initials = (name || user?.email || 'U')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,48 +88,94 @@ export const AccountSettingsPage: React.FC = () => {
   return (
     <div>
       <SEO
-        title={`Account Settings | ${BRAND_NAME}`}
-        description="Manage your personal profile, credentials, and notification preferences."
+        title={`Account Profile | ${BRAND_NAME}`}
+        description="Manage your personal administrator profile, credentials, and notification preferences."
       />
 
       <PageHeader
-        title="Account Settings"
+        title="Profile & Account"
         description="Manage your personal administrator credentials, login email, and notification preferences."
       />
 
-      <div style={{ maxWidth: '780px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div style={{ maxWidth: '840px', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+        {/* Profile Overview Card */}
+        <div className="card" style={{ background: 'linear-gradient(135deg, #0B1F3A 0%, #071527 100%)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C9A227 0%, #F59E0B 100%)',
+                  color: '#0B1F3A',
+                  fontSize: '1.25rem',
+                  fontWeight: 900,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(201, 162, 39, 0.4)',
+                  flexShrink: 0,
+                }}
+              >
+                {initials}
+              </div>
+              <div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>
+                  {name || 'Business Administrator'}
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '2px' }}>
+                  <Mail size={13} />
+                  <span>{email || 'admin@bizpilotly.com'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-gold" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}>
+                <ShieldCheck size={13} />
+                <span>Verified Account</span>
+              </span>
+              <span className="badge badge-neutral" style={{ background: 'rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '0.75rem' }}>
+                Admin
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Personal Details */}
         <div className="card">
           <div className="card-header">
             <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <UserIcon size={18} color="#1d4ed8" />
-              <span>Personal Profile</span>
+              <UserIcon size={18} color="#2563EB" />
+              <span>Personal Information</span>
             </h3>
           </div>
 
           <form onSubmit={handleUpdateProfile}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
               <Input
-                label="Full Name"
+                label="Full Legal Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Alex Morgan"
                 required
               />
               <div>
                 <Input
-                  label="Login Email Address"
+                  label="Authentication Email"
                   type="email"
                   value={email}
                   disabled
                 />
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Email is managed through your Supabase authentication account.
+                  Managed securely through your Supabase account.
                 </p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <Button type="submit" variant="secondary" size="sm" isLoading={profileLoading}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <Button type="submit" variant="primary" size="sm" isLoading={profileLoading}>
                 Save Profile
               </Button>
             </div>
@@ -133,13 +186,13 @@ export const AccountSettingsPage: React.FC = () => {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Lock size={18} color="#1d4ed8" />
-              <span>Security & Password</span>
+              <Lock size={18} color="#2563EB" />
+              <span>Security & Credentials</span>
             </h3>
           </div>
 
           <form onSubmit={handleChangePassword}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
               <Input
                 label="New Password"
                 type="password"
@@ -156,7 +209,7 @@ export const AccountSettingsPage: React.FC = () => {
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
               <Button type="submit" variant="secondary" size="sm" isLoading={passwordLoading}>
                 Update Password
               </Button>
@@ -168,7 +221,7 @@ export const AccountSettingsPage: React.FC = () => {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Bell size={18} color="#1d4ed8" />
+              <Bell size={18} color="#2563EB" />
               <span>Notification Preferences</span>
             </h3>
           </div>
@@ -214,7 +267,7 @@ export const AccountSettingsPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               size="sm"
               onClick={() => showToast('Notification preferences updated.', 'success')}
             >

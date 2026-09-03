@@ -57,7 +57,7 @@ export const HomePage: React.FC = () => {
         canonical="https://bizpilotly.com/"
       />
 
-      {/* 1. IMMERSIVE 3D HERO SECTION WITH KINETIC TYPOGRAPHY */}
+      {/* 1. HERO SECTION WITH 3D ECOSYSTEM & KINETIC TYPOGRAPHY */}
       <section
         className="section-py"
         style={{
@@ -179,20 +179,31 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. SECTION 01: ASYMMETRIC EDITORIAL BENTO GRID */}
+      {/* 2. PLATFORM ARCHITECTURE (BENTO GRID) */}
       <ProductBentoGrid />
 
-      {/* 3. SECTION 02: 7-STEP FINANCIAL WORKFLOW */}
+      {/* 3. END-TO-END WORKFLOW (7 STEPS) */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-                <span className="editorial-number">02</span>
-                <span className="editorial-divider" />
-                <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
-                  End-to-End Workflow
-                </span>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: 'var(--brand-gold-100)',
+                  color: 'var(--brand-gold-700)',
+                  padding: '0.3rem 0.875rem',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  marginBottom: '1rem',
+                  border: '1px solid var(--brand-gold-200)',
+                }}
+              >
+                <Sparkles size={13} color="#C9A227" />
+                <span>End-to-End Workflow</span>
               </div>
               <KineticText
                 as="h2"
@@ -266,15 +277,26 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. SECTION 03: THREE PILLARS (CALCULATE, CREATE, MANAGE) */}
+      {/* 4. THREE FUNCTIONAL PILLARS (CALCULATE, CREATE, MANAGE) */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-            <span className="editorial-number">03</span>
-            <span className="editorial-divider" />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
-              Functional Pillars
-            </span>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'var(--brand-gold-100)',
+              color: 'var(--brand-gold-700)',
+              padding: '0.3rem 0.875rem',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              marginBottom: '1rem',
+              border: '1px solid var(--brand-gold-200)',
+            }}
+          >
+            <Sparkles size={13} color="#C9A227" />
+            <span>Functional Pillars</span>
           </div>
           <KineticText
             as="h2"
@@ -409,16 +431,27 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. SECTION 04: PRICING */}
+      {/* 5. PRICING SECTION */}
       <section className="section-py" id="pricing" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
         <div className="container">
           <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-              <span className="editorial-number">04</span>
-              <span className="editorial-divider" />
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
-                Subscription Plans
-              </span>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'rgba(201, 162, 39, 0.15)',
+                color: '#C9A227',
+                padding: '0.3rem 0.875rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                marginBottom: '1rem',
+                border: '1px solid rgba(201, 162, 39, 0.3)',
+              }}
+            >
+              <Sparkles size={13} color="#C9A227" />
+              <span>Subscription Plans</span>
             </div>
             <KineticText
               as="h2"
@@ -573,16 +606,27 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. SECTION 05: FAQ */}
+      {/* 6. FAQ SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container-sm">
           <div className="text-center" style={{ marginBottom: '3rem' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-              <span className="editorial-number">05</span>
-              <span className="editorial-divider" />
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
-                Inquiries
-              </span>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'var(--brand-gold-100)',
+                color: 'var(--brand-gold-700)',
+                padding: '0.3rem 0.875rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                marginBottom: '1rem',
+                border: '1px solid var(--brand-gold-200)',
+              }}
+            >
+              <Sparkles size={13} color="#C9A227" />
+              <span>Inquiries</span>
             </div>
             <KineticText
               as="h2"
@@ -648,7 +692,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 7. SECTION 06: FINAL CTA */}
+      {/* 7. FINAL CALL TO ACTION */}
       <section className="section-py" style={{ background: 'linear-gradient(135deg, #0A0A0A 0%, #0B1F3A 100%)', color: '#ffffff' }}>
         <div className="container text-center">
           <KineticText

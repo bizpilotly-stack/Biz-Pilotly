@@ -4,7 +4,6 @@ import {
   Users,
   FileText,
   CreditCard,
-  FileSpreadsheet,
   TrendingUp,
   Sparkles,
   ArrowRight,
@@ -17,19 +16,37 @@ export const ProductBentoGrid: React.FC = () => {
   return (
     <section className="bento-section" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', padding: '5rem 0' }}>
       <div className="container">
-        {/* Section Header with Levo-style Editorial Numbering */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3.5rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+        {/* Section Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-              <span className="editorial-number">01</span>
-              <span className="editorial-divider" />
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
-                Platform Architecture
-              </span>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'var(--brand-gold-100)',
+                color: 'var(--brand-gold-700)',
+                padding: '0.3rem 0.875rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                marginBottom: '1rem',
+                border: '1px solid var(--brand-gold-200)',
+              }}
+            >
+              <Sparkles size={13} color="#C9A227" />
+              <span>Platform Architecture</span>
             </div>
             <KineticText
               as="h2"
-              style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: '0 0 0.5rem', lineHeight: 1.15 }}
+              style={{
+                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                fontWeight: 800,
+                color: 'var(--brand-black)',
+                letterSpacing: '-0.03em',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.15,
+              }}
             >
               Everything Your Business Needs. Connected in One Command Center.
             </KineticText>
@@ -39,9 +56,9 @@ export const ProductBentoGrid: React.FC = () => {
           </p>
         </div>
 
-        {/* Bento Grid Layout (LP Grid / 21st.dev Asymmetric Hierarchy) */}
+        {/* Bento Grid Layout (Strictly Balanced 3-Column Hierarchy) */}
         <div className="bento-grid">
-          {/* 1. LARGE PRIMARY ANCHOR CELL (Spans 2 columns & 2 rows on desktop) */}
+          {/* 1. LARGE PRIMARY ANCHOR CELL (Spans 2 columns) */}
           <div className="bento-card bento-card-hero">
             <div className="bento-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -104,7 +121,7 @@ export const ProductBentoGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. CELL: CLIENT DIRECTORY */}
+          {/* 2. CELL: CLIENT DIRECTORY (1 Column) */}
           <div className="bento-card">
             <div className="bento-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -138,7 +155,7 @@ export const ProductBentoGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. CELL: DOCUMENT LIFECYCLE PIPELINE */}
+          {/* 3. CELL: DOCUMENT LIFECYCLE PIPELINE (1 Column) */}
           <div className="bento-card">
             <div className="bento-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -171,7 +188,7 @@ export const ProductBentoGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. CELL: PAYMENTS & SETTLEMENT */}
+          {/* 4. CELL: PAYMENTS & SETTLEMENT (1 Column) */}
           <div className="bento-card">
             <div className="bento-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -203,37 +220,7 @@ export const ProductBentoGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* 5. CELL: EXPENSES & TAX LEDGER */}
-          <div className="bento-card">
-            <div className="bento-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="bento-icon-badge" style={{ background: 'rgba(248, 113, 113, 0.15)', color: '#EF4444' }}>
-                  <FileSpreadsheet size={16} />
-                </div>
-                <div>
-                  <span className="bento-category">Overheads</span>
-                  <h3 className="bento-title">Expenses & Accounting</h3>
-                </div>
-              </div>
-            </div>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              Track contractor payouts, software licenses, and server costs. Deductible overheads update your net margin instantly.
-            </p>
-
-            {/* Real Expense Snapshot */}
-            <div className="bento-mini-preview">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                <span style={{ color: '#64748B' }}>Direct Project Costs:</span>
-                <strong style={{ color: '#EF4444' }}>-$318.00</strong>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', marginTop: '4px' }}>
-                <span style={{ color: '#64748B' }}>1-Click CSV Ledger:</span>
-                <span className="badge badge-neutral" style={{ fontSize: '0.625rem' }}>Tax Ready</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 6. CELL: REALIZED PROFIT & MARGIN GAUGE */}
+          {/* 5. CELL: EXPENSES, ACCOUNTING & REALIZED NET PROFIT (1 Column) */}
           <div className="bento-card">
             <div className="bento-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -241,21 +228,21 @@ export const ProductBentoGrid: React.FC = () => {
                   <TrendingUp size={16} />
                 </div>
                 <div>
-                  <span className="bento-category">Intelligence</span>
-                  <h3 className="bento-title">Realized Net Profit</h3>
+                  <span className="bento-category">Accounting</span>
+                  <h3 className="bento-title">Profit & Overheads</h3>
                 </div>
               </div>
             </div>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              Know exactly how much cash you keep after every delivery without complex financial modeling or spreadsheet errors.
+              Deductible expenses update your true profit margins in real-time. Export 1-click tax ledgers instantly.
             </p>
 
             {/* Realized Profit Badge */}
             <div className="bento-mini-preview" style={{ background: '#0B1F3A', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase' }}>Net Profit Margin</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#C9A227', marginTop: '2px' }}>81.9% Target</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase' }}>Net Margin Target</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#C9A227', marginTop: '2px' }}>81.9% Net</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>Realized Return</div>
