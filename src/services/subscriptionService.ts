@@ -340,10 +340,68 @@ class SubscriptionService {
   }
 
   /**
+   * Evaluates the effective active plan (evaluating status and trial bounds).
+   */
+  getEffectivePlan(sub: UserSubscription): PlanTier {
+    if (sub.status === 'ACTIVE') {
+      return sub.plan;
+    }
+    if (sub.status === 'TRIAL_ACTIVE') {
+      // Trial is strictly limited to the chosen plan (pro or business)
+      return sub.plan;
+    }
+    // Free Starter by default
+    return 'free';
+  }
+
+  /**
+   * Strict plan-based feature entitlement checker.
+   * During trial, users receive ONLY the features of their selected plan.
+   */
+  canAccessPlanFeature(
+    sub: UserSubscription,
+    feature:
+      | 'unlimited_documents'
+      | 'unlimited_clients'
+      | 'custom_logo'
+      | 'white_label'
+      | 'recurring_invoices'
+      | 'task_csv'
+      | 'accounting_csv'
+      | 'team_seats'
+      | 'multi_workspace'
+      | 'audit_logs'
+  ): boolean {
+    const effectivePlan = this.getEffectivePlan(sub);
+
+    switch (feature) {
+      case 'team_seats':
+      case 'multi_workspace':
+      case 'audit_logs':
+        // Business Suite only
+        return effectivePlan === 'business';
+
+      case 'unlimited_documents':
+      case 'unlimited_clients':
+      case 'custom_logo':
+      case 'white_label':
+      case 'recurring_invoices':
+      case 'task_csv':
+      case 'accounting_csv':
+        // Professional or Business Suite
+        return effectivePlan === 'pro' || effectivePlan === 'business';
+
+      default:
+        return true;
+    }
+  }
+
+  /**
    * Feature-gating checker.
    */
   canAccessPaidFeatures(sub: UserSubscription): boolean {
-    return sub.status === 'ACTIVE' || sub.status === 'TRIAL_ACTIVE';
+    const effective = this.getEffectivePlan(sub);
+    return effective === 'pro' || effective === 'business';
   }
 
   private persistSubscription(userId: string, data: Partial<UserSubscription>): void {

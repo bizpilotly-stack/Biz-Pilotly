@@ -286,29 +286,44 @@
    RESPONSIVE MEDIA QUERIES & REDUCED MOTION
    ========================================================================== */
 
-@media (max-width: 1024px) {
+/* Tablet & iPad Pro / Air Optimization (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ecosystem-3d-viewport {
+    min-height: 420px;
+  }
   .ecosystem-3d-world {
-    transform: scale(0.88);
+    transform: scale(0.82);
+    transform-origin: center center;
+  }
+  .scroll-story-sticky {
+    padding: 1.5rem 1rem;
+  }
+  .scroll-story-product-window {
+    max-width: 720px;
   }
 }
 
+/* Mobile Devices (<768px) */
 @media (max-width: 768px) {
   .ecosystem-3d-viewport {
-    min-height: 380px;
+    min-height: 360px;
     perspective: none;
+    overflow-x: clip;
   }
   .ecosystem-3d-world {
     max-width: 100%;
-    height: 360px;
-    transform: none !important;
+    height: 350px;
+    transform: scale(0.72) !important;
+    transform-origin: center center;
   }
   .scroll-story-sticky {
     height: auto;
     min-height: 100vh;
-    padding: 2.5rem 1rem;
+    padding: 2rem 1rem;
+    overflow-x: clip;
   }
   .scroll-step-indicator {
-    bottom: 1rem;
+    bottom: 0.75rem;
   }
 }
 

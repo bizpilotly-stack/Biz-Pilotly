@@ -209,22 +209,22 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           business: {
             ...prev.business,
             name: prev.business.name || settings.name,
-            logo: prev.business.logo || settings.logo,
+            logo: settings.logo || prev.business.logo,
             email: prev.business.email || settings.email,
             phone: prev.business.phone || settings.phone,
             address: prev.business.address || settings.address,
           },
           signature: prev.signature || settings.signature,
-          paymentDetails: {
+          paymentDetails: documentType === 'invoice' ? {
             ...prev.paymentDetails,
             bankName: prev.paymentDetails?.bankName || settings.bankDetails?.bankName,
             accountName: prev.paymentDetails?.accountName || settings.bankDetails?.accountName,
             accountNumber: prev.paymentDetails?.accountNumber || settings.bankDetails?.accountNumber,
-          },
+          } : undefined,
         }));
       }
     }).catch(console.error);
-  }, []);
+  }, [documentType]);
 
   // Auto-save draft on doc state changes (debounced by 300ms)
   useEffect(() => {

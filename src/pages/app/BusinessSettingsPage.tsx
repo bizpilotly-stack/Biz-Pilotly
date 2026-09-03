@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building,
   Save,
@@ -10,10 +11,14 @@ import {
   Trash2,
   Image as ImageIcon,
   PenTool,
+  AlertTriangle,
+  ShieldAlert,
 } from 'lucide-react';
 import { DigitalSignatureCanvas } from '../../components/documents/DigitalSignatureCanvas';
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
+import { authService } from '../../services/authService';
+import { Modal } from '../../components/common/Modal';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
 import { getCountryProfile } from '../../constants/internationalBanks';
 import { ALL_WORLD_COUNTRIES } from '../../constants/allCountries';
@@ -25,6 +30,7 @@ import { useToast } from '../../components/common/Toast';
 import { SEO } from '../../components/common/SEO';
 
 export const BusinessSettingsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +39,9 @@ export const BusinessSettingsPage: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>('NG');
   const [isCustomBankMode, setIsCustomBankMode] = useState<boolean>(false);
   const [sigModalOpen, setSigModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const countryProfile = getCountryProfile(selectedCountry);
 
@@ -678,6 +687,95 @@ export const BusinessSettingsPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      {/* DANGER ZONE: Account Deletion */}
+      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid #FEE2E2' }}>
+        <div style={{ background: '#FFF5F5', border: '1px solid #FECACA', borderRadius: 'var(--radius-xl)', padding: '1.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626', fontWeight: 800, fontSize: '1.125rem' }}>
+                <ShieldAlert size={20} />
+                <span>Danger Zone: Permanent Account Deletion</span>
+              </div>
+              <p style={{ color: '#7F1D1D', fontSize: '0.875rem', marginTop: '0.5rem', maxWidth: '600px', lineHeight: 1.5 }}>
+                Permanently delete your account, business profile, all client contacts, documents, invoices, receipts, and payment records. This action cannot be reversed.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteConfirmText('');
+                setDeleteModalOpen(true);
+              }}
+              className="btn btn-secondary"
+              style={{ background: '#DC2626', color: '#ffffff', borderColor: '#B91C1C', fontWeight: 700 }}
+            >
+              <Trash2 size={16} />
+              <span>Delete Account</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Permanently Delete Your Account"
+      >
+        <div style={{ padding: '0.5rem 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#DC2626', background: '#FEE2E2', padding: '1rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
+            <AlertTriangle size={24} style={{ flexShrink: 0 }} />
+            <div style={{ fontSize: '0.875rem', lineHeight: 1.4 }}>
+              <strong>Warning:</strong> All your data, documents, templates, and subscription settings will be permanently erased immediately.
+            </div>
+          </div>
+
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Please type <strong style={{ color: '#DC2626', fontFamily: 'var(--font-mono)' }}>DELETE</strong> to confirm permanent deletion:
+          </p>
+
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Type DELETE"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            style={{ marginBottom: '1.5rem', fontFamily: 'var(--font-mono)' }}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <Button variant="secondary" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <button
+              type="button"
+              disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
+              onClick={async () => {
+                if (deleteConfirmText !== 'DELETE') return;
+                setIsDeletingAccount(true);
+                try {
+                  await authService.deleteAccount();
+                  showToast('Account successfully deleted. Goodbye!', 'info');
+                  navigate('/login');
+                } catch (err: any) {
+                  showToast(err?.message || 'Error deleting account.', 'error');
+                  setIsDeletingAccount(false);
+                }
+              }}
+              className="btn btn-primary"
+              style={{
+                background: '#DC2626',
+                borderColor: '#B91C1C',
+                opacity: deleteConfirmText === 'DELETE' ? 1 : 0.5,
+                cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {isDeletingAccount ? 'Deleting Account...' : 'Permanently Delete Account'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Digital Signature Canvas Modal */}
       <DigitalSignatureCanvas

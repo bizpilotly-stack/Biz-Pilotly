@@ -51,10 +51,22 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
   let currentY = margin;
 
   // 1. TOP HEADER: Business Branding & Document Title
+  let textStartX = margin;
+  if (doc.business?.logo) {
+    try {
+      if (doc.business.logo.startsWith('data:image')) {
+        pdf.addImage(doc.business.logo, 'PNG', margin, currentY, 18, 18);
+        textStartX = margin + 22;
+      }
+    } catch {
+      // Graceful fallback if image format cannot be parsed by jsPDF
+    }
+  }
+
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(20);
+  pdf.setFontSize(18);
   pdf.setTextColor(...brandNavy);
-  pdf.text(doc.business?.name || 'My Business Studio', margin, currentY + 6);
+  pdf.text(doc.business?.name || 'My Business Studio', textStartX, currentY + 6);
 
   // Document Type Header
   pdf.setFontSize(16);
@@ -69,15 +81,15 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
     pdf.setTextColor(...textMuted);
-    pdf.text(doc.business.tagline, margin, currentY);
+    pdf.text(doc.business.tagline, textStartX, currentY);
     currentY += 5;
   }
 
   // Header Divider
   pdf.setDrawColor(...borderLight);
   pdf.setLineWidth(0.4);
-  pdf.line(margin, currentY, pageWidth - margin, currentY);
-  currentY += 6;
+  pdf.line(margin, currentY + 2, pageWidth - margin, currentY + 2);
+  currentY += 8;
 
   // 2. METADATA & RECIPIENT GRID (2 Columns)
   const colWidth = (contentWidth - 10) / 2;
@@ -276,7 +288,8 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
   const notesWidth = contentWidth - totalsWidth - 10;
   let notesY = currentY;
 
-  if (doc.paymentDetails?.bankName || doc.paymentDetails?.accountNumber) {
+  // Bank details strictly on Invoices only
+  if (doc.type === 'invoice' && (doc.paymentDetails?.bankName || doc.paymentDetails?.accountNumber)) {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8.5);
     pdf.setTextColor(...brandNavy);
