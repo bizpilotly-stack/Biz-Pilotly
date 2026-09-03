@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Zap,
 } from 'lucide-react';
+import { KineticText } from './KineticText';
 
 export const ProductBentoGrid: React.FC = () => {
   return (
@@ -26,10 +27,12 @@ export const ProductBentoGrid: React.FC = () => {
                 Platform Architecture
               </span>
             </div>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: '0 0 0.5rem', lineHeight: 1.15 }}>
-              Everything Your Business Needs.<br />
-              Connected in One Command Center.
-            </h2>
+            <KineticText
+              as="h2"
+              style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: '0 0 0.5rem', lineHeight: 1.15 }}
+            >
+              Everything Your Business Needs. Connected in One Command Center.
+            </KineticText>
           </div>
           <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '420px', lineHeight: 1.6, margin: 0 }}>
             No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.

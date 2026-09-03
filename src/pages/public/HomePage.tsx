@@ -9,6 +9,11 @@ import {
   Zap,
   Sparkles,
   ChevronDown,
+  Calculator,
+  FileSpreadsheet,
+  FileText,
+  FileCheck,
+  Receipt,
   Crown,
   Check,
 } from 'lucide-react';
@@ -17,10 +22,8 @@ import { SEO } from '../../components/common/SEO';
 import { PRICING_PLANS, PricingCurrency, getStoredCurrency, setStoredCurrency } from '../../config/pricing';
 import { CurrencySelector } from '../../components/common/CurrencySelector';
 import { Ecosystem3DHero } from '../../components/landing/Ecosystem3DHero';
-import { KineticHeadline } from '../../components/landing/KineticHeadline';
-import { KineticStatement } from '../../components/landing/KineticStatement';
 import { ProductBentoGrid } from '../../components/landing/ProductBentoGrid';
-import { KineticWorkflow } from '../../components/landing/KineticWorkflow';
+import { KineticText } from '../../components/landing/KineticText';
 import '../../styles/ecosystem-3d.css';
 
 export const HomePage: React.FC = () => {
@@ -35,6 +38,16 @@ export const HomePage: React.FC = () => {
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
   };
+
+  const workflowItems = [
+    { step: 1, title: 'Price & Target Margin', desc: 'Calculate break-even rates and markup with built-in financial models.', icon: <Calculator size={20} color="#C9A227" /> },
+    { step: 2, title: 'Scope & Proposal', desc: 'Draft clean proposals with timeline milestones and deliverables.', icon: <FileText size={20} color="#0B1F3A" /> },
+    { step: 3, title: 'Client Sign-off', desc: 'Convert agreed terms into confirmed contracts with uploaded signatures.', icon: <FileCheck size={20} color="#0B1F3A" /> },
+    { step: 4, title: 'Invoice Delivery', desc: 'Generate printable invoices and share via WhatsApp, Telegram, or Discord links.', icon: <Receipt size={20} color="#C9A227" /> },
+    { step: 5, title: 'Payment Collection', desc: 'Record incoming bank transfers and card deposits with automatic ledger updates.', icon: <CreditCard size={20} color="#0B1F3A" /> },
+    { step: 6, title: 'Expense Logging', desc: 'Track project expenses and subcontractor payouts against billables.', icon: <FileSpreadsheet size={20} color="#0B1F3A" /> },
+    { step: 7, title: 'Realized Net Profit', desc: 'View your true net profit and margin without messy spreadsheet formulas.', icon: <TrendingUp size={20} color="#10b981" /> },
+  ];
 
   return (
     <div>
@@ -86,16 +99,20 @@ export const HomePage: React.FC = () => {
                 <span>Lightweight Operating System for Freelancers</span>
               </div>
 
-              {/* Kinetic Typography Headline */}
-              <KineticHeadline
-                text={BRAND_NAME}
+              {/* Existing Hero Title with Kinetic Typography */}
+              <KineticText
+                as="h1"
                 style={{
                   fontSize: 'clamp(2.5rem, 5vw, 3.75rem)',
                   fontWeight: 800,
                   color: 'var(--brand-black)',
                   letterSpacing: '-0.04em',
+                  lineHeight: 1.1,
+                  margin: '0 0 0.5rem',
                 }}
-              />
+              >
+                {BRAND_NAME}
+              </KineticText>
 
               <div
                 style={{
@@ -162,16 +179,94 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. SECTION 01: KINETIC EDITORIAL STATEMENT */}
-      <KineticStatement />
-
-      {/* 3. SECTION 02: ASYMMETRIC EDITORIAL BENTO GRID */}
+      {/* 2. SECTION 01: ASYMMETRIC EDITORIAL BENTO GRID */}
       <ProductBentoGrid />
 
-      {/* 4. SECTION 03: 7-STEP FINANCIAL WORKFLOW */}
-      <KineticWorkflow />
+      {/* 3. SECTION 02: 7-STEP FINANCIAL WORKFLOW */}
+      <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
+        <div className="container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+                <span className="editorial-number">02</span>
+                <span className="editorial-divider" />
+                <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
+                  End-to-End Workflow
+                </span>
+              </div>
+              <KineticText
+                as="h2"
+                style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}
+              >
+                From Initial Quote to Realized Net Profit
+              </KineticText>
+            </div>
+            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.6, margin: 0 }}>
+              BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
+            </p>
+          </div>
 
-      {/* 5. SECTION 04: THREE PILLARS (CALCULATE, CREATE, MANAGE) */}
+          {/* Visual Connected Step Chain */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '1rem',
+              alignItems: 'stretch',
+              position: 'relative',
+            }}
+          >
+            {workflowItems.map((item, index) => (
+              <div
+                key={item.step}
+                style={{
+                  background: 'var(--bg-app)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: '1.5rem 1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  boxShadow: 'var(--shadow-xs)',
+                  position: 'relative',
+                  transition: 'border-color var(--transition-fast)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 'var(--radius-full)',
+                    background: index === 6 ? 'var(--brand-gold-500)' : 'var(--brand-navy-800)',
+                    color: '#ffffff',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  {item.step}
+                </div>
+
+                <div style={{ marginBottom: '0.75rem' }}>{item.icon}</div>
+
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  {item.title}
+                </h3>
+
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: 'auto', paddingTop: '0.5rem' }}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. SECTION 03: THREE PILLARS (CALCULATE, CREATE, MANAGE) */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
@@ -181,9 +276,12 @@ export const HomePage: React.FC = () => {
               Functional Pillars
             </span>
           </div>
-          <h2 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '3.5rem' }}>
+          <KineticText
+            as="h2"
+            style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '3.5rem' }}
+          >
             Calculate Accurately. Create Fast. Manage With Clarity.
-          </h2>
+          </KineticText>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem' }}>
             {/* Pillar 1: Calculate */}
@@ -311,7 +409,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. SECTION 05: PRICING */}
+      {/* 5. SECTION 04: PRICING */}
       <section className="section-py" id="pricing" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
         <div className="container">
           <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
@@ -322,9 +420,12 @@ export const HomePage: React.FC = () => {
                 Subscription Plans
               </span>
             </div>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
+            <KineticText
+              as="h2"
+              style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}
+            >
               Simple pricing. Start free.
-            </h2>
+            </KineticText>
             <p style={{ fontSize: '1.0625rem', color: '#94a3b8', lineHeight: 1.6 }}>
               Use BizPilotly for free, or unlock advanced business tools with a 15-day free trial. No credit card required.
             </p>
@@ -472,7 +573,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 7. SECTION 06: FAQ */}
+      {/* 6. SECTION 05: FAQ */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container-sm">
           <div className="text-center" style={{ marginBottom: '3rem' }}>
@@ -483,9 +584,12 @@ export const HomePage: React.FC = () => {
                 Inquiries
               </span>
             </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
+            <KineticText
+              as="h2"
+              style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}
+            >
               Frequently Asked Questions
-            </h2>
+            </KineticText>
             <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
               Clear answers regarding BizPilotly tools, workflow, and features.
             </p>
@@ -544,12 +648,15 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 8. SECTION 07: FINAL EDITORIAL KINETIC CTA */}
+      {/* 7. SECTION 06: FINAL CTA */}
       <section className="section-py" style={{ background: 'linear-gradient(135deg, #0A0A0A 0%, #0B1F3A 100%)', color: '#ffffff' }}>
         <div className="container text-center">
-          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}>
+          <KineticText
+            as="h2"
+            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}
+          >
             Calculate Accurately. Create Fast. Manage With Clarity.
-          </h2>
+          </KineticText>
           <p style={{ fontSize: '1.125rem', color: '#cbd5e1', maxWidth: '600px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
             Join modern freelancers and service businesses using BizPilotly to run their client operations with confidence.
           </p>
