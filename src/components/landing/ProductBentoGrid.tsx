@@ -17,49 +17,45 @@ export const ProductBentoGrid: React.FC = () => {
     <section className="bento-section" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', padding: '5rem 0' }}>
       <div className="container">
         {/* Section Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3.5rem', flexWrap: 'wrap', gap: '2rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '720px', width: '100%' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'var(--brand-gold-100)',
-                color: 'var(--brand-gold-700)',
-                padding: '0.35rem 0.95rem',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                marginBottom: '1.25rem',
-                border: '1px solid var(--brand-gold-200)',
-              }}
-            >
-              <Sparkles size={13} color="#C9A227" />
-              <span>Platform Architecture</span>
-            </div>
-            <KineticText
-              as="h2"
-              style={{
-                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
-                fontWeight: 800,
-                color: 'var(--brand-black)',
-                letterSpacing: '-0.03em',
-                margin: '0 0 0.75rem',
-                lineHeight: 1.15,
-              }}
-            >
-              Everything Your Business Needs. Connected in One Command Center.
-            </KineticText>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '880px', marginBottom: '3.5rem' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'var(--brand-gold-100)',
+              color: 'var(--brand-gold-700)',
+              padding: '0.35rem 0.95rem',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              marginBottom: '1.25rem',
+              border: '1px solid var(--brand-gold-200)',
+            }}
+          >
+            <Sparkles size={13} color="#C9A227" />
+            <span>Platform Architecture</span>
           </div>
-          <div style={{ maxWidth: '440px', width: '100%', margin: '0.5rem 0 0' }}>
-            <KineticText
-              as="p"
-              intensity="subtle"
-              style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}
-            >
-              No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.
-            </KineticText>
-          </div>
+          <KineticText
+            as="h2"
+            style={{
+              fontSize: 'clamp(2rem, 3.5vw, 2.75rem)',
+              fontWeight: 800,
+              color: 'var(--brand-black)',
+              letterSpacing: '-0.03em',
+              margin: '0 0 0.875rem',
+              lineHeight: 1.15,
+            }}
+          >
+            Everything Your Business Needs. Connected in One Command Center.
+          </KineticText>
+          <KineticText
+            as="p"
+            intensity="subtle"
+            style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: '720px' }}
+          >
+            No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.
+          </KineticText>
         </div>
 
         {/* Bento Grid Layout (Strictly Balanced 3-Column Hierarchy) */}

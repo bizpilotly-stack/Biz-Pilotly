@@ -189,43 +189,40 @@ export const HomePage: React.FC = () => {
       {/* 3. END-TO-END WORKFLOW (7 STEPS) */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3.5rem', flexWrap: 'wrap', gap: '2rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '720px', width: '100%' }}>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  background: 'var(--brand-gold-100)',
-                  color: 'var(--brand-gold-700)',
-                  padding: '0.35rem 0.95rem',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  marginBottom: '1.25rem',
-                  border: '1px solid var(--brand-gold-200)',
-                }}
-              >
-                <Sparkles size={13} color="#C9A227" />
-                <span>End-to-End Workflow</span>
-              </div>
-              <KineticText
-                as="h2"
-                intensity="high"
-                style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}
-              >
-                From Initial Quote to Realized Net Profit
-              </KineticText>
+          {/* Section Header */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '880px', marginBottom: '3.5rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'var(--brand-gold-100)',
+                color: 'var(--brand-gold-700)',
+                padding: '0.35rem 0.95rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                marginBottom: '1.25rem',
+                border: '1px solid var(--brand-gold-200)',
+              }}
+            >
+              <Sparkles size={13} color="#C9A227" />
+              <span>End-to-End Workflow</span>
             </div>
-            <div style={{ maxWidth: '440px', width: '100%', margin: '0.5rem 0 0' }}>
-              <KineticText
-                as="p"
-                intensity="subtle"
-                style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}
-              >
-                BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
-              </KineticText>
-            </div>
+            <KineticText
+              as="h2"
+              intensity="high"
+              style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: '0 0 0.875rem', lineHeight: 1.15 }}
+            >
+              From Initial Quote to Realized Net Profit
+            </KineticText>
+            <KineticText
+              as="p"
+              intensity="subtle"
+              style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: '720px' }}
+            >
+              BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
+            </KineticText>
           </div>
 
           {/* Visual Connected Step Chain */}
@@ -291,7 +288,7 @@ export const HomePage: React.FC = () => {
       {/* 4. THREE FUNCTIONAL PILLARS (CALCULATE, CREATE, MANAGE) */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '3.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '880px', marginBottom: '3.5rem' }}>
             <div
               style={{
                 display: 'inline-flex',
@@ -313,9 +310,16 @@ export const HomePage: React.FC = () => {
             <KineticText
               as="h2"
               intensity="high"
-              style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}
+              style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: '0 0 0.875rem', lineHeight: 1.15 }}
             >
               Calculate Accurately. Create Fast. Manage With Clarity.
+            </KineticText>
+            <KineticText
+              as="p"
+              intensity="subtle"
+              style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: '720px' }}
+            >
+              A focused operational toolkit built specifically for freelancers, studios, and independent agencies.
             </KineticText>
           </div>
 
