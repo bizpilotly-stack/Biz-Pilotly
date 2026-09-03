@@ -76,11 +76,28 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
       accountNumber: '•••• 8921',
       routingOrIban: '021000021 / US34 SVBK 0000 8921',
     };
-  } else if (type === 'quote' || type === 'proposal') {
+  } else if (type === 'quote') {
     base.validUntil = nextMonth;
-    if (type === 'proposal') {
-      base.projectOverview = 'Comprehensive brand strategy, user experience overhaul, and responsive design systems delivery tailored for enterprise rollout.';
-    }
+    base.terms = 'This quote is valid for 30 calendar days from issue date. Pricing becomes fixed upon client acceptance.';
+  } else if (type === 'estimate') {
+    base.validUntil = nextMonth;
+    base.notes = 'PROVISIONAL ESTIMATE: Quantities and costs are approximate based on initial scope and may adjust with final project specifications.';
+    base.terms = 'Estimated fees are valid for 30 days. Formal confirmation and deposit required prior to production commencement.';
+  } else if (type === 'proposal') {
+    base.validUntil = nextMonth;
+    base.projectOverview = 'Comprehensive brand strategy, user experience overhaul, and responsive design systems delivery tailored for enterprise rollout.';
+    base.scope = 'Phase 1: Discovery & Architecture. Phase 2: Design Systems & Component UI. Phase 3: Interactive Prototypes & Asset Handoff.';
+    base.deliverables = '1. Complete Figma UI Kit & Design Tokens\n2. Responsive Web Component Blueprints\n3. High-Fidelity Clickable Prototype\n4. Brand Style Guidelines Guidebook';
+    base.timeline = 'Weeks 1-2: Discovery & Strategy\nWeeks 3-5: Interface Design & Reviews\nWeeks 6-7: Refinements & Asset Delivery';
+  } else if (type === 'contract') {
+    base.contractTerms = {
+      parties: 'This Agreement is entered into between Apex Studio Design Co. ("Provider") and Horizon Health Dynamics ("Client").',
+      effectiveDate: today,
+      obligations: 'Provider agrees to deliver specified design services with reasonable professional care. Client agrees to provide timely feedback and settle agreed invoices according to milestone terms.',
+      governingLaw: 'State of Texas / United States',
+      terminationTerms: 'Either party may terminate this agreement with 14 calendar days written notice.',
+    };
+    base.terms = 'Confidentiality, intellectual property assignment upon full payment, and mutual indemnification apply as defined in formal agreement terms.';
   } else if (type === 'receipt') {
     base.paymentMethod = 'Bank Transfer';
     base.paymentReference = `TXN-${Date.now().toString(36).toUpperCase()}`;

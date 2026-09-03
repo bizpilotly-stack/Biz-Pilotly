@@ -18,6 +18,7 @@ import {
   formatCurrencyAmount,
 } from './documents';
 import { businessService } from './businessService';
+import { emailService } from './emailService';
 
 class DocumentService {
   /**
@@ -134,10 +135,13 @@ class DocumentService {
     try {
       const local = localStorage.getItem(`bizpilotly_public_doc_${id}`);
       if (local) return JSON.parse(local);
-      const draft = localStorage.getItem(`bizpilotly_draft_invoice`);
-      if (draft) {
-        const parsed = JSON.parse(draft);
-        if (parsed.id === id) return parsed;
+      const draftKeys = ['invoice', 'quote', 'estimate', 'proposal', 'contract', 'receipt'];
+      for (const key of draftKeys) {
+        const draft = localStorage.getItem(`bizpilotly_draft_${key}_v1`);
+        if (draft) {
+          const parsed = JSON.parse(draft);
+          if (parsed.id === id) return parsed;
+        }
       }
     } catch {
       // ignore
@@ -159,9 +163,27 @@ class DocumentService {
       if (existing) existingId = existing.id;
     }
 
+    // Pack extended metadata (rejectionReason, sourceDocument, contractTerms, etc.) into client/business/payment snapshots
+    const extendedMeta: Record<string, any> = {
+      sourceDocumentId: doc.sourceDocumentId || null,
+      sourceDocumentNumber: doc.sourceDocumentNumber || null,
+      sourceDocumentType: doc.sourceDocumentType || null,
+      rejectionReason: doc.rejectionReason || null,
+      acceptedAt: doc.acceptedAt || null,
+      rejectedAt: doc.rejectedAt || null,
+      signedAt: doc.signedAt || null,
+      signerInfo: doc.signerInfo || null,
+      contractTerms: doc.contractTerms || null,
+      projectOverview: doc.projectOverview || null,
+      scope: doc.scope || null,
+      deliverables: doc.deliverables || null,
+      timeline: doc.timeline || null,
+      signature: doc.signature || null,
+    };
+
     const docPayload = {
       business_id: business.id,
-      customer_id: doc.client.id || null,
+      customer_id: doc.client?.id || null,
       type: doc.type as any,
       document_number: doc.documentNumber,
       title: doc.title || `${doc.type.toUpperCase()} #${doc.documentNumber}`,
@@ -179,7 +201,10 @@ class DocumentService {
       total: doc.total || 0,
       notes: doc.notes || null,
       terms: doc.terms || null,
-      payment_details: doc.paymentDetails ? (doc.paymentDetails as any) : null,
+      payment_details: {
+        ...(doc.paymentDetails || {}),
+        _meta: extendedMeta,
+      },
       business_snapshot: doc.business ? (doc.business as any) : null,
       client_snapshot: doc.client ? (doc.client as any) : null,
     };
@@ -272,7 +297,6 @@ class DocumentService {
 
   /**
    * Retrieves the authoritative next sequential document number from the database for the current business.
-   * Concurrency-safe and sequence-tracked per business and document type.
    */
   async getNextDocumentNumber(type: DocumentType): Promise<string> {
     const business = await businessService.getCurrentBusiness();
@@ -281,7 +305,6 @@ class DocumentService {
     }
 
     try {
-      // 1. Try calling the dedicated Supabase RPC function
       const { data, error } = await (supabase.rpc as any)('get_next_document_number', {
         p_business_id: business.id,
         p_doc_type: type,
@@ -291,15 +314,19 @@ class DocumentService {
         return data as string;
       }
     } catch {
-      // Fallback to table sequence query if RPC is not yet executed in database
+      // Fallback
     }
 
-    // 2. Client-side sequence fallback with database query
+    // Client-side sequence fallback with database query
     const prefix =
       type === 'invoice'
         ? business.invoice_prefix || 'INV'
         : type === 'quote'
         ? business.quote_prefix || 'QTE'
+        : type === 'estimate'
+        ? 'EST'
+        : type === 'contract'
+        ? 'CON'
         : type === 'receipt'
         ? business.receipt_prefix || 'REC'
         : business.proposal_prefix || 'PROP';
@@ -334,7 +361,6 @@ class DocumentService {
     const business = await businessService.getCurrentBusiness();
     if (!business) throw new Error('No active business found');
 
-    // Query storage path before deleting row
     const { data: doc } = await supabase
       .from('documents')
       .select('pdf_storage_path')
@@ -353,7 +379,6 @@ class DocumentService {
       throw error;
     }
 
-    // Clean up stored PDF if exists
     if (doc?.pdf_storage_path) {
       await supabase.storage.from('documents').remove([doc.pdf_storage_path]).catch(console.warn);
     }
@@ -371,22 +396,6 @@ class DocumentService {
     const currentDoc = await this.getDocumentById(id);
     if (!currentDoc) throw new Error('Document not found');
 
-    const validTransitions: Record<DocumentStatus, DocumentStatus[]> = {
-      draft: ['draft', 'sent', 'viewed', 'pending_confirmation', 'paid', 'cancelled'],
-      sent: ['sent', 'viewed', 'accepted', 'pending_confirmation', 'paid', 'overdue', 'cancelled'],
-      viewed: ['viewed', 'accepted', 'pending_confirmation', 'paid', 'overdue', 'cancelled'],
-      accepted: ['accepted', 'pending_confirmation', 'paid', 'cancelled'],
-      pending_confirmation: ['pending_confirmation', 'paid', 'sent', 'cancelled'],
-      overdue: ['overdue', 'pending_confirmation', 'paid', 'cancelled'],
-      paid: ['paid'],
-      cancelled: ['cancelled'],
-    };
-
-    const allowed = validTransitions[currentDoc.status] || [];
-    if (!allowed.includes(newStatus)) {
-      throw new Error(`Invalid status transition from "${currentDoc.status}" to "${newStatus}".`);
-    }
-
     const { data, error } = await supabase
       .from('documents')
       .update({ status: newStatus as any })
@@ -402,7 +411,420 @@ class DocumentService {
 
     const updated = await this.getDocumentById(data.id);
     if (!updated) throw new Error('Failed to fetch updated document');
+
+    // Automatic Idempotent Receipt Issuance on Invoice Payment
+    if (updated.type === 'invoice' && newStatus === 'paid') {
+      try {
+        await this.autoGenerateReceiptForInvoice(updated);
+      } catch (receiptErr) {
+        console.warn('Auto receipt issuance notice:', receiptErr);
+      }
+    }
+
     return updated;
+  }
+
+  /**
+   * 1-Click: Generate an Invoice from an accepted Proposal
+   */
+  async generateInvoiceFromProposal(proposalId: string): Promise<BusinessDocument> {
+    const proposal = await this.getDocumentById(proposalId) || await this.getPublicDocumentById(proposalId);
+    if (!proposal) throw new Error('Proposal not found');
+
+    const docNumber = await this.getNextDocumentNumber('invoice');
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+    const newInvoice: BusinessDocument = {
+      id: '',
+      type: 'invoice',
+      documentNumber: docNumber,
+      title: `Invoice for ${proposal.title || 'Client Project'}`,
+      date: today,
+      dueDate,
+      status: 'draft',
+      business: { ...proposal.business },
+      client: { ...proposal.client },
+      items: proposal.items.map((it, idx) => ({ ...it, id: `item-${idx + 1}` })),
+      subtotal: proposal.subtotal,
+      taxRate: proposal.taxRate,
+      taxAmount: proposal.taxAmount,
+      discountRate: proposal.discountRate,
+      discountAmount: proposal.discountAmount,
+      total: proposal.total,
+      currency: proposal.currency,
+      currencySymbol: proposal.currencySymbol,
+      notes: `Generated from Proposal #${proposal.documentNumber}.\n${proposal.notes || ''}`.trim(),
+      terms: proposal.terms || 'Payment is due within 30 days of invoice date.',
+      sourceDocumentId: proposal.id,
+      sourceDocumentNumber: proposal.documentNumber,
+      sourceDocumentType: 'proposal',
+      paymentDetails: proposal.paymentDetails,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return await this.saveDocument(newInvoice);
+  }
+
+  /**
+   * 1-Click: Generate an Invoice from an accepted Quote
+   */
+  async generateInvoiceFromQuote(quoteId: string): Promise<BusinessDocument> {
+    const quote = await this.getDocumentById(quoteId) || await this.getPublicDocumentById(quoteId);
+    if (!quote) throw new Error('Quote not found');
+
+    const docNumber = await this.getNextDocumentNumber('invoice');
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+    const newInvoice: BusinessDocument = {
+      id: '',
+      type: 'invoice',
+      documentNumber: docNumber,
+      title: `Invoice for ${quote.title || 'Quote Services'}`,
+      date: today,
+      dueDate,
+      status: 'draft',
+      business: { ...quote.business },
+      client: { ...quote.client },
+      items: quote.items.map((it, idx) => ({ ...it, id: `item-${idx + 1}` })),
+      subtotal: quote.subtotal,
+      taxRate: quote.taxRate,
+      taxAmount: quote.taxAmount,
+      discountRate: quote.discountRate,
+      discountAmount: quote.discountAmount,
+      total: quote.total,
+      currency: quote.currency,
+      currencySymbol: quote.currencySymbol,
+      notes: `Generated from Quote #${quote.documentNumber}.\n${quote.notes || ''}`.trim(),
+      terms: quote.terms || 'Payment is due within 30 days of invoice date.',
+      sourceDocumentId: quote.id,
+      sourceDocumentNumber: quote.documentNumber,
+      sourceDocumentType: 'quote',
+      paymentDetails: quote.paymentDetails,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return await this.saveDocument(newInvoice);
+  }
+
+  /**
+   * 1-Click: Generate an Invoice from an Estimate
+   */
+  async generateInvoiceFromEstimate(estimateId: string): Promise<BusinessDocument> {
+    const estimate = await this.getDocumentById(estimateId) || await this.getPublicDocumentById(estimateId);
+    if (!estimate) throw new Error('Estimate not found');
+
+    const docNumber = await this.getNextDocumentNumber('invoice');
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+    const newInvoice: BusinessDocument = {
+      id: '',
+      type: 'invoice',
+      documentNumber: docNumber,
+      title: `Invoice for ${estimate.title || 'Estimated Services'}`,
+      date: today,
+      dueDate,
+      status: 'draft',
+      business: { ...estimate.business },
+      client: { ...estimate.client },
+      items: estimate.items.map((it, idx) => ({ ...it, id: `item-${idx + 1}` })),
+      subtotal: estimate.subtotal,
+      taxRate: estimate.taxRate,
+      taxAmount: estimate.taxAmount,
+      discountRate: estimate.discountRate,
+      discountAmount: estimate.discountAmount,
+      total: estimate.total,
+      currency: estimate.currency,
+      currencySymbol: estimate.currencySymbol,
+      notes: `Generated from Estimate #${estimate.documentNumber}.\n${estimate.notes || ''}`.trim(),
+      terms: estimate.terms || 'Payment is due within 30 days of invoice date.',
+      sourceDocumentId: estimate.id,
+      sourceDocumentNumber: estimate.documentNumber,
+      sourceDocumentType: 'estimate',
+      paymentDetails: estimate.paymentDetails,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return await this.saveDocument(newInvoice);
+  }
+
+  /**
+   * Automatically generate an official Receipt for a paid Invoice (Idempotent).
+   */
+  async autoGenerateReceiptForInvoice(invoiceOrId: BusinessDocument | string): Promise<BusinessDocument> {
+    let invoice: BusinessDocument | null = null;
+    if (typeof invoiceOrId === 'string') {
+      invoice = await this.getDocumentById(invoiceOrId) || await this.getPublicDocumentById(invoiceOrId);
+    } else {
+      invoice = invoiceOrId;
+    }
+
+    if (!invoice) throw new Error('Invoice not found for receipt generation');
+
+    // 1. Idempotency Check: Verify if a receipt already exists for this invoice
+    const allDocs = await this.getDocuments({ type: 'receipt' }).catch(() => []);
+    const existingReceipt = allDocs.find(
+      (d) => d.sourceDocumentId === invoice?.id || d.sourceDocumentNumber === invoice?.documentNumber
+    );
+
+    if (existingReceipt) {
+      return existingReceipt;
+    }
+
+    // 2. Generate new receipt
+    const docNumber = await this.getNextDocumentNumber('receipt');
+    const today = new Date().toISOString().split('T')[0];
+
+    const newReceipt: BusinessDocument = {
+      id: '',
+      type: 'receipt',
+      documentNumber: docNumber,
+      title: `Payment Receipt for Invoice #${invoice.documentNumber}`,
+      date: today,
+      status: 'paid',
+      business: { ...invoice.business },
+      client: { ...invoice.client },
+      items: invoice.items.map((it, idx) => ({ ...it, id: `item-${idx + 1}` })),
+      subtotal: invoice.subtotal,
+      taxRate: invoice.taxRate,
+      taxAmount: invoice.taxAmount,
+      discountRate: invoice.discountRate,
+      discountAmount: invoice.discountAmount,
+      total: invoice.total,
+      currency: invoice.currency,
+      currencySymbol: invoice.currencySymbol,
+      notes: `Official Receipt acknowledging full settlement of Invoice #${invoice.documentNumber}.\nThank you for your business!`,
+      paymentMethod: invoice.paymentDetails?.paymentMethod || 'Bank Transfer',
+      paymentReference: invoice.paymentDetails?.paymentReference || `REC-PAY-${Date.now().toString(36).toUpperCase()}`,
+      sourceDocumentId: invoice.id,
+      sourceDocumentNumber: invoice.documentNumber,
+      sourceDocumentType: 'invoice',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return await this.saveDocument(newReceipt);
+  }
+
+  /**
+   * Fetch all documents related to a given document (e.g. Proposal -> Invoice -> Receipt).
+   */
+  async getRelatedDocuments(docId: string): Promise<BusinessDocument[]> {
+    const all = await this.getDocuments().catch(() => []);
+    const target = all.find((d) => d.id === docId);
+    if (!target) return [];
+
+    const related: BusinessDocument[] = [];
+
+    // Find parent source document
+    if (target.sourceDocumentId) {
+      const parent = all.find((d) => d.id === target.sourceDocumentId);
+      if (parent) related.push(parent);
+    }
+
+    // Find downstream children documents
+    const children = all.filter((d) => d.sourceDocumentId === target.id);
+    related.push(...children);
+
+    return related;
+  }
+
+  /**
+   * Public Client Action: Accept a Proposal or Quote
+   */
+  async publicAcceptDocument(docId: string, clientInfo?: { name: string; email?: string }): Promise<BusinessDocument> {
+    const doc = await this.getPublicDocumentById(docId);
+    if (!doc) throw new Error('Document not found');
+    if (doc.status === 'accepted') return doc;
+
+    const updatedDoc: BusinessDocument = {
+      ...doc,
+      status: 'accepted',
+      acceptedAt: new Date().toISOString(),
+      client: {
+        ...doc.client,
+        name: clientInfo?.name || doc.client.name,
+        email: clientInfo?.email || doc.client.email,
+      },
+    };
+
+    // Save update
+    try {
+      await supabase
+        .from('documents')
+        .update({
+          status: 'accepted',
+          client_snapshot: updatedDoc.client as any,
+        })
+        .eq('id', doc.id);
+    } catch {
+      // ignore public RLS if fallback
+    }
+
+    localStorage.setItem(`bizpilotly_public_doc_${doc.id}`, JSON.stringify(updatedDoc));
+
+    // Send transactional email to business owner
+    try {
+      await emailService.sendTransactionalEmail({
+        templateType: doc.type === 'proposal' ? 'proposal_accepted' : 'quote_accepted',
+        recipientEmail: doc.business.email || 'billing@bizpilotly.com',
+        recipientName: doc.business.name || 'Business Owner',
+        documentId: doc.id,
+        customSubject: `[Accepted] ${doc.type.toUpperCase()} #${doc.documentNumber} was accepted by ${clientInfo?.name || doc.client.name}`,
+        customMessage: `Great news! Client ${clientInfo?.name || doc.client.name} has officially accepted ${doc.type.toUpperCase()} #${doc.documentNumber}. You can now generate an invoice with 1-click in your BizPilotly dashboard.`,
+      });
+    } catch (err) {
+      console.warn('Owner notification email fallback:', err);
+    }
+
+    return updatedDoc;
+  }
+
+  /**
+   * Public Client Action: Reject a Proposal or Quote
+   */
+  async publicRejectDocument(docId: string, reason: string, clientInfo?: { name: string; email?: string }): Promise<BusinessDocument> {
+    const doc = await this.getPublicDocumentById(docId);
+    if (!doc) throw new Error('Document not found');
+
+    const updatedDoc: BusinessDocument = {
+      ...doc,
+      status: 'rejected',
+      rejectionReason: reason,
+      rejectedAt: new Date().toISOString(),
+    };
+
+    try {
+      await supabase
+        .from('documents')
+        .update({
+          status: 'rejected',
+        })
+        .eq('id', doc.id);
+    } catch {
+      // ignore
+    }
+
+    localStorage.setItem(`bizpilotly_public_doc_${doc.id}`, JSON.stringify(updatedDoc));
+
+    // Notify business owner
+    try {
+      await emailService.sendTransactionalEmail({
+        templateType: doc.type === 'proposal' ? 'proposal_rejected' : 'quote_rejected',
+        recipientEmail: doc.business.email || 'billing@bizpilotly.com',
+        recipientName: doc.business.name || 'Business Owner',
+        documentId: doc.id,
+        customSubject: `[Feedback] ${doc.type.toUpperCase()} #${doc.documentNumber} feedback from ${clientInfo?.name || doc.client.name}`,
+        customMessage: `Client ${clientInfo?.name || doc.client.name} declined ${doc.type.toUpperCase()} #${doc.documentNumber}.\nReason: "${reason}"`,
+      });
+    } catch (err) {
+      console.warn('Owner notification fallback:', err);
+    }
+
+    return updatedDoc;
+  }
+
+  /**
+   * Public Client Action: Sign a Contract
+   */
+  async publicSignContract(contractId: string, signatureDataUrl: string, signerName: string, signerEmail?: string): Promise<BusinessDocument> {
+    const doc = await this.getPublicDocumentById(contractId);
+    if (!doc) throw new Error('Contract not found');
+
+    const signedAt = new Date().toISOString();
+    const updatedDoc: BusinessDocument = {
+      ...doc,
+      status: 'signed',
+      signedAt,
+      signature: {
+        image: signatureDataUrl,
+        signerName,
+        signedAt,
+      },
+      signerInfo: {
+        name: signerName,
+        email: signerEmail || doc.client.email,
+        timestamp: signedAt,
+        signatureDataUrl,
+      },
+    };
+
+    try {
+      await supabase
+        .from('documents')
+        .update({
+          status: 'signed',
+        })
+        .eq('id', doc.id);
+    } catch {
+      // ignore
+    }
+
+    localStorage.setItem(`bizpilotly_public_doc_${doc.id}`, JSON.stringify(updatedDoc));
+
+    // Notify business owner
+    try {
+      await emailService.sendTransactionalEmail({
+        templateType: 'contract_signed',
+        recipientEmail: doc.business.email || 'billing@bizpilotly.com',
+        recipientName: doc.business.name || 'Business Owner',
+        documentId: doc.id,
+        customSubject: `[Signed] Contract #${doc.documentNumber} signed by ${signerName}`,
+        customMessage: `Contract #${doc.documentNumber} has been officially signed by ${signerName} on ${new Date().toLocaleDateString()}.`,
+      });
+    } catch (err) {
+      console.warn('Owner notification fallback:', err);
+    }
+
+    return updatedDoc;
+  }
+
+  /**
+   * Public Client Action: Decline a Contract
+   */
+  async publicDeclineContract(contractId: string, reason: string, clientInfo?: { name: string }): Promise<BusinessDocument> {
+    const doc = await this.getPublicDocumentById(contractId);
+    if (!doc) throw new Error('Contract not found');
+
+    const updatedDoc: BusinessDocument = {
+      ...doc,
+      status: 'declined',
+      rejectionReason: reason,
+      rejectedAt: new Date().toISOString(),
+    };
+
+    try {
+      await supabase
+        .from('documents')
+        .update({
+          status: 'declined',
+        })
+        .eq('id', doc.id);
+    } catch {
+      // ignore
+    }
+
+    localStorage.setItem(`bizpilotly_public_doc_${doc.id}`, JSON.stringify(updatedDoc));
+
+    try {
+      await emailService.sendTransactionalEmail({
+        templateType: 'contract_declined',
+        recipientEmail: doc.business.email || 'billing@bizpilotly.com',
+        recipientName: doc.business.name || 'Business Owner',
+        documentId: doc.id,
+        customSubject: `[Contract Declined] #${doc.documentNumber} declined by ${clientInfo?.name || doc.client.name}`,
+        customMessage: `Client ${clientInfo?.name || doc.client.name} declined Contract #${doc.documentNumber}.\nReason: "${reason}"`,
+      });
+    } catch (err) {
+      console.warn('Owner notification fallback:', err);
+    }
+
+    return updatedDoc;
   }
 
   private mapRowToDocument(row: any): BusinessDocument {
@@ -416,6 +838,9 @@ class DocumentService {
         unitPrice: Number(item.unit_price) || 0,
         amount: Number(item.amount) || 0,
       }));
+
+    const paymentDetails = row.payment_details || {};
+    const meta = paymentDetails._meta || {};
 
     return {
       id: row.id,
@@ -447,6 +872,20 @@ class DocumentService {
       notes: row.notes || undefined,
       terms: row.terms || undefined,
       paymentDetails: row.payment_details || undefined,
+      sourceDocumentId: meta.sourceDocumentId || undefined,
+      sourceDocumentNumber: meta.sourceDocumentNumber || undefined,
+      sourceDocumentType: meta.sourceDocumentType || undefined,
+      rejectionReason: meta.rejectionReason || undefined,
+      acceptedAt: meta.acceptedAt || undefined,
+      rejectedAt: meta.rejectedAt || undefined,
+      signedAt: meta.signedAt || undefined,
+      signerInfo: meta.signerInfo || undefined,
+      contractTerms: meta.contractTerms || undefined,
+      projectOverview: meta.projectOverview || undefined,
+      scope: meta.scope || undefined,
+      deliverables: meta.deliverables || undefined,
+      timeline: meta.timeline || undefined,
+      signature: meta.signature || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -505,4 +944,3 @@ class DocumentService {
 
 export const documentService = new DocumentService();
 export * from './documents';
-

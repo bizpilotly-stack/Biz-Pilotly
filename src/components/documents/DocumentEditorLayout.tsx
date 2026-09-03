@@ -85,6 +85,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [resendConfirmed, setResendConfirmed] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const saveTimeoutRef = useRef<number | null>(null);
 
   const handleCopyField = (text: string, fieldName: string) => {
@@ -393,6 +394,36 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
   };
 
+  const handleGenerateInvoice = async () => {
+    setIsConverting(true);
+    try {
+      // Save current document if needed
+      let sourceDoc = doc;
+      if (!sourceDoc.id || sourceDoc.id.startsWith('doc-')) {
+        sourceDoc = await documentService.saveDocument(doc);
+        setDoc(sourceDoc);
+      }
+
+      let newInv: BusinessDocument;
+      if (sourceDoc.type === 'proposal') {
+        newInv = await documentService.generateInvoiceFromProposal(sourceDoc.id);
+      } else if (sourceDoc.type === 'quote') {
+        newInv = await documentService.generateInvoiceFromQuote(sourceDoc.id);
+      } else if (sourceDoc.type === 'estimate') {
+        newInv = await documentService.generateInvoiceFromEstimate(sourceDoc.id);
+      } else {
+        throw new Error('Unsupported conversion type');
+      }
+
+      showToast(`✓ Invoice #${newInv.documentNumber} generated from ${sourceDoc.type}!`, 'success');
+      navigate(isApp ? '/app/documents/invoice' : `/invoice/${newInv.id}`);
+    } catch (err: any) {
+      showToast(err?.message || 'Error generating invoice from document.', 'error');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   const markAsSentAndSave = async (): Promise<BusinessDocument> => {
     const updatedDoc: BusinessDocument = {
       ...doc,
@@ -533,6 +564,33 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               </Button>
             )}
 
+            {/* 1-Click Generate Invoice if Accepted Proposal/Quote or Estimate */}
+            {(doc.status === 'accepted' || doc.type === 'estimate') && (
+              <button
+                type="button"
+                onClick={handleGenerateInvoice}
+                disabled={isConverting}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.4375rem 0.875rem',
+                  borderRadius: '8px',
+                  background: '#10B981',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                }}
+                title="Generate an official invoice inheriting all line items and client data"
+              >
+                <Sparkles size={15} />
+                <span>{isConverting ? 'Generating...' : 'Generate Invoice'}</span>
+              </button>
+            )}
+
             {/* Multi-Channel Share Button */}
             <button
               type="button"
@@ -611,9 +669,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 />
               )}
 
-              {(documentType === 'quote' || documentType === 'proposal') && (
+              {(documentType === 'quote' || documentType === 'proposal' || documentType === 'estimate') && (
                 <Input
-                  label="Quote Valid Until"
+                  label={`${documentType === 'estimate' ? 'Estimate' : 'Quote'} Valid Until`}
                   type="date"
                   value={doc.validUntil || ''}
                   onChange={(e) => setDoc({ ...doc, validUntil: e.target.value })}
@@ -646,17 +704,131 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               </div>
             </div>
 
-            {/* Proposal Specific Narrative Overview */}
+            {/* Proposal Specific Sections: Overview, Scope, Deliverables, Timeline */}
             {documentType === 'proposal' && (
-              <div className="form-group" style={{ marginTop: '0.5rem' }}>
-                <label className="form-label">Project Executive Overview / Scope Narrative</label>
-                <textarea
-                  className="form-textarea"
-                  rows={3}
-                  value={doc.projectOverview || ''}
-                  onChange={(e) => setDoc({ ...doc, projectOverview: e.target.value })}
-                  placeholder="Outline the client goals, strategic approach, and high-level milestones..."
-                />
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">1. Project Executive Overview</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.projectOverview || ''}
+                    onChange={(e) => setDoc({ ...doc, projectOverview: e.target.value })}
+                    placeholder="Outline strategic client objectives and project pitch..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">2. Scope of Work & Milestones</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.scope || ''}
+                    onChange={(e) => setDoc({ ...doc, scope: e.target.value })}
+                    placeholder="Phase breakdown, architecture, and production scope..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">3. Key Deliverables</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.deliverables || ''}
+                    onChange={(e) => setDoc({ ...doc, deliverables: e.target.value })}
+                    placeholder="Itemized deliverables, design files, codebases, or assets..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">4. Estimated Milestone Timeline</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.timeline || ''}
+                    onChange={(e) => setDoc({ ...doc, timeline: e.target.value })}
+                    placeholder="e.g. Weeks 1-2: Discovery, Weeks 3-5: Build & Reviews..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Contract Specific Sections: Parties, Effective Date, Obligations, Governing Law */}
+            {documentType === 'contract' && (
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">1. Agreement Parties & Definitions</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.contractTerms?.parties || ''}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        contractTerms: { ...doc.contractTerms, parties: e.target.value },
+                      })
+                    }
+                    placeholder='e.g. This Agreement is between [Provider Name] ("Provider") and [Client Name] ("Client")...'
+                  />
+                </div>
+                <div className="doc-form-row">
+                  <Input
+                    label="Contract Effective Date"
+                    type="date"
+                    value={doc.contractTerms?.effectiveDate || doc.date}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        contractTerms: { ...doc.contractTerms, effectiveDate: e.target.value },
+                      })
+                    }
+                  />
+                  <Input
+                    label="Governing Law / Jurisdiction"
+                    value={doc.contractTerms?.governingLaw || ''}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        contractTerms: { ...doc.contractTerms, governingLaw: e.target.value },
+                      })
+                    }
+                    placeholder="e.g. State of Delaware, USA / England & Wales"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">2. Mutual Obligations & Standards</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.contractTerms?.obligations || ''}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        contractTerms: { ...doc.contractTerms, obligations: e.target.value },
+                      })
+                    }
+                    placeholder="Obligations of provider and client, acceptance standards, and revisions..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">3. Termination & Dispute Terms</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={doc.contractTerms?.terminationTerms || ''}
+                    onChange={(e) =>
+                      setDoc({
+                        ...doc,
+                        contractTerms: { ...doc.contractTerms, terminationTerms: e.target.value },
+                      })
+                    }
+                    placeholder="e.g. Either party may terminate with 14 days written notice..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Estimate Notice Note */}
+            {documentType === 'estimate' && (
+              <div style={{ marginTop: '0.75rem', background: '#FEF3C7', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #FDE68A', fontSize: '0.8125rem', color: '#92400E' }}>
+                <strong>Provisional Estimate:</strong> Item quantities and rates communicate approximate costs for budgeting purposes.
               </div>
             )}
 
@@ -1149,6 +1321,155 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Source Document Reference Banner */}
+              {doc.sourceDocumentNumber && (
+                <div
+                  style={{
+                    background: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    borderRadius: '8px',
+                    padding: '0.625rem 1rem',
+                    marginBottom: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '0.8125rem',
+                    color: '#1E40AF',
+                    fontWeight: 600,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <Layers size={14} />
+                    <span>Generated from {doc.sourceDocumentType ? doc.sourceDocumentType.toUpperCase() : 'Source'} #{doc.sourceDocumentNumber}</span>
+                  </div>
+                  {doc.sourceDocumentId && (
+                    <Link to={`/invoice/${doc.sourceDocumentId}`} style={{ color: '#2563EB', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.75rem' }}>
+                      <span>View Source</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* Estimate Provisional Disclaimer */}
+              {doc.type === 'estimate' && (
+                <div
+                  style={{
+                    background: '#FEF3C7',
+                    border: '1px solid #FDE68A',
+                    borderRadius: '8px',
+                    padding: '0.625rem 1rem',
+                    marginBottom: '1.25rem',
+                    fontSize: '0.75rem',
+                    color: '#92400E',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <AlertTriangle size={14} />
+                  <span><strong>PROVISIONAL ESTIMATE:</strong> Quantities and pricing are approximate estimates for preliminary client budgeting.</span>
+                </div>
+              )}
+
+              {/* Proposal Specific Narrative Preview */}
+              {doc.type === 'proposal' && (
+                <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {doc.projectOverview && (
+                    <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        Executive Overview
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.projectOverview}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.scope && (
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        Scope of Work & Strategy
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.scope}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.deliverables && (
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        Deliverables
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.deliverables}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.timeline && (
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        Milestone Timeline
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.timeline}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Contract Specific Legal Clauses Preview */}
+              {doc.type === 'contract' && (
+                <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {doc.contractTerms?.parties && (
+                    <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        1. The Parties & Purpose
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.contractTerms.parties}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.contractTerms?.effectiveDate && (
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        2. Effective Date
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5 }}>
+                        Effective Date: <strong>{doc.contractTerms.effectiveDate}</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.contractTerms?.obligations && (
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        3. Mutual Obligations & Deliverable Standards
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.contractTerms.obligations}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.contractTerms?.governingLaw && (
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                        4. Governing Jurisdiction & Termination
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {doc.contractTerms.governingLaw}. {doc.contractTerms.terminationTerms || ''}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Line Items Table */}
               <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>

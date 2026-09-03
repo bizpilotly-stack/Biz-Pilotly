@@ -40,11 +40,13 @@ import { DiscountCalculator } from './pages/calculators/DiscountCalculator';
 import { CommissionCalculator } from './pages/calculators/CommissionCalculator';
 import { PercentageCalculator } from './pages/calculators/PercentageCalculator';
 
-// 4 Document Builders
+// 6 Document Builders
 import { InvoiceBuilderPage } from './pages/documents/InvoiceBuilderPage';
 import { QuoteBuilderPage } from './pages/documents/QuoteBuilderPage';
+import { EstimateBuilderPage } from './pages/documents/EstimateBuilderPage';
 import { ReceiptBuilderPage } from './pages/documents/ReceiptBuilderPage';
 import { ProposalBuilderPage } from './pages/documents/ProposalBuilderPage';
+import { ContractBuilderPage } from './pages/documents/ContractBuilderPage';
 
 // Dashboard App Pages
 import { OverviewPage } from './pages/app/OverviewPage';
@@ -84,8 +86,10 @@ export const App: React.FC = () => {
               <Route path="/documents" element={<DocumentsHubPage />} />
               <Route path="/documents/invoice" element={<InvoiceBuilderPage />} />
               <Route path="/documents/quote" element={<QuoteBuilderPage />} />
-              <Route path="/documents/receipt" element={<ReceiptBuilderPage />} />
+              <Route path="/documents/estimate" element={<EstimateBuilderPage />} />
               <Route path="/documents/proposal" element={<ProposalBuilderPage />} />
+              <Route path="/documents/contract" element={<ContractBuilderPage />} />
+              <Route path="/documents/receipt" element={<ReceiptBuilderPage />} />
 
               {/* Company & Auth Routes */}
               <Route path="/business" element={<BusinessPage />} />
@@ -96,9 +100,11 @@ export const App: React.FC = () => {
               <Route path="/signup" element={<SignupPage />} />
             </Route>
 
-            {/* Standalone Public Invoice Showcase (No Marketing Header/Footer) */}
+            {/* Standalone Public Document / Invoice Showcase */}
             <Route path="/invoice/:id" element={<PublicInvoiceViewPage />} />
+            <Route path="/document/:id" element={<PublicInvoiceViewPage />} />
             <Route path="/portal/invoice/:id" element={<PublicInvoiceViewPage />} />
+            <Route path="/portal/document/:id" element={<PublicInvoiceViewPage />} />
 
             {/* Standalone Client Portal (Passwordless Statement Access) */}
             <Route path="/portal/:clientId" element={<ClientPortalPage />} />
@@ -119,8 +125,10 @@ export const App: React.FC = () => {
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="documents/invoice" element={<InvoiceBuilderPage />} />
               <Route path="documents/quote" element={<QuoteBuilderPage />} />
-              <Route path="documents/receipt" element={<ReceiptBuilderPage />} />
+              <Route path="documents/estimate" element={<EstimateBuilderPage />} />
               <Route path="documents/proposal" element={<ProposalBuilderPage />} />
+              <Route path="documents/contract" element={<ContractBuilderPage />} />
+              <Route path="documents/receipt" element={<ReceiptBuilderPage />} />
               <Route path="recurring" element={<RecurringInvoicesPage />} />
               <Route path="team" element={<TeamSeatsPage />} />
 

@@ -3,8 +3,10 @@ import { DocumentType } from './types';
 export const DEFAULT_PREFIXES: Record<DocumentType, string> = {
   invoice: 'INV',
   quote: 'QTE',
-  receipt: 'REC',
+  estimate: 'EST',
   proposal: 'PROP',
+  contract: 'CON',
+  receipt: 'REC',
 };
 
 /**
@@ -33,11 +35,15 @@ export function getDefaultDocumentTitle(type: DocumentType): string {
     case 'invoice':
       return 'Client Billing Invoice';
     case 'quote':
-      return 'Project Cost Estimate / Quote';
+      return 'Formal Price Quote';
+    case 'estimate':
+      return 'Provisional Project Estimate';
     case 'receipt':
       return 'Official Payment Receipt';
     case 'proposal':
       return 'Business Project Proposal';
+    case 'contract':
+      return 'Client Service Agreement & Contract';
     default:
       return 'Business Document';
   }

@@ -2,9 +2,21 @@
  * Reusable Domain Types & Discriminated Interfaces for BizPilotly Document Engine
  */
 
-export type DocumentType = 'invoice' | 'quote' | 'receipt' | 'proposal';
+export type DocumentType = 'invoice' | 'quote' | 'estimate' | 'proposal' | 'contract' | 'receipt';
 
-export type DocumentStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'paid' | 'pending_confirmation' | 'overdue' | 'cancelled';
+export type DocumentStatus = 
+  | 'draft' 
+  | 'sent' 
+  | 'viewed' 
+  | 'accepted' 
+  | 'rejected'
+  | 'signed'
+  | 'declined'
+  | 'paid' 
+  | 'pending_confirmation' 
+  | 'overdue' 
+  | 'expired'
+  | 'cancelled';
 
 export interface BusinessEntity {
   name: string;
@@ -33,6 +45,22 @@ export interface LineItem {
   quantity: number;
   unitPrice: number;
   amount: number;
+}
+
+export interface SignerInfo {
+  name: string;
+  email?: string;
+  ipAddress?: string;
+  timestamp: string;
+  signatureDataUrl?: string;
+}
+
+export interface ContractTerms {
+  parties?: string;
+  effectiveDate?: string;
+  obligations?: string;
+  governingLaw?: string;
+  terminationTerms?: string;
 }
 
 export interface PaymentDetails {
@@ -68,6 +96,9 @@ export interface BusinessDocument {
   paymentMethod?: string;
   paymentReference?: string;
   projectOverview?: string;
+  scope?: string;
+  deliverables?: string;
+  timeline?: string;
   status: DocumentStatus;
   business: BusinessEntity;
   client: ClientEntity;
@@ -82,6 +113,15 @@ export interface BusinessDocument {
   currencySymbol: string;
   notes?: string;
   terms?: string;
+  sourceDocumentId?: string;
+  sourceDocumentNumber?: string;
+  sourceDocumentType?: DocumentType;
+  rejectionReason?: string;
+  acceptedAt?: string;
+  rejectedAt?: string;
+  signedAt?: string;
+  signerInfo?: SignerInfo;
+  contractTerms?: ContractTerms;
   paymentDetails?: PaymentDetails;
   signature?: {
     image: string;

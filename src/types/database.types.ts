@@ -6,8 +6,21 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type DocumentType = 'invoice' | 'quote' | 'receipt' | 'proposal';
-export type DocumentStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'paid' | 'overdue' | 'cancelled';
+export type DocumentType = 'invoice' | 'quote' | 'estimate' | 'proposal' | 'contract' | 'receipt';
+export type DocumentStatus = 
+  | 'draft' 
+  | 'sent' 
+  | 'viewed' 
+  | 'accepted' 
+  | 'rejected'
+  | 'signed'
+  | 'declined'
+  | 'paid' 
+  | 'partially_paid'
+  | 'pending_confirmation' 
+  | 'overdue' 
+  | 'expired' 
+  | 'cancelled';
 export type CustomerStatus = 'active' | 'inactive' | 'lead';
 export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 export type ExpenseStatus = 'cleared' | 'pending' | 'reimbursed';
@@ -76,6 +89,8 @@ export interface Database {
           quote_prefix: string;
           receipt_prefix: string;
           proposal_prefix: string;
+          estimate_prefix?: string;
+          contract_prefix?: string;
           default_payment_terms: string | null;
           default_notes: string | null;
           bank_name: string | null;
@@ -103,6 +118,8 @@ export interface Database {
           quote_prefix?: string;
           receipt_prefix?: string;
           proposal_prefix?: string;
+          estimate_prefix?: string;
+          contract_prefix?: string;
           default_payment_terms?: string | null;
           default_notes?: string | null;
           bank_name?: string | null;
@@ -130,6 +147,8 @@ export interface Database {
           quote_prefix?: string;
           receipt_prefix?: string;
           proposal_prefix?: string;
+          estimate_prefix?: string;
+          contract_prefix?: string;
           default_payment_terms?: string | null;
           default_notes?: string | null;
           bank_name?: string | null;

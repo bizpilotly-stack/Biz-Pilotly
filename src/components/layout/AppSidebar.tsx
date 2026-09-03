@@ -60,8 +60,10 @@ export const AppSidebar: React.FC = () => {
 
   const documentStudioItems = [
     { label: 'Invoices', path: '/app/documents/invoice', icon: <FileText className="icon" /> },
-    { label: 'Quotes & Estimates', path: '/app/documents/quote', icon: <FileCheck className="icon" /> },
-    { label: 'Proposals & Contracts', path: '/app/documents/proposal', icon: <ScrollText className="icon" /> },
+    { label: 'Quotes', path: '/app/documents/quote', icon: <FileCheck className="icon" /> },
+    { label: 'Estimates', path: '/app/documents/estimate', icon: <FileCheck className="icon" /> },
+    { label: 'Proposals', path: '/app/documents/proposal', icon: <ScrollText className="icon" /> },
+    { label: 'Contracts', path: '/app/documents/contract', icon: <ScrollText className="icon" /> },
     { label: 'Official Receipts', path: '/app/documents/receipt', icon: <Receipt className="icon" /> },
     { label: 'Recurring Retainers', path: '/app/recurring', icon: <RefreshCw className="icon" /> },
   ];

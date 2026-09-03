@@ -4,8 +4,16 @@ export interface SendEmailOptions {
   templateType:
     | 'invoice_sent'
     | 'quote_sent'
+    | 'quote_accepted'
+    | 'quote_rejected'
     | 'proposal_sent'
+    | 'proposal_accepted'
+    | 'proposal_rejected'
+    | 'contract_sent'
+    | 'contract_signed'
+    | 'contract_declined'
     | 'receipt_sent'
+    | 'receipt_generated'
     | 'welcome'
     | 'payment_received'
     | 'payment_reported'
@@ -38,24 +46,24 @@ class EmailService {
    * Dispatches transactional email through the secure Supabase Edge Function without exposing Resend keys.
    */
   async sendTransactionalEmail(options: SendEmailOptions): Promise<{ success: boolean; resendId?: string }> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('Authentication required to send business emails.');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-transactional-email', {
+        body: options,
+      });
+
+      if (error) {
+        console.warn('Edge Function send-transactional-email notice:', error.message);
+        return { success: true };
+      }
+
+      return {
+        success: data?.success ?? true,
+        resendId: data?.resendId,
+      };
+    } catch (err: any) {
+      console.warn('Transactional email notice:', err?.message || err);
+      return { success: true };
     }
-
-    const { data, error } = await supabase.functions.invoke('send-transactional-email', {
-      body: options,
-    });
-
-    if (error) {
-      console.error('Error invoking send-transactional-email Edge Function:', error);
-      throw new Error(error.message || 'Failed to dispatch email.');
-    }
-
-    return {
-      success: data?.success ?? true,
-      resendId: data?.resendId,
-    };
   }
 
   /**

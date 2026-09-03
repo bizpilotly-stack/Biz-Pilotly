@@ -399,7 +399,7 @@ export const BusinessSettingsPage: React.FC = () => {
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
             <Input
               label="Invoice Prefix"
               value={settings.invoicePrefix}
@@ -411,14 +411,24 @@ export const BusinessSettingsPage: React.FC = () => {
               onChange={(e) => setSettings({ ...settings, quotePrefix: e.target.value })}
             />
             <Input
-              label="Receipt Prefix"
-              value={settings.receiptPrefix}
-              onChange={(e) => setSettings({ ...settings, receiptPrefix: e.target.value })}
+              label="Estimate Prefix"
+              value={settings.estimatePrefix || 'EST'}
+              onChange={(e) => setSettings({ ...settings, estimatePrefix: e.target.value })}
             />
             <Input
               label="Proposal Prefix"
               value={settings.proposalPrefix}
               onChange={(e) => setSettings({ ...settings, proposalPrefix: e.target.value })}
+            />
+            <Input
+              label="Contract Prefix"
+              value={settings.contractPrefix || 'CON'}
+              onChange={(e) => setSettings({ ...settings, contractPrefix: e.target.value })}
+            />
+            <Input
+              label="Receipt Prefix"
+              value={settings.receiptPrefix}
+              onChange={(e) => setSettings({ ...settings, receiptPrefix: e.target.value })}
             />
           </div>
 
