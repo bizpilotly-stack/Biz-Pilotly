@@ -12,9 +12,7 @@ import {
   MessageSquare,
   Layers,
   MoreVertical,
-  Calendar,
   User,
-  ExternalLink,
 } from 'lucide-react';
 import { BusinessDocument, DocumentType, DocumentStatus } from '../../types';
 import { documentService } from '../../services/documentService';

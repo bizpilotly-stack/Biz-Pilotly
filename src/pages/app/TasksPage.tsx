@@ -8,14 +8,11 @@ import {
   Trash2,
   Edit3,
   MoreVertical,
-  Calendar,
   User,
   Clock,
   DollarSign,
   AlertCircle,
   CheckCircle2,
-  Layers,
-  Filter,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/common/Button';

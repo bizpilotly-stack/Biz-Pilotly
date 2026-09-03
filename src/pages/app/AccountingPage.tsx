@@ -6,14 +6,6 @@ import {
   DollarSign,
   Receipt,
   Percent,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  ArrowDownRight,
-  Filter,
-  MoreVertical,
-  CheckCircle2,
-  Building,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/common/Button';
@@ -22,15 +14,13 @@ import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
 import { ProfitMetrics, MonthlyFinancialSummary } from '../../types';
 import { profitService } from '../../services/profitService';
-import { formatCurrency, formatPercent } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 
 export const AccountingPage: React.FC = () => {
   const { showToast } = useToast();
   const [metrics, setMetrics] = useState<ProfitMetrics | null>(null);
   const [financials, setFinancials] = useState<MonthlyFinancialSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
   useEffect(() => {
     const loadData = async () => {
