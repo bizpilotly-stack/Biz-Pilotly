@@ -358,7 +358,25 @@
   }
 }
 
+/* Dual View Table/Cards System */
+.desktop-table-view {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-cards-view {
+  display: none;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
+  .app-shell {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
   .app-sidebar {
     display: none;
   }
@@ -366,11 +384,40 @@
     display: flex;
   }
   .app-content {
-    padding: var(--space-4);
+    padding: var(--space-3) var(--space-3) 80px var(--space-3);
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
   .app-header {
-    padding: 0 var(--space-4);
+    padding: 0 var(--space-3);
+    height: 60px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
+  .page-header {
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+  }
+  .page-header-title {
+    font-size: 1.35rem;
+  }
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Switch tables to responsive cards on mobile */
+  .desktop-table-view {
+    display: none !important;
+  }
+  .mobile-cards-view {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .footer-grid {
     grid-template-columns: 1fr;
   }
@@ -378,5 +425,39 @@
     flex-direction: column;
     gap: var(--space-3);
     text-align: center;
+  }
+}
+
+/* 2x2 Metric Grid on Mobile Viewports */
+@media (max-width: 640px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.625rem !important;
+    margin-bottom: 1rem !important;
+  }
+  .metric-card {
+    padding: 0.875rem !important;
+    min-width: 0 !important;
+  }
+  .metric-card-value {
+    font-size: 1.25rem !important;
+    word-break: break-word;
+  }
+  .metric-card-label {
+    font-size: 0.6875rem !important;
+  }
+  .metric-card-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .metric-card-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .metrics-grid {
+    grid-template-columns: 1fr !important;
   }
 }

@@ -15,6 +15,8 @@ import {
   RefreshCw,
   FileCheck,
   ScrollText,
+  FileSpreadsheet,
+  CheckSquare,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
@@ -28,11 +30,13 @@ export const AppSidebar: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      adminService.checkIsAdmin().then((res) => setIsAdmin(res));
-    } else {
-      setIsAdmin(false);
-    }
+    let mounted = true;
+    adminService.checkIsAdmin().then((adminStatus) => {
+      if (mounted) setIsAdmin(adminStatus);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   const handleLogout = async () => {
@@ -55,6 +59,8 @@ export const AppSidebar: React.FC = () => {
     { label: 'Clients Directory', path: '/app/clients', icon: <Users className="icon" /> },
     { label: 'Incoming Payments', path: '/app/payments', icon: <CreditCard className="icon" /> },
     { label: 'Expense Ledger', path: '/app/expenses', icon: <Receipt className="icon" /> },
+    { label: 'Accounting & Reports', path: '/app/accounting', icon: <FileSpreadsheet className="icon" /> },
+    { label: 'Task & Deliverable CSV', path: '/app/tasks', icon: <CheckSquare className="icon" /> },
     { label: 'Profit & Margins', path: '/app/profit', icon: <TrendingUp className="icon" /> },
   ];
 

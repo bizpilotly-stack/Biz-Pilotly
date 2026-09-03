@@ -11,6 +11,10 @@ import {
   Sparkles,
   MessageSquare,
   Layers,
+  MoreVertical,
+  Calendar,
+  User,
+  ExternalLink,
 } from 'lucide-react';
 import { BusinessDocument, DocumentType, DocumentStatus } from '../../types';
 import { documentService } from '../../services/documentService';
@@ -32,6 +36,14 @@ export const DocumentsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<DocumentType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | 'all'>('all');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // Close menus on outside click
+  useEffect(() => {
+    const handleOutside = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutside);
+    return () => window.removeEventListener('click', handleOutside);
+  }, []);
 
   // Rejection Reason Modal
   const [reasonModalDoc, setReasonModalDoc] = useState<BusinessDocument | null>(null);
@@ -243,42 +255,263 @@ export const DocumentsPage: React.FC = () => {
           onAction={() => navigate('/app/documents/invoice')}
         />
       ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Document #</th>
-                <th>Type</th>
-                <th>Client</th>
-                <th>Date Issued</th>
-                <th>Due / Valid</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Related</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((d) => {
-                const isPaid = d.status === 'paid';
-                const isAccepted = d.status === 'accepted';
-                const isRejected = d.status === 'rejected';
-                const isSigned = d.status === 'signed';
-                const isDeclined = d.status === 'declined';
+        <>
+          {/* 1. DESKTOP DATA TABLE (Tablets & Desktop) */}
+          <div className="table-container desktop-table-view">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Document #</th>
+                  <th>Type</th>
+                  <th>Client</th>
+                  <th>Date Issued</th>
+                  <th>Due / Valid</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Related</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((d) => {
+                  const isPaid = d.status === 'paid';
+                  const isAccepted = d.status === 'accepted';
+                  const isRejected = d.status === 'rejected';
+                  const isSigned = d.status === 'signed';
+                  const isDeclined = d.status === 'declined';
 
-                return (
-                  <tr key={d.id}>
-                    <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                      <Link to={`/app/documents/${d.type}`} style={{ color: 'var(--brand-navy-600)' }}>
-                        {d.documentNumber}
-                      </Link>
-                    </td>
-                    <td>
+                  return (
+                    <tr key={d.id}>
+                      <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                        <Link to={`/app/documents/${d.type}`} style={{ color: 'var(--brand-navy-600)' }}>
+                          {d.documentNumber}
+                        </Link>
+                      </td>
+                      <td>
+                        <span
+                          className="badge badge-neutral"
+                          style={{
+                            textTransform: 'uppercase',
+                            fontSize: '0.6875rem',
+                            background:
+                              d.type === 'proposal'
+                                ? '#EFF6FF'
+                                : d.type === 'contract'
+                                ? '#F5F3FF'
+                                : d.type === 'receipt'
+                                ? '#ECFDF5'
+                                : d.type === 'estimate'
+                                ? '#FFFBEB'
+                                : undefined,
+                            color:
+                              d.type === 'proposal'
+                                ? '#1E40AF'
+                                : d.type === 'contract'
+                                ? '#6D28D9'
+                                : d.type === 'receipt'
+                                ? '#065F46'
+                                : d.type === 'estimate'
+                                ? '#92400E'
+                                : undefined,
+                          }}
+                        >
+                          {d.type}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{d.client.name}</div>
+                        {d.client.company && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.client.company}</div>}
+                      </td>
+                      <td style={{ color: 'var(--text-muted)' }}>{formatDate(d.date)}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{formatDate(d.dueDate || d.validUntil || '-')}</td>
+                      <td style={{ fontWeight: 800, fontSize: '0.9375rem' }}>
+                        {formatCurrency(d.total, d.currency, d.currencySymbol)}
+                      </td>
+                      <td>
+                        <select
+                          value={d.status}
+                          onChange={(e) => handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
+                          className="form-select"
+                          style={{
+                            padding: '0.2rem 0.5rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            width: 'auto',
+                            textTransform: 'capitalize',
+                            background:
+                              isPaid || isAccepted || isSigned
+                                ? '#D1FAE5'
+                                : isRejected || isDeclined
+                                ? '#FEE2E2'
+                                : d.status === 'overdue'
+                                ? '#FEE2E2'
+                                : 'var(--bg-surface)',
+                            color:
+                              isPaid || isAccepted || isSigned
+                                ? '#065F46'
+                                : isRejected || isDeclined
+                                ? '#991B1B'
+                                : d.status === 'overdue'
+                                ? '#991B1B'
+                                : undefined,
+                          }}
+                        >
+                          <option value="draft">Draft</option>
+                          <option value="sent">Sent</option>
+                          <option value="viewed">Viewed</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="rejected">Rejected</option>
+                          <option value="signed">Signed</option>
+                          <option value="declined">Declined</option>
+                          <option value="paid">Paid</option>
+                          <option value="overdue">Overdue</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+
+                      {/* Related Document Chains */}
+                      <td>
+                        {d.sourceDocumentNumber ? (
+                          <button
+                            type="button"
+                            onClick={() => openRelatedTree(d)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              color: '#2563EB',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                            }}
+                            title={`Source: ${d.sourceDocumentType} #${d.sourceDocumentNumber}`}
+                          >
+                            <Layers size={13} />
+                            <span>#{d.sourceDocumentNumber}</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openRelatedTree(d)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'pointer',
+                              color: '#94A3B8',
+                              fontSize: '0.75rem',
+                            }}
+                            title="View document chain"
+                          >
+                            <Layers size={14} />
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Contextual Actions */}
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+                          {(isAccepted || d.type === 'estimate') && (
+                            <button
+                              onClick={() => handleGenerateInvoice(d)}
+                              disabled={convertingId === d.id}
+                              className="btn btn-ghost btn-sm btn-icon"
+                              style={{ color: '#10B981' }}
+                              title="Generate Invoice from this document"
+                            >
+                              <Sparkles size={15} />
+                            </button>
+                          )}
+
+                          {(isRejected || isDeclined) && d.rejectionReason && (
+                            <button
+                              onClick={() => setReasonModalDoc(d)}
+                              className="btn btn-ghost btn-sm btn-icon"
+                              style={{ color: '#DC2626' }}
+                              title="View Feedback / Decline Reason"
+                            >
+                              <MessageSquare size={15} />
+                            </button>
+                          )}
+
+                          <a
+                            href={`/invoice/${d.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-ghost btn-sm btn-icon"
+                            title="View public document"
+                          >
+                            <Eye size={15} color="#2563EB" />
+                          </a>
+
+                          <Link
+                            to={`/app/documents/${d.type}`}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            title="Edit in builder"
+                          >
+                            <Edit3 size={15} color="#475569" />
+                          </Link>
+
+                          <button
+                            onClick={() => handleDownloadPdf(d)}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            title="Download PDF"
+                            disabled={downloadingId === d.id}
+                          >
+                            <Download size={15} color="#0B1F3A" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(d.id, d.documentNumber)}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            style={{ color: '#ef4444' }}
+                            title="Delete document"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 2. MOBILE RESPONSIVE CARDS (Phones <= 768px) */}
+          <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {documents.map((d) => {
+              const isPaid = d.status === 'paid';
+              const isAccepted = d.status === 'accepted';
+              const isRejected = d.status === 'rejected';
+              const isSigned = d.status === 'signed';
+              const isDeclined = d.status === 'declined';
+              const isMenuOpen = activeMenuId === d.id;
+
+              return (
+                <div
+                  key={d.id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div>
                       <span
-                        className="badge badge-neutral"
+                        className="badge"
                         style={{
                           textTransform: 'uppercase',
-                          fontSize: '0.6875rem',
+                          fontSize: '0.625rem',
+                          fontWeight: 800,
+                          marginRight: '0.5rem',
                           background:
                             d.type === 'proposal'
                               ? '#EFF6FF'
@@ -288,7 +521,7 @@ export const DocumentsPage: React.FC = () => {
                               ? '#ECFDF5'
                               : d.type === 'estimate'
                               ? '#FFFBEB'
-                              : undefined,
+                              : '#F1F5F9',
                           color:
                             d.type === 'proposal'
                               ? '#1E40AF'
@@ -298,180 +531,271 @@ export const DocumentsPage: React.FC = () => {
                               ? '#065F46'
                               : d.type === 'estimate'
                               ? '#92400E'
-                              : undefined,
+                              : '#475569',
                         }}
                       >
                         {d.type}
                       </span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{d.client.name}</div>
-                      {d.client.company && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.client.company}</div>}
-                    </td>
-                    <td style={{ color: 'var(--text-muted)' }}>{formatDate(d.date)}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{formatDate(d.dueDate || d.validUntil || '-')}</td>
-                    <td style={{ fontWeight: 800, fontSize: '0.9375rem' }}>
-                      {formatCurrency(d.total, d.currency, d.currencySymbol)}
-                    </td>
-                    <td>
-                      <select
-                        value={d.status}
-                        onChange={(e) => handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
-                        className="form-select"
+                      <strong style={{ fontSize: '0.9375rem', fontFamily: 'var(--font-mono)', color: '#0B1F3A' }}>
+                        #{d.documentNumber}
+                      </strong>
+                    </div>
+
+                    {/* 3-Dot Actions Menu */}
+                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : d.id)}
                         style={{
-                          padding: '0.2rem 0.5rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          width: 'auto',
-                          textTransform: 'capitalize',
-                          background:
-                            isPaid || isAccepted || isSigned
-                              ? '#D1FAE5'
-                              : isRejected || isDeclined
-                              ? '#FEE2E2'
-                              : d.status === 'overdue'
-                              ? '#FEE2E2'
-                              : 'var(--bg-surface)',
-                          color:
-                            isPaid || isAccepted || isSigned
-                              ? '#065F46'
-                              : isRejected || isDeclined
-                              ? '#991B1B'
-                              : d.status === 'overdue'
-                              ? '#991B1B'
-                              : undefined,
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          cursor: 'pointer',
+                          color: '#64748b',
+                          borderRadius: '4px',
                         }}
+                        aria-label="Actions Menu"
                       >
-                        <option value="draft">Draft</option>
-                        <option value="sent">Sent</option>
-                        <option value="viewed">Viewed</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="signed">Signed</option>
-                        <option value="declined">Declined</option>
-                        <option value="paid">Paid</option>
-                        <option value="overdue">Overdue</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </td>
+                        <MoreVertical size={18} />
+                      </button>
 
-                    {/* Related Document Chains */}
-                    <td>
-                      {d.sourceDocumentNumber ? (
-                        <button
-                          type="button"
-                          onClick={() => openRelatedTree(d)}
+                      {isMenuOpen && (
+                        <div
                           style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            color: '#2563EB',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
+                            position: 'absolute',
+                            right: 0,
+                            top: '100%',
+                            background: '#ffffff',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '8px',
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                            zIndex: 50,
+                            minWidth: '160px',
+                            padding: '4px 0',
                           }}
-                          title={`Source: ${d.sourceDocumentType} #${d.sourceDocumentNumber}`}
                         >
-                          <Layers size={13} />
-                          <span>#{d.sourceDocumentNumber}</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => openRelatedTree(d)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            cursor: 'pointer',
-                            color: '#94A3B8',
-                            fontSize: '0.75rem',
-                          }}
-                          title="View document chain"
-                        >
-                          <Layers size={14} />
-                        </button>
+                          <a
+                            href={`/invoice/${d.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#2563EB',
+                              textDecoration: 'none',
+                            }}
+                          >
+                            <Eye size={14} />
+                            <span>View Document</span>
+                          </a>
+
+                          <Link
+                            to={`/app/documents/${d.type}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#0B1F3A',
+                              textDecoration: 'none',
+                            }}
+                          >
+                            <Edit3 size={14} />
+                            <span>Edit in Builder</span>
+                          </Link>
+
+                          {(isAccepted || d.type === 'estimate') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                handleGenerateInvoice(d);
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#10B981',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <Sparkles size={14} />
+                              <span>Generate Invoice</span>
+                            </button>
+                          )}
+
+                          {(isRejected || isDeclined) && d.rejectionReason && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setReasonModalDoc(d);
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#DC2626',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <MessageSquare size={14} />
+                              <span>View Feedback</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              handleDownloadPdf(d);
+                            }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              background: 'none',
+                              border: 'none',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#0B1F3A',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
+                          >
+                            <Download size={14} />
+                            <span>Download PDF</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              openRelatedTree(d);
+                            }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              background: 'none',
+                              border: 'none',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#64748B',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
+                          >
+                            <Layers size={14} />
+                            <span>Related Chain</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              handleDelete(d.id, d.documentNumber);
+                            }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              background: 'none',
+                              border: 'none',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#EF4444',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
+                          >
+                            <Trash2 size={14} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       )}
-                    </td>
+                    </div>
+                  </div>
 
-                    {/* Contextual Actions */}
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
-                        {/* 1-Click Generate Invoice if Proposal/Quote Accepted or Estimate */}
-                        {(isAccepted || d.type === 'estimate') && (
-                          <button
-                            onClick={() => handleGenerateInvoice(d)}
-                            disabled={convertingId === d.id}
-                            className="btn btn-ghost btn-sm btn-icon"
-                            style={{ color: '#10B981' }}
-                            title="Generate Invoice from this document"
-                          >
-                            <Sparkles size={15} />
-                          </button>
-                        )}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <User size={13} />
+                      <strong style={{ color: '#1e293b' }}>{d.client.name}</strong>
+                    </div>
 
-                        {/* View Rejection / Decline Reason */}
-                        {(isRejected || isDeclined) && d.rejectionReason && (
-                          <button
-                            onClick={() => setReasonModalDoc(d)}
-                            className="btn btn-ghost btn-sm btn-icon"
-                            style={{ color: '#DC2626' }}
-                            title="View Feedback / Decline Reason"
-                          >
-                            <MessageSquare size={15} />
-                          </button>
-                        )}
+                    <strong style={{ fontSize: '1rem', color: '#0B1F3A' }}>
+                      {formatCurrency(d.total, d.currency, d.currencySymbol)}
+                    </strong>
+                  </div>
 
-                        {/* View in Public Viewer */}
-                        <a
-                          href={`/invoice/${d.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-ghost btn-sm btn-icon"
-                          title="View public document"
-                        >
-                          <Eye size={15} color="#2563EB" />
-                        </a>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #F1F5F9', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#64748B' }}>Issued: {formatDate(d.date)}</span>
 
-                        {/* Edit in Builder */}
-                        <Link
-                          to={`/app/documents/${d.type}`}
-                          className="btn btn-ghost btn-sm btn-icon"
-                          title="Edit in builder"
-                        >
-                          <Edit3 size={15} color="#475569" />
-                        </Link>
-
-                        {/* Download PDF */}
-                        <button
-                          onClick={() => handleDownloadPdf(d)}
-                          className="btn btn-ghost btn-sm btn-icon"
-                          title="Download PDF"
-                          disabled={downloadingId === d.id}
-                        >
-                          <Download size={15} color="#0B1F3A" />
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDelete(d.id, d.documentNumber)}
-                          className="btn btn-ghost btn-sm btn-icon"
-                          style={{ color: '#ef4444' }}
-                          title="Delete document"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    <select
+                      value={d.status}
+                      onChange={(e) => handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
+                      className="form-select"
+                      style={{
+                        padding: '0.15rem 0.4rem',
+                        fontSize: '0.6875rem',
+                        fontWeight: 700,
+                        width: 'auto',
+                        textTransform: 'capitalize',
+                        background:
+                          isPaid || isAccepted || isSigned
+                            ? '#D1FAE5'
+                            : isRejected || isDeclined
+                            ? '#FEE2E2'
+                            : d.status === 'overdue'
+                            ? '#FEE2E2'
+                            : '#F1F5F9',
+                        color:
+                          isPaid || isAccepted || isSigned
+                            ? '#065F46'
+                            : isRejected || isDeclined
+                            ? '#991B1B'
+                            : d.status === 'overdue'
+                            ? '#991B1B'
+                            : '#475569',
+                      }}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="sent">Sent</option>
+                      <option value="viewed">Viewed</option>
+                      <option value="accepted">Accepted</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="signed">Signed</option>
+                      <option value="declined">Declined</option>
+                      <option value="paid">Paid</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Rejection / Decline Reason Inspection Modal */}

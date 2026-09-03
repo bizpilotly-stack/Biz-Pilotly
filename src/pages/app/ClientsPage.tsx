@@ -14,6 +14,7 @@ import {
   Globe,
   Copy,
   ExternalLink,
+  MoreVertical,
 } from 'lucide-react';
 import { Client } from '../../types';
 import { clientService } from '../../services/clientService';
@@ -37,6 +38,13 @@ export const ClientsPage: React.FC = () => {
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutside = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutside);
+    return () => window.removeEventListener('click', handleOutside);
+  }, []);
 
   // Add Client Modal State
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -181,87 +189,268 @@ export const ClientsPage: React.FC = () => {
         />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: selectedClient ? '1.5fr 1fr' : '1fr', gap: '2rem', alignItems: 'start' }}>
-          {/* Clients List Table */}
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Client / Company</th>
-                  <th>Contact</th>
-                  <th>Total Billed</th>
-                  <th>Balance Due</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((c) => {
-                  const isSelected = selectedClient?.id === c.id;
-                  return (
-                    <tr
-                      key={c.id}
-                      onClick={() => setSelectedClient(c)}
-                      style={{ cursor: 'pointer', backgroundColor: isSelected ? 'var(--brand-navy-50)' : undefined }}
-                    >
-                      <td>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.name}</div>
-                        {c.company && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.company}</div>}
-                      </td>
-                      <td>
-                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{c.email}</div>
-                        {c.phone && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.phone}</div>}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{formatCurrency(c.totalBilled, c.currency)}</td>
-                      <td style={{ fontWeight: 700, color: c.balance > 0 ? '#b45309' : '#047857' }}>
-                        {formatCurrency(c.balance, c.currency)}
-                      </td>
-                      <td>
-                        <Badge status={c.status}>{c.status}</Badge>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`/portal/${c.id}`, '_blank');
+          {/* Clients List: Desktop Table + Mobile Cards */}
+          <div>
+            {/* 1. Desktop Table */}
+            <div className="table-container desktop-table-view">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Client / Company</th>
+                    <th>Contact</th>
+                    <th>Total Billed</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clients.map((c) => {
+                    const isSelected = selectedClient?.id === c.id;
+                    return (
+                      <tr
+                        key={c.id}
+                        onClick={() => setSelectedClient(c)}
+                        style={{ cursor: 'pointer', backgroundColor: isSelected ? 'var(--brand-navy-50)' : undefined }}
+                      >
+                        <td>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.name}</div>
+                          {c.company && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.company}</div>}
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{c.email}</div>
+                          {c.phone && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.phone}</div>}
+                        </td>
+                        <td style={{ fontWeight: 600 }}>{formatCurrency(c.totalBilled, c.currency)}</td>
+                        <td style={{ fontWeight: 700, color: c.balance > 0 ? '#b45309' : '#047857' }}>
+                          {formatCurrency(c.balance, c.currency)}
+                        </td>
+                        <td>
+                          <Badge status={c.status}>{c.status}</Badge>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`/portal/${c.id}`, '_blank');
+                              }}
+                              className="btn btn-ghost btn-sm btn-icon"
+                              title="Open Client Portal Statement"
+                            >
+                              <ExternalLink size={15} color="#1d4ed8" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`${window.location.origin}/portal/${c.id}`);
+                                showToast(`✓ Copied Portal link for ${c.name}!`, 'success');
+                              }}
+                              className="btn btn-ghost btn-sm btn-icon"
+                              title="Copy Client Portal Link"
+                            >
+                              <Copy size={15} color="#475569" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClient(c.id, c.name);
+                              }}
+                              className="btn btn-ghost btn-sm btn-icon"
+                              style={{ color: '#ef4444' }}
+                              title="Delete client"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 2. Mobile Responsive Cards */}
+            <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {clients.map((c) => {
+                const isMenuOpen = activeMenuId === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedClient(c)}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '12px',
+                      padding: '1rem',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#0B1F3A' }}>{c.name}</div>
+                        {c.company && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{c.company}</div>}
+                      </div>
+
+                      {/* 3-Dot Actions Menu */}
+                      <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMenuId(isMenuOpen ? null : c.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            color: '#64748b',
+                            borderRadius: '4px',
+                          }}
+                          aria-label="Actions Menu"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: '100%',
+                              background: '#ffffff',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: '8px',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                              zIndex: 50,
+                              minWidth: '160px',
+                              padding: '4px 0',
                             }}
-                            className="btn btn-ghost btn-sm btn-icon"
-                            title="Open Client Portal Statement"
                           >
-                            <ExternalLink size={15} color="#1d4ed8" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(`${window.location.origin}/portal/${c.id}`);
-                              showToast(`✓ Copied Portal link for ${c.name}!`, 'success');
-                            }}
-                            className="btn btn-ghost btn-sm btn-icon"
-                            title="Copy Client Portal Link"
-                          >
-                            <Copy size={15} color="#475569" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClient(c.id, c.name);
-                            }}
-                            className="btn btn-ghost btn-sm btn-icon"
-                            style={{ color: '#ef4444' }}
-                            title="Delete client"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                window.open(`/portal/${c.id}`, '_blank');
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#1d4ed8',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <ExternalLink size={14} />
+                              <span>Open Portal</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                navigator.clipboard.writeText(`${window.location.origin}/portal/${c.id}`);
+                                showToast(`✓ Copied Portal link for ${c.name}!`, 'success');
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#0B1F3A',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <Copy size={14} />
+                              <span>Copy Portal Link</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setSelectedClient(c);
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#0B1F3A',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <FileText size={14} />
+                              <span>View Statement</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                handleDeleteClient(c.id, c.name);
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete Client</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                      {c.email} {c.phone && `• ${c.phone}`}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '0.5rem', marginTop: '0.5rem', fontSize: '0.8125rem' }}>
+                      <div>
+                        <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>Billed: </span>
+                        <strong>{formatCurrency(c.totalBilled, c.currency)}</strong>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>Balance: </span>
+                        <strong style={{ color: c.balance > 0 ? '#b45309' : '#047857' }}>
+                          {formatCurrency(c.balance, c.currency)}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Client Profile Card / Drawer */}

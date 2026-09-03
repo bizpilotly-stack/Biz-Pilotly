@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import {
   Receipt,
   Plus,
   Search,
   Trash2,
   FileSpreadsheet,
+  MoreVertical,
 } from 'lucide-react';
 import { Expense, ExpenseCategory } from '../../types';
 import { expenseService } from '../../services/expenseService';
@@ -40,6 +40,13 @@ export const ExpensesPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutside = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutside);
+    return () => window.removeEventListener('click', handleOutside);
+  }, []);
 
   // Add Expense Modal State
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -267,50 +274,155 @@ export const ExpensesPage: React.FC = () => {
           onAction={() => setAddModalOpen(true)}
         />
       ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Expense Item</th>
-                <th>Category</th>
-                <th>Vendor</th>
-                <th>Payment Method</th>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((exp) => (
-                <tr key={exp.id}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{exp.title}</div>
-                    {exp.notes && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{exp.notes}</div>}
-                  </td>
-                  <td>
-                    <span className="badge badge-neutral">{exp.category}</span>
-                  </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{exp.vendor}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>{exp.paymentMethod}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{formatDate(exp.date)}</td>
-                  <td style={{ fontWeight: 800, color: '#b91c1c' }}>
-                    -{formatCurrency(exp.amount, exp.currency, exp.currencySymbol)}
-                  </td>
-                  <td>
-                    <button
-                      onClick={() => handleDelete(exp.id, exp.title)}
-                      className="btn btn-ghost btn-sm btn-icon"
-                      style={{ color: '#ef4444' }}
-                      title="Delete expense"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </td>
+        <>
+          {/* 1. Desktop Table */}
+          <div className="table-container desktop-table-view">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Expense Item</th>
+                  <th>Category</th>
+                  <th>Vendor</th>
+                  <th>Payment Method</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {expenses.map((exp) => (
+                  <tr key={exp.id}>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{exp.title}</div>
+                      {exp.notes && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{exp.notes}</div>}
+                    </td>
+                    <td>
+                      <span className="badge badge-neutral">{exp.category}</span>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{exp.vendor}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>{exp.paymentMethod}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{formatDate(exp.date)}</td>
+                    <td style={{ fontWeight: 800, color: '#b91c1c' }}>
+                      -{formatCurrency(exp.amount, exp.currency, exp.currencySymbol)}
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => handleDelete(exp.id, exp.title)}
+                        className="btn btn-ghost btn-sm btn-icon"
+                        style={{ color: '#ef4444' }}
+                        title="Delete expense"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 2. Mobile Responsive Cards */}
+          <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {expenses.map((exp) => {
+              const isMenuOpen = activeMenuId === exp.id;
+              return (
+                <div
+                  key={exp.id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div>
+                      <span className="badge badge-neutral" style={{ fontSize: '0.625rem', marginRight: '0.5rem' }}>
+                        {exp.category}
+                      </span>
+                      <strong style={{ fontSize: '0.9375rem', color: '#0B1F3A' }}>{exp.title}</strong>
+                    </div>
+
+                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : exp.id)}
+                        style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#64748b' }}
+                        aria-label="Actions Menu"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: '100%',
+                            background: '#ffffff',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '8px',
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                            zIndex: 50,
+                            minWidth: '140px',
+                            padding: '4px 0',
+                          }}
+                        >
+                          <div
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#64748b',
+                              borderBottom: '1px solid #F1F5F9',
+                            }}
+                          >
+                            Vendor: {exp.vendor}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              handleDelete(exp.id, exp.title);
+                            }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              background: 'none',
+                              border: 'none',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
+                          >
+                            <Trash2 size={14} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    <span>Vendor: <strong>{exp.vendor}</strong></span>
+                    <strong style={{ fontSize: '1rem', color: '#b91c1c' }}>
+                      -{formatCurrency(exp.amount, exp.currency, exp.currencySymbol)}
+                    </strong>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #F1F5F9', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#64748b' }}>Date: {formatDate(exp.date)}</span>
+                    <span style={{ color: '#64748b' }}>{exp.paymentMethod}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Add Expense Modal */}

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   Plus,
@@ -7,6 +6,9 @@ import {
   Clock,
   AlertCircle,
   FileSpreadsheet,
+  MoreVertical,
+  User,
+  Trash2,
 } from 'lucide-react';
 import { Payment } from '../../types';
 import { paymentService } from '../../services/paymentService';
@@ -29,6 +31,13 @@ export const PaymentsPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutside = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutside);
+    return () => window.removeEventListener('click', handleOutside);
+  }, []);
 
   // Record Payment Modal State
   const [recordModalOpen, setRecordModalOpen] = useState(false);
@@ -239,42 +248,133 @@ export const PaymentsPage: React.FC = () => {
           onAction={() => setRecordModalOpen(true)}
         />
       ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Payment ID</th>
-                <th>Client Name</th>
-                <th>Invoice #</th>
-                <th>Payment Method</th>
-                <th>Date Settled</th>
-                <th>Amount</th>
-                <th>Reference</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{p.paymentNumber}</td>
-                  <td>{p.clientName}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--brand-navy-600)' }}>{p.invoiceNumber}</td>
-                  <td>{p.method}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{formatDate(p.date)}</td>
-                  <td style={{ fontWeight: 800, color: p.status === 'completed' ? '#047857' : 'var(--text-primary)' }}>
-                    +{formatCurrency(p.amount, p.currency, p.currencySymbol)}
-                  </td>
-                  <td style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                    {p.reference || '-'}
-                  </td>
-                  <td>
-                    <Badge status={p.status}>{p.status}</Badge>
-                  </td>
+        <>
+          {/* 1. Desktop Data Table */}
+          <div className="table-container desktop-table-view">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Payment ID</th>
+                  <th>Client Name</th>
+                  <th>Invoice #</th>
+                  <th>Payment Method</th>
+                  <th>Date Settled</th>
+                  <th>Amount</th>
+                  <th>Reference</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {payments.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{p.paymentNumber}</td>
+                    <td>{p.clientName}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--brand-navy-600)' }}>{p.invoiceNumber}</td>
+                    <td>{p.method}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{formatDate(p.date)}</td>
+                    <td style={{ fontWeight: 800, color: p.status === 'completed' ? '#047857' : 'var(--text-primary)' }}>
+                      +{formatCurrency(p.amount, p.currency, p.currencySymbol)}
+                    </td>
+                    <td style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                      {p.reference || '-'}
+                    </td>
+                    <td>
+                      <Badge status={p.status}>{p.status}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 2. Mobile Responsive Cards */}
+          <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {payments.map((p) => {
+              const isMenuOpen = activeMenuId === p.id;
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#64748b', marginRight: '0.5rem' }}>
+                        {p.paymentNumber}
+                      </span>
+                      <strong style={{ fontSize: '0.9375rem', color: '#0B1F3A' }}>{p.clientName}</strong>
+                    </div>
+
+                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : p.id)}
+                        style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#64748b' }}
+                        aria-label="Actions Menu"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: '100%',
+                            background: '#ffffff',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '8px',
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                            zIndex: 50,
+                            minWidth: '150px',
+                            padding: '4px 0',
+                          }}
+                        >
+                          <div
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#64748b',
+                              borderBottom: '1px solid #F1F5F9',
+                            }}
+                          >
+                            Ref: {p.reference || 'N/A'}
+                          </div>
+                          <div
+                            style={{
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#0B1F3A',
+                            }}
+                          >
+                            Method: {p.method}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    <span>For Invoice: <strong>{p.invoiceNumber}</strong></span>
+                    <strong style={{ fontSize: '1rem', color: p.status === 'completed' ? '#047857' : '#0B1F3A' }}>
+                      +{formatCurrency(p.amount, p.currency, p.currencySymbol)}
+                    </strong>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #F1F5F9', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#64748b' }}>Date: {formatDate(p.date)}</span>
+                    <Badge status={p.status}>{p.status}</Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Record Payment Modal */}

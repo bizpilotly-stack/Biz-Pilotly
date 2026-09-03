@@ -58,6 +58,8 @@ import { AppCalculatorsHubPage } from './pages/app/AppCalculatorsHubPage';
 import { PaymentsPage } from './pages/app/PaymentsPage';
 import { ExpensesPage } from './pages/app/ExpensesPage';
 import { ProfitPage } from './pages/app/ProfitPage';
+import { AccountingPage } from './pages/app/AccountingPage';
+import { TasksPage } from './pages/app/TasksPage';
 import { BusinessSettingsPage } from './pages/app/BusinessSettingsPage';
 import { AccountSettingsPage } from './pages/app/AccountSettingsPage';
 
@@ -146,6 +148,9 @@ export const App: React.FC = () => {
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="expenses" element={<ExpensesPage />} />
               <Route path="profit" element={<ProfitPage />} />
+              <Route path="accounting" element={<AccountingPage />} />
+              <Route path="tasks" element={<TasksPage />} />
+              <Route path="tasks/csv" element={<TasksPage />} />
               <Route path="settings" element={<Navigate to="/app/settings/business" replace />} />
               <Route path="settings/business" element={<BusinessSettingsPage />} />
               <Route path="settings/account" element={<AccountSettingsPage />} />

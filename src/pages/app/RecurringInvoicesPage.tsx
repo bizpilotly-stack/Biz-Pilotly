@@ -159,13 +159,13 @@ export const RecurringInvoicesPage: React.FC = () => {
         <div style={{ overflowX: 'auto' }}>
           <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'var(--bg-surface-muted)', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Title & Client</th>
-                <th style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Frequency</th>
-                <th style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Amount</th>
-                <th style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Next Bill Date</th>
-                <th style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Status</th>
-                <th style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
+              <tr style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Retainer / Client</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Frequency</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Amount</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Next Scheduled Run</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Status</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -203,26 +203,13 @@ export const RecurringInvoicesPage: React.FC = () => {
                     </td>
                     <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '0.375rem' }}>
-                        <button
-                          onClick={() => handleRunNow(s)}
-                          className="btn btn-secondary btn-sm"
-                          title="Generate invoice now"
-                        >
+                        <button onClick={() => handleRunNow(s)} className="btn btn-secondary btn-sm" title="Generate invoice now">
                           <Play size={12} color="#10B981" />
-                          <span>Run Now</span>
                         </button>
-                        <button
-                          onClick={() => handleToggleStatus(s)}
-                          className="btn btn-secondary btn-icon btn-sm"
-                          title={s.status === 'active' ? 'Pause retainer' : 'Resume retainer'}
-                        >
+                        <button onClick={() => handleToggleStatus(s)} className="btn btn-secondary btn-icon btn-sm">
                           {s.status === 'active' ? <Pause size={14} /> : <Play size={14} />}
                         </button>
-                        <button
-                          onClick={() => handleDelete(s.id)}
-                          className="btn btn-secondary btn-icon btn-sm"
-                          title="Delete retainer"
-                        >
+                        <button onClick={() => handleDelete(s.id)} className="btn btn-secondary btn-icon btn-sm">
                           <Trash2 size={14} color="#EF4444" />
                         </button>
                       </div>
@@ -232,6 +219,71 @@ export const RecurringInvoicesPage: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* 2. Mobile Responsive Cards */}
+        <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.75rem' }}>
+          {schedules.map((s) => (
+            <div
+              key={s.id}
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <div>
+                  <span className="badge badge-gold" style={{ fontSize: '0.625rem', textTransform: 'uppercase', marginRight: '0.5rem' }}>
+                    {s.frequency}
+                  </span>
+                  <strong style={{ fontSize: '0.9375rem', color: '#0B1F3A' }}>{s.title}</strong>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{s.clientName}</div>
+                </div>
+
+                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: s.status === 'active' ? '#10B981' : '#64748B', background: s.status === 'active' ? '#D1FAE5' : '#F1F5F9', padding: '2px 8px', borderRadius: '999px' }}>
+                  {s.status.toUpperCase()}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#64748b', marginTop: '0.5rem' }}>
+                <span>Next: <strong>{s.nextRunDate}</strong></span>
+                <strong style={{ fontSize: '1rem', color: '#0B1F3A' }}>
+                  {formatCurrency(s.amount, s.currency, '₦')}
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #F1F5F9' }}>
+                <button
+                  type="button"
+                  onClick={() => handleRunNow(s)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                >
+                  <Play size={12} color="#10B981" />
+                  <span>Run Now</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleStatus(s)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                >
+                  {s.status === 'active' ? 'Pause' : 'Resume'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(s.id)}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: '#ef4444', padding: '4px 6px' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
