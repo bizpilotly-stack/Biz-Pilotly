@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
             }}
           >
             {/* Left Primary Hero Content */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <div
                 style={{
                   display: 'inline-flex',
@@ -87,7 +87,7 @@ export const HomePage: React.FC = () => {
                   gap: '0.5rem',
                   background: 'var(--brand-gold-100)',
                   color: 'var(--brand-gold-700)',
-                  padding: '0.35rem 1rem',
+                  padding: '0.35rem 0.95rem',
                   borderRadius: 'var(--radius-full)',
                   fontSize: '0.8125rem',
                   fontWeight: 700,
@@ -108,7 +108,7 @@ export const HomePage: React.FC = () => {
                   color: 'var(--brand-black)',
                   letterSpacing: '-0.04em',
                   lineHeight: 1.1,
-                  margin: '0 0 0.5rem',
+                  margin: '0 0 0.75rem',
                 }}
               >
                 {BRAND_NAME}
@@ -185,8 +185,8 @@ export const HomePage: React.FC = () => {
       {/* 3. END-TO-END WORKFLOW (7 STEPS) */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
-            <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3.5rem', flexWrap: 'wrap', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '720px', width: '100%' }}>
               <div
                 style={{
                   display: 'inline-flex',
@@ -194,11 +194,11 @@ export const HomePage: React.FC = () => {
                   gap: '0.5rem',
                   background: 'var(--brand-gold-100)',
                   color: 'var(--brand-gold-700)',
-                  padding: '0.3rem 0.875rem',
+                  padding: '0.35rem 0.95rem',
                   borderRadius: 'var(--radius-full)',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  marginBottom: '1rem',
+                  marginBottom: '1.25rem',
                   border: '1px solid var(--brand-gold-200)',
                 }}
               >
@@ -212,7 +212,7 @@ export const HomePage: React.FC = () => {
                 From Initial Quote to Realized Net Profit
               </KineticText>
             </div>
-            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.6, margin: '0.5rem 0 0' }}>
               BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
             </p>
           </div>
@@ -280,30 +280,32 @@ export const HomePage: React.FC = () => {
       {/* 4. THREE FUNCTIONAL PILLARS (CALCULATE, CREATE, MANAGE) */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              background: 'var(--brand-gold-100)',
-              color: 'var(--brand-gold-700)',
-              padding: '0.3rem 0.875rem',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              marginBottom: '1rem',
-              border: '1px solid var(--brand-gold-200)',
-            }}
-          >
-            <Sparkles size={13} color="#C9A227" />
-            <span>Functional Pillars</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '3.5rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'var(--brand-gold-100)',
+                color: 'var(--brand-gold-700)',
+                padding: '0.35rem 0.95rem',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                marginBottom: '1.25rem',
+                border: '1px solid var(--brand-gold-200)',
+              }}
+            >
+              <Sparkles size={13} color="#C9A227" />
+              <span>Functional Pillars</span>
+            </div>
+            <KineticText
+              as="h2"
+              style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}
+            >
+              Calculate Accurately. Create Fast. Manage With Clarity.
+            </KineticText>
           </div>
-          <KineticText
-            as="h2"
-            style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '3.5rem' }}
-          >
-            Calculate Accurately. Create Fast. Manage With Clarity.
-          </KineticText>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem' }}>
             {/* Pillar 1: Calculate */}
@@ -434,7 +436,7 @@ export const HomePage: React.FC = () => {
       {/* 5. PRICING SECTION */}
       <section className="section-py" id="pricing" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
         <div className="container">
-          <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
+          <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div
               style={{
                 display: 'inline-flex',
@@ -442,11 +444,11 @@ export const HomePage: React.FC = () => {
                 gap: '0.5rem',
                 background: 'rgba(201, 162, 39, 0.15)',
                 color: '#C9A227',
-                padding: '0.3rem 0.875rem',
+                padding: '0.35rem 0.95rem',
                 borderRadius: 'var(--radius-full)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
                 border: '1px solid rgba(201, 162, 39, 0.3)',
               }}
             >
@@ -455,7 +457,7 @@ export const HomePage: React.FC = () => {
             </div>
             <KineticText
               as="h2"
-              style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}
+              style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem', justifyContent: 'center' }}
             >
               Simple pricing. Start free.
             </KineticText>
@@ -609,7 +611,7 @@ export const HomePage: React.FC = () => {
       {/* 6. FAQ SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container-sm">
-          <div className="text-center" style={{ marginBottom: '3rem' }}>
+          <div className="text-center" style={{ marginBottom: '3rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div
               style={{
                 display: 'inline-flex',
@@ -617,11 +619,11 @@ export const HomePage: React.FC = () => {
                 gap: '0.5rem',
                 background: 'var(--brand-gold-100)',
                 color: 'var(--brand-gold-700)',
-                padding: '0.3rem 0.875rem',
+                padding: '0.35rem 0.95rem',
                 borderRadius: 'var(--radius-full)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
                 border: '1px solid var(--brand-gold-200)',
               }}
             >
@@ -630,7 +632,7 @@ export const HomePage: React.FC = () => {
             </div>
             <KineticText
               as="h2"
-              style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}
+              style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.5rem', justifyContent: 'center' }}
             >
               Frequently Asked Questions
             </KineticText>
@@ -694,10 +696,10 @@ export const HomePage: React.FC = () => {
 
       {/* 7. FINAL CALL TO ACTION */}
       <section className="section-py" style={{ background: 'linear-gradient(135deg, #0A0A0A 0%, #0B1F3A 100%)', color: '#ffffff' }}>
-        <div className="container text-center">
+        <div className="container text-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <KineticText
             as="h2"
-            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}
+            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem', justifyContent: 'center' }}
           >
             Calculate Accurately. Create Fast. Manage With Clarity.
           </KineticText>

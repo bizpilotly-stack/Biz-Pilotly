@@ -17,8 +17,8 @@ export const ProductBentoGrid: React.FC = () => {
     <section className="bento-section" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', padding: '5rem 0' }}>
       <div className="container">
         {/* Section Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
-          <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3.5rem', flexWrap: 'wrap', gap: '2rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '720px', width: '100%' }}>
             <div
               style={{
                 display: 'inline-flex',
@@ -26,11 +26,11 @@ export const ProductBentoGrid: React.FC = () => {
                 gap: '0.5rem',
                 background: 'var(--brand-gold-100)',
                 color: 'var(--brand-gold-700)',
-                padding: '0.3rem 0.875rem',
+                padding: '0.35rem 0.95rem',
                 borderRadius: 'var(--radius-full)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
                 border: '1px solid var(--brand-gold-200)',
               }}
             >
@@ -44,14 +44,14 @@ export const ProductBentoGrid: React.FC = () => {
                 fontWeight: 800,
                 color: 'var(--brand-black)',
                 letterSpacing: '-0.03em',
-                margin: '0 0 0.5rem',
+                margin: '0 0 0.75rem',
                 lineHeight: 1.15,
               }}
             >
               Everything Your Business Needs. Connected in One Command Center.
             </KineticText>
           </div>
-          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '420px', lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '420px', lineHeight: 1.6, margin: '0.5rem 0 0' }}>
             No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.
           </p>
         </div>

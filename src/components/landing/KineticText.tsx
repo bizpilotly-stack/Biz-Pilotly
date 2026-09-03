@@ -16,12 +16,15 @@ export const KineticText: React.FC<KineticTextProps> = ({
   const ref = useRef<any>(null);
   const [progress, setProgress] = useState(0);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Respect accessibility settings
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setIsReducedMotion(true);
-      return;
+    if (typeof window !== 'undefined') {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setIsReducedMotion(true);
+        return;
+      }
+      setIsMobile(window.innerWidth < 768);
     }
 
     let ticking = false;
@@ -33,7 +36,7 @@ export const KineticText: React.FC<KineticTextProps> = ({
           const rect = ref.current.getBoundingClientRect();
           const windowHeight = window.innerHeight;
 
-          // Responsive scrub window: starts when element enters bottom, resolves when it reaches comfortable viewing zone
+          // Start when entering bottom of viewport, finish when past comfortable viewing zone
           const start = windowHeight * 0.95;
           const end = windowHeight * 0.35;
           const current = rect.top;
@@ -55,7 +58,7 @@ export const KineticText: React.FC<KineticTextProps> = ({
 
   if (isReducedMotion) {
     return (
-      <Component className={className} style={style}>
+      <Component className={className} style={{ display: 'block', width: '100%', ...style }}>
         {children}
       </Component>
     );
@@ -68,25 +71,29 @@ export const KineticText: React.FC<KineticTextProps> = ({
       ref={ref}
       className={`kinetic-text-wrapper ${className}`}
       style={{
-        display: 'inline-flex',
+        display: 'flex',
         flexWrap: 'wrap',
         gap: '0.28em',
+        width: '100%',
         ...style,
       }}
     >
       {words.map((word, index) => {
-        // Differential timing per word for natural kinetic organization
+        // Differential timing per word for staggered convergence
         const wordOffset = (index / Math.max(1, words.length - 1)) * 0.2;
         const wordProgress = Math.max(0, Math.min(1, (progress - wordOffset) / 0.8));
 
-        // Multi-axis kinetic arrangement vectors
         const remaining = 1 - wordProgress;
-        const translateY = remaining * 14;
-        const translateX = (index % 2 === 0 ? 6 : -6) * remaining;
-        const rotateZ = (index % 2 === 0 ? 0.8 : -0.8) * remaining;
-        const blur = remaining * 3.5;
-        const scale = 0.96 + (wordProgress * 0.04);
-        const opacity = Math.max(0.3, wordProgress);
+
+        // Alternating Left & Right initial displacement
+        const maxOffset = isMobile ? 12 : 22;
+        const isLeft = index % 2 === 0;
+        const translateX = (isLeft ? -maxOffset : maxOffset) * remaining;
+        const translateY = remaining * (isMobile ? 8 : 14);
+        const rotateZ = (isLeft ? -1.5 : 1.5) * remaining;
+        const blur = remaining * (isMobile ? 2.5 : 4);
+        const scale = 0.95 + (wordProgress * 0.05);
+        const opacity = Math.max(0.25, wordProgress);
 
         return (
           <span
@@ -98,7 +105,7 @@ export const KineticText: React.FC<KineticTextProps> = ({
                 : `translate3d(${translateX}px, ${translateY}px, 0) rotate(${rotateZ}deg) scale(${scale})`,
               filter: blur > 0.2 ? `blur(${blur}px)` : 'none',
               opacity,
-              transition: 'transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1), filter 0.14s ease, opacity 0.14s ease',
+              transition: 'transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), filter 0.16s ease, opacity 0.16s ease',
               willChange: 'transform, filter, opacity',
             }}
           >
