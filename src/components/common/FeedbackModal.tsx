@@ -81,11 +81,14 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
           background: '#ffffff',
           borderRadius: 'var(--radius-2xl, 20px)',
           maxWidth: '460px',
-          width: '100%',
-          padding: '2rem',
+          width: 'calc(100vw - 32px)',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          padding: '1.5rem 1.25rem',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           border: '1px solid #E2E8F0',
           position: 'relative',
+          boxSizing: 'border-box',
         }}
       >
         <button

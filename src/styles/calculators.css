@@ -222,3 +222,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .calc-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+  .calc-inputs-panel,
+  .calc-results-panel {
+    padding: 1.25rem 1rem;
+    border-radius: 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .calc-result-metrics {
+    grid-template-columns: 1fr;
+  }
+}

@@ -15,6 +15,11 @@ import {
   User,
   LogOut,
   Sparkles,
+  Receipt,
+  FileCheck,
+  ScrollText,
+  RefreshCw,
+  PlusCircle,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -32,6 +37,34 @@ export const MobileNav: React.FC = () => {
   const handleNavClick = () => {
     setMoreOpen(false);
   };
+
+  const operationsLinks = [
+    { label: 'Overview', path: '/app', icon: <LayoutDashboard size={17} color="#2563EB" />, end: true },
+    { label: 'All Documents', path: '/app/documents', icon: <FileText size={17} color="#A78BFA" /> },
+    { label: 'Clients Directory', path: '/app/clients', icon: <Users size={17} color="#38BDF8" /> },
+    { label: 'Incoming Payments', path: '/app/payments', icon: <CreditCard size={17} color="#10B981" /> },
+    { label: 'Expense Ledger', path: '/app/expenses', icon: <Receipt size={17} color="#EF4444" /> },
+    { label: 'Accounting & Reports', path: '/app/accounting', icon: <FileSpreadsheet size={17} color="#2563EB" /> },
+    { label: 'Tasks & Deliverables', path: '/app/tasks', icon: <CheckSquare size={17} color="#10B981" /> },
+    { label: 'Profit & Margins', path: '/app/profit', icon: <TrendingUp size={17} color="#C9A227" /> },
+  ];
+
+  const documentStudioLinks = [
+    { label: 'Invoices', path: '/app/documents/invoice', icon: <FileText size={17} color="#2563EB" /> },
+    { label: 'Quotes', path: '/app/documents/quote', icon: <FileCheck size={17} color="#10B981" /> },
+    { label: 'Estimates', path: '/app/documents/estimate', icon: <FileCheck size={17} color="#F59E0B" /> },
+    { label: 'Proposals', path: '/app/documents/proposal', icon: <ScrollText size={17} color="#8B5CF6" /> },
+    { label: 'Contracts', path: '/app/documents/contract', icon: <ScrollText size={17} color="#3B82F6" /> },
+    { label: 'Receipts', path: '/app/documents/receipt', icon: <Receipt size={17} color="#10B981" /> },
+    { label: 'Recurring Retainers', path: '/app/recurring', icon: <RefreshCw size={17} color="#6366F1" /> },
+  ];
+
+  const toolsSettingsLinks = [
+    { label: '8 Calculators Hub', path: '/app/calculators', icon: <Calculator size={17} color="#8B5CF6" /> },
+    { label: 'Team & Seats', path: '/app/team', icon: <Users size={17} color="#38BDF8" /> },
+    { label: 'Business Settings', path: '/app/settings/business', icon: <Building size={17} color="#475569" /> },
+    { label: 'Account Profile', path: '/app/settings/account', icon: <User size={17} color="#475569" /> },
+  ];
 
   return (
     <>
@@ -83,7 +116,7 @@ export const MobileNav: React.FC = () => {
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           {moreOpen ? <X size={20} /> : <Menu size={20} />}
-          <span>{moreOpen ? 'Close' : 'More'}</span>
+          <span>{moreOpen ? 'Close' : 'Menu'}</span>
         </button>
       </nav>
 
@@ -110,15 +143,15 @@ export const MobileNav: React.FC = () => {
               background: '#ffffff',
               borderTopLeftRadius: '24px',
               borderTopRightRadius: '24px',
-              padding: '1.5rem 1.25rem calc(80px + env(safe-area-inset-bottom, 16px))',
-              maxHeight: '85vh',
+              padding: '1.25rem 1.25rem calc(80px + env(safe-area-inset-bottom, 16px))',
+              maxHeight: '88vh',
               overflowY: 'auto',
               boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.25)',
               animation: 'slideUpMobileDrawer 0.24s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
-            {/* Drawer Drag Bar */}
-            <div style={{ width: 40, height: 4, borderRadius: 99, background: '#cbd5e1', margin: '0 auto 1.25rem' }} />
+            {/* Drawer Drag Handle */}
+            <div style={{ width: 40, height: 4, borderRadius: 99, background: '#cbd5e1', margin: '0 auto 1rem' }} />
 
             {/* User Quick Header */}
             <div
@@ -136,8 +169,8 @@ export const MobileNav: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     borderRadius: '50%',
                     background: '#C9A227',
                     color: '#0B1F3A',
@@ -145,13 +178,15 @@ export const MobileNav: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '0.875rem',
+                    fontSize: '0.9375rem',
                   }}
                 >
                   {(user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>{user?.user_metadata?.full_name || 'Admin'}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#ffffff' }}>
+                    {user?.user_metadata?.full_name || 'Admin Workspace'}
+                  </div>
                   <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>{user?.email}</div>
                 </div>
               </div>
@@ -161,139 +196,181 @@ export const MobileNav: React.FC = () => {
               </span>
             </div>
 
-            {/* Extended Navigation Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <NavLink
-                to="/app/accounting"
-                onClick={handleNavClick}
-                className="mobile-drawer-link"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-app)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                <FileSpreadsheet size={18} color="#2563EB" />
-                <span>Accounting</span>
-              </NavLink>
+            {/* Quick Actions Bar */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: '0.5rem' }}>
+                Quick Create Document
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                <NavLink
+                  to="/app/documents/invoice"
+                  onClick={handleNavClick}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.625rem 0.35rem',
+                    background: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    borderRadius: '10px',
+                    color: '#1D4ED8',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <PlusCircle size={15} />
+                  <span>+ Invoice</span>
+                </NavLink>
 
-              <NavLink
-                to="/app/tasks"
-                onClick={handleNavClick}
-                className="mobile-drawer-link"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-app)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                <CheckSquare size={18} color="#10B981" />
-                <span>Tasks</span>
-              </NavLink>
+                <NavLink
+                  to="/app/documents/quote"
+                  onClick={handleNavClick}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.625rem 0.35rem',
+                    background: '#ECFDF5',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: '10px',
+                    color: '#047857',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <PlusCircle size={15} />
+                  <span>+ Quote</span>
+                </NavLink>
 
-              <NavLink
-                to="/app/profit"
-                onClick={handleNavClick}
-                className="mobile-drawer-link"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-app)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                <TrendingUp size={18} color="#C9A227" />
-                <span>Profit Intel</span>
-              </NavLink>
+                <NavLink
+                  to="/app/documents/proposal"
+                  onClick={handleNavClick}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.625rem 0.35rem',
+                    background: '#FAF5FF',
+                    border: '1px solid #E9D5FF',
+                    borderRadius: '10px',
+                    color: '#7E22CE',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <PlusCircle size={15} />
+                  <span>+ Proposal</span>
+                </NavLink>
+              </div>
+            </div>
 
-              <NavLink
-                to="/calculators"
-                onClick={handleNavClick}
-                className="mobile-drawer-link"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-app)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                <Calculator size={18} color="#8B5CF6" />
-                <span>Calculators</span>
-              </NavLink>
+            {/* Section 1: Operations */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: '0.5rem' }}>
+                Operations & Financials
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                {operationsLinks.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.end}
+                    onClick={handleNavClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.75rem',
+                      borderRadius: '10px',
+                      background: 'var(--bg-app)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
 
-              <NavLink
-                to="/app/settings/business"
-                onClick={handleNavClick}
-                className="mobile-drawer-link"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-app)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                <Building size={18} color="#475569" />
-                <span>Business Info</span>
-              </NavLink>
+            {/* Section 2: Document Studio */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: '0.5rem' }}>
+                Document Studio
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                {documentStudioLinks.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleNavClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.75rem',
+                      borderRadius: '10px',
+                      background: 'var(--bg-app)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
 
-              <NavLink
-                to="/app/settings/account"
-                onClick={handleNavClick}
-                className="mobile-drawer-link"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-app)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                <User size={18} color="#475569" />
-                <span>Profile & Acct</span>
-              </NavLink>
+            {/* Section 3: Tools & Settings */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: '0.5rem' }}>
+                Tools & Settings
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                {toolsSettingsLinks.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleNavClick}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.75rem',
+                      borderRadius: '10px',
+                      background: 'var(--bg-app)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
             </div>
 
             {/* Sign Out Button */}
@@ -310,7 +387,7 @@ export const MobileNav: React.FC = () => {
                 background: 'rgba(239, 68, 68, 0.08)',
                 color: '#EF4444',
                 border: '1px solid rgba(239, 68, 68, 0.2)',
-                fontSize: '0.875rem',
+                fontSize: '0.8125rem',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
