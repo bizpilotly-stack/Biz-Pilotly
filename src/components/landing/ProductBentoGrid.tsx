@@ -9,10 +9,6 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
-  Receipt,
-  Layers,
-  ArrowUpRight,
-  ShieldCheck,
   Zap,
 } from 'lucide-react';
 

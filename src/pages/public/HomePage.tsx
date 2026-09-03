@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   CreditCard,
   Building,
-  ShieldCheck,
   Zap,
   Sparkles,
   ChevronDown,
