@@ -16,7 +16,6 @@ export const KineticStatement: React.FC = () => {
           const rect = sectionRef.current.getBoundingClientRect();
           const windowHeight = window.innerHeight;
           // Calculate scrub progress: starts when section enters bottom, completes when center hits upper third
-          const totalDistance = windowHeight + rect.height;
           const currentDistance = windowHeight - rect.top;
           const rawProgress = Math.max(0, Math.min(1, currentDistance / (windowHeight * 0.9)));
           setProgress(rawProgress);
