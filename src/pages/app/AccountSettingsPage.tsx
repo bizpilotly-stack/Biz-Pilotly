@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon, Lock, Bell, ShieldCheck, Mail, Sparkles } from 'lucide-react';
+import { User as UserIcon, Lock, Bell, ShieldCheck, Mail } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
