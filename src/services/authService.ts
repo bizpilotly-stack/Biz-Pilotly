@@ -79,7 +79,7 @@ class AuthService {
         await supabase.from('businesses').delete().eq('id', business.id);
       }
 
-      await supabase.from('user_profiles').delete().eq('id', user.id);
+      await supabase.from('profiles').delete().eq('id', user.id);
     } catch (err) {
       console.warn('Account data cascade cleanup notice:', err);
     }
