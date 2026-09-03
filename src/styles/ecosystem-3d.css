@@ -319,6 +319,9 @@
   .bento-card-hero {
     grid-column: span 2;
   }
+  .bento-card:last-child {
+    grid-column: span 2;
+  }
   .ecosystem-3d-world {
     transform: scale(0.85);
     transform-origin: center center;
