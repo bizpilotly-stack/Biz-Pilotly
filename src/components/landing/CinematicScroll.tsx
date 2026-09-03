@@ -7,14 +7,8 @@ import {
   CheckCircle2,
   TrendingUp,
   CreditCard,
-  ShieldCheck,
-  Zap,
   Sparkles,
-  ArrowRight,
-  ChevronRight,
-  Layers,
   Activity,
-  DollarSign
 } from 'lucide-react';
 
 interface StageConfig {
