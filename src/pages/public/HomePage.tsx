@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
             }}
           >
             {/* Left Primary Hero Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '580px' }}>
+            <div className="hero-content-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '580px' }}>
               <div
                 style={{
                   display: 'inline-flex',
@@ -143,7 +143,7 @@ export const HomePage: React.FC = () => {
               </KineticText>
 
               {/* CTAs */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+              <div className="hero-cta-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
                 <Link to="/signup" className="btn btn-primary btn-lg" style={{ boxShadow: 'var(--shadow-md)' }}>
                   <span>Get Started Free</span>
                   <ArrowRight size={18} />
@@ -154,7 +154,7 @@ export const HomePage: React.FC = () => {
               </div>
 
               {/* Trust Value Badges */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+              <div className="hero-trust-badges" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <CheckCircle2 size={16} color="#10b981" />
                   <span>No credit card required</span>

@@ -173,7 +173,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenFeedback }) => {
             <span>Calculators</span>
           </Link>
 
-          <Link to="/app/documents/invoice" className="btn btn-primary btn-sm">
+          <Link to="/app/documents/invoice" className="btn btn-primary btn-sm header-new-invoice-btn">
             <Plus size={14} />
             <span>New Invoice</span>
           </Link>

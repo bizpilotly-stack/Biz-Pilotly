@@ -79,51 +79,37 @@ export const ProductBentoGrid: React.FC = () => {
               <span className="badge badge-gold" style={{ fontSize: '0.6875rem' }}>Live Production UI</span>
             </div>
 
-            <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-              Real-time financial reconciliation combining gross revenue, pending deliverables, overhead expenses, and true profit margins.
+            <p style={{ fontSize: '0.9375rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+              Real-time financial reconciliation combining gross revenue, client retainers, deductible expenses, and true net margins.
             </p>
 
-            {/* Real Dashboard Window Inside Bento Cell */}
-            <div className="bento-ui-window">
-              <div className="bento-ui-topbar">
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444' }} />
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#F59E0B' }} />
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#10B981' }} />
-                </div>
-                <span style={{ color: '#64748b', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>app.bizpilotly.com/overview</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.875rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
+                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gross Billings</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '4px' }}>Real-time Tracking</div>
+                <div style={{ fontSize: '0.6875rem', color: '#10B981', marginTop: '2px' }}>Automatic Reconciliation</div>
               </div>
-
-              <div style={{ padding: '1.25rem', background: '#0B1F3A' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <div className="bento-metric-pill">
-                    <div className="bento-metric-label">August Revenue</div>
-                    <div className="bento-metric-val">$19,800.00</div>
-                    <div style={{ fontSize: '0.625rem', color: '#10B981', marginTop: '2px' }}>↑ +14.8% MoM</div>
-                  </div>
-                  <div className="bento-metric-pill">
-                    <div className="bento-metric-label">Receivables</div>
-                    <div className="bento-metric-val" style={{ color: '#FBBF24' }}>$2,500.00</div>
-                    <div style={{ fontSize: '0.625rem', color: '#94a3b8', marginTop: '2px' }}>1 active invoice</div>
-                  </div>
-                  <div className="bento-metric-pill">
-                    <div className="bento-metric-label">Realized Profit</div>
-                    <div className="bento-metric-val" style={{ color: '#38BDF8' }}>$16,227.52</div>
-                    <div style={{ fontSize: '0.625rem', color: '#C9A227', marginTop: '2px' }}>81.9% net margin</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#cbd5e1', fontSize: '0.75rem' }}>
-                    <CheckCircle2 size={14} color="#10B981" />
-                    <span>6 active client retainers fully balanced.</span>
-                  </div>
-                  <Link to="/signup" className="btn btn-gold btn-sm" style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
-                    <span>Launch Free</span>
-                    <ArrowRight size={12} />
-                  </Link>
-                </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
+                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Receivables</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FBBF24', marginTop: '4px' }}>Active Invoices</div>
+                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginTop: '2px' }}>Overdue Reminders</div>
               </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
+                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Intelligence</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38BDF8', marginTop: '4px' }}>True Profit Margin</div>
+                <div style={{ fontSize: '0.6875rem', color: '#C9A227', marginTop: '2px' }}>Deductible Expenses</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#cbd5e1', fontSize: '0.8125rem' }}>
+                <CheckCircle2 size={16} color="#10B981" />
+                <span>All client retainers & accounts balanced.</span>
+              </div>
+              <Link to="/signup" className="btn btn-gold btn-sm" style={{ fontSize: '0.8125rem', padding: '6px 14px' }}>
+                <span>Get Started Free</span>
+                <ArrowRight size={13} />
+              </Link>
             </div>
           </div>
 

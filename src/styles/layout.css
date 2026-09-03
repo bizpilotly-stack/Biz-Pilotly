@@ -435,6 +435,12 @@
     max-width: 100vw;
     box-sizing: border-box;
   }
+  .header-new-invoice-btn,
+  .header-feedback-btn,
+  .header-calc-btn,
+  .trial-status-badge {
+    display: none !important;
+  }
   .page-header {
     margin-bottom: 1rem;
     gap: 0.5rem;

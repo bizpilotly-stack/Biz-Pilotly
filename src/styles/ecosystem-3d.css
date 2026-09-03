@@ -359,6 +359,22 @@
     transform: scale(0.68) !important;
     transform-origin: center center;
   }
+  .hero-content-col {
+    align-items: center !important;
+    text-align: center !important;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .hero-content-col .kinetic-text-wrapper {
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  .hero-content-col .hero-cta-group {
+    justify-content: center !important;
+  }
+  .hero-content-col .hero-trust-badges {
+    justify-content: center !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
