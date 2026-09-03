@@ -51,9 +51,15 @@ export const ProductBentoGrid: React.FC = () => {
               Everything Your Business Needs. Connected in One Command Center.
             </KineticText>
           </div>
-          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '420px', lineHeight: 1.6, margin: '0.5rem 0 0' }}>
-            No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.
-          </p>
+          <div style={{ maxWidth: '440px', width: '100%', margin: '0.5rem 0 0' }}>
+            <KineticText
+              as="p"
+              intensity="subtle"
+              style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}
+            >
+              No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.
+            </KineticText>
+          </div>
         </div>
 
         {/* Bento Grid Layout (Strictly Balanced 3-Column Hierarchy) */}

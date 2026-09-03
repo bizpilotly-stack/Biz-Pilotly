@@ -69,7 +69,7 @@ export const SupportWidget: React.FC<SupportWidgetProps> = () => {
   return (
     <>
       {/* Floating Support Button (Bottom Right) */}
-      <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9990 }}>
+      <div className="floating-support-widget">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}

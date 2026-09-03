@@ -366,6 +366,20 @@
   }
 }
 
+.floating-support-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9990;
+}
+
+@media (max-width: 768px) {
+  .floating-support-widget {
+    bottom: calc(74px + env(safe-area-inset-bottom, 8px));
+    right: 14px;
+  }
+}
+
 /* Responsive Media Queries */
 @media (max-width: 1024px) {
   .footer-grid {

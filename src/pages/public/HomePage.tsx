@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
             }}
           >
             {/* Left Primary Hero Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '580px' }}>
               <div
                 style={{
                   display: 'inline-flex',
@@ -99,9 +99,10 @@ export const HomePage: React.FC = () => {
                 <span>Lightweight Operating System for Freelancers</span>
               </div>
 
-              {/* Existing Hero Title with Kinetic Typography */}
+              {/* Hero Title with High Kinetic Word Convergence */}
               <KineticText
                 as="h1"
+                intensity="high"
                 style={{
                   fontSize: 'clamp(2.5rem, 5vw, 3.75rem)',
                   fontWeight: 800,
@@ -114,7 +115,9 @@ export const HomePage: React.FC = () => {
                 {BRAND_NAME}
               </KineticText>
 
-              <div
+              <KineticText
+                as="div"
+                intensity="subtle"
                 style={{
                   fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)',
                   fontWeight: 700,
@@ -124,19 +127,20 @@ export const HomePage: React.FC = () => {
                 }}
               >
                 {BRAND_TAGLINE}
-              </div>
+              </KineticText>
 
-              <p
+              <KineticText
+                as="p"
+                intensity="subtle"
                 style={{
                   fontSize: 'clamp(1rem, 1.6vw, 1.125rem)',
                   color: 'var(--text-secondary)',
                   lineHeight: 1.6,
                   marginBottom: '2rem',
-                  maxWidth: '520px',
                 }}
               >
                 {BRAND_SUBTITLE}
-              </p>
+              </KineticText>
 
               {/* CTAs */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
@@ -207,14 +211,21 @@ export const HomePage: React.FC = () => {
               </div>
               <KineticText
                 as="h2"
+                intensity="high"
                 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}
               >
                 From Initial Quote to Realized Net Profit
               </KineticText>
             </div>
-            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.6, margin: '0.5rem 0 0' }}>
-              BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
-            </p>
+            <div style={{ maxWidth: '440px', width: '100%', margin: '0.5rem 0 0' }}>
+              <KineticText
+                as="p"
+                intensity="subtle"
+                style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}
+              >
+                BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
+              </KineticText>
+            </div>
           </div>
 
           {/* Visual Connected Step Chain */}
@@ -301,6 +312,7 @@ export const HomePage: React.FC = () => {
             </div>
             <KineticText
               as="h2"
+              intensity="high"
               style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}
             >
               Calculate Accurately. Create Fast. Manage With Clarity.
@@ -457,13 +469,18 @@ export const HomePage: React.FC = () => {
             </div>
             <KineticText
               as="h2"
+              intensity="high"
               style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem', justifyContent: 'center' }}
             >
               Simple pricing. Start free.
             </KineticText>
-            <p style={{ fontSize: '1.0625rem', color: '#94a3b8', lineHeight: 1.6 }}>
+            <KineticText
+              as="p"
+              intensity="subtle"
+              style={{ fontSize: '1.0625rem', color: '#94a3b8', lineHeight: 1.6, justifyContent: 'center' }}
+            >
               Use BizPilotly for free, or unlock advanced business tools with a 15-day free trial. No credit card required.
-            </p>
+            </KineticText>
 
             {/* Currency Selector */}
             <div style={{ marginTop: '1.5rem' }}>
@@ -632,13 +649,18 @@ export const HomePage: React.FC = () => {
             </div>
             <KineticText
               as="h2"
+              intensity="high"
               style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.5rem', justifyContent: 'center' }}
             >
               Frequently Asked Questions
             </KineticText>
-            <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
+            <KineticText
+              as="p"
+              intensity="subtle"
+              style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', justifyContent: 'center' }}
+            >
               Clear answers regarding BizPilotly tools, workflow, and features.
-            </p>
+            </KineticText>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -699,13 +721,18 @@ export const HomePage: React.FC = () => {
         <div className="container text-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <KineticText
             as="h2"
+            intensity="high"
             style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem', justifyContent: 'center' }}
           >
             Calculate Accurately. Create Fast. Manage With Clarity.
           </KineticText>
-          <p style={{ fontSize: '1.125rem', color: '#cbd5e1', maxWidth: '600px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
+          <KineticText
+            as="p"
+            intensity="subtle"
+            style={{ fontSize: '1.125rem', color: '#cbd5e1', maxWidth: '600px', margin: '0 auto 2.5rem', lineHeight: 1.6, justifyContent: 'center' }}
+          >
             Join modern freelancers and service businesses using BizPilotly to run their client operations with confidence.
-          </p>
+          </KineticText>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <Link to="/signup" className="btn btn-gold btn-lg">
               <span>Create Free Account</span>
