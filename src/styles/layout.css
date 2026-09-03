@@ -436,10 +436,20 @@
     box-sizing: border-box;
   }
   .header-new-invoice-btn,
-  .header-feedback-btn,
   .header-calc-btn,
   .trial-status-badge {
     display: none !important;
+  }
+  .header-feedback-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-surface-muted, #f1f5f9);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
   }
   .page-header {
     margin-bottom: 1rem;
