@@ -23,7 +23,7 @@ import { SEO } from '../../components/common/SEO';
 import { PRICING_PLANS, PricingCurrency, getStoredCurrency, setStoredCurrency } from '../../config/pricing';
 import { CurrencySelector } from '../../components/common/CurrencySelector';
 import { Ecosystem3DHero } from '../../components/landing/Ecosystem3DHero';
-import { EcosystemScrollStory } from '../../components/landing/EcosystemScrollStory';
+import { ProductBentoGrid } from '../../components/landing/ProductBentoGrid';
 import '../../styles/ecosystem-3d.css';
 
 export const HomePage: React.FC = () => {
@@ -177,62 +177,29 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. CONNECTED 3-PHASE SCROLL STORY */}
-      <EcosystemScrollStory />
+      {/* 2. SECTION 01: ASYMMETRIC EDITORIAL BENTO GRID */}
+      <ProductBentoGrid />
 
-      {/* 3. VALUE PROPOSITION SECTION */}
-      <section className="section-py-sm" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="container text-center">
-          <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2rem' }}>
-            Built specifically for independent contractors and service studios
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '2rem', textAlign: 'left' }}>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--brand-navy-50)', color: 'var(--brand-navy-800)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Zap size={20} />
+      {/* 3. SECTION 02: 7-STEP FINANCIAL WORKFLOW */}
+      <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
+        <div className="container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+                <span className="editorial-number">02</span>
+                <span className="editorial-divider" />
+                <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
+                  End-to-End Workflow
+                </span>
               </div>
-              <div>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Zero Setup Friction</h4>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Use mathematical calculators and generate printable business documents immediately without account obstacles.</p>
-              </div>
+              <h2 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', margin: 0 }}>
+                From Initial Quote to Realized Net Profit
+              </h2>
             </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--brand-gold-50)', color: 'var(--brand-gold-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>High-Standard Presentation</h4>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>High-contrast typography and printable document proportions designed to project authority when pitching clients.</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--brand-navy-50)', color: 'var(--brand-navy-800)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Building size={20} />
-              </div>
-              <div>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Unified Pipeline</h4>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Connect initial quote calculations to invoice delivery, payment tracking, and net profit visibility in one place.</p>
-              </div>
-            </div>
+            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.6, margin: 0 }}>
+              BizPilotly structures the complete financial lifecycle of client projects into 7 clear, automated milestones.
+            </p>
           </div>
-        </div>
-      </section>
-
-      {/* 4. ELEGANT WORKFLOW SECTION */}
-      <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="container text-center">
-          <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>
-            <Sparkles size={14} />
-            <span>End-to-End Business Flow</span>
-          </div>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1rem' }}>
-            From Initial Price to Realized Profit
-          </h2>
-          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '620px', margin: '0 auto 3.5rem' }}>
-            BizPilotly structures the complete financial lifecycle of client projects into 7 clear, organized steps.
-          </p>
 
           {/* Visual Connected Step Chain */}
           <div
@@ -248,7 +215,7 @@ export const HomePage: React.FC = () => {
               <div
                 key={item.step}
                 style={{
-                  background: 'var(--bg-surface)',
+                  background: 'var(--bg-app)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-xl)',
                   padding: '1.5rem 1rem',
@@ -281,7 +248,7 @@ export const HomePage: React.FC = () => {
 
                 <div style={{ marginBottom: '0.75rem' }}>{item.icon}</div>
 
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
                   {item.title}
                 </h3>
 
@@ -294,161 +261,156 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. CALCULATE SECTION */}
-      <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
-            <div>
-              <div className="badge badge-info" style={{ marginBottom: '1rem' }}>Pillar 1: Calculate</div>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}>
-                Stop Guessing Your Rates. Price for Real Profit.
-              </h2>
-              <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                Undercharging is the #1 mistake freelancers make. Use BizPilotly calculators to determine exact markups, break-even hourly rates, and target margins before sending proposals.
-              </p>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.9375rem' }}>
-                  <CheckCircle2 size={18} color="#0B1F3A" /> Profit & Margin precision models
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.9375rem' }}>
-                  <CheckCircle2 size={18} color="#0B1F3A" /> Break-even threshold calculations
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '0.9375rem' }}>
-                  <CheckCircle2 size={18} color="#0B1F3A" /> Instant 1-click conversion into invoices & quotes
-                </li>
-              </ul>
-              <Link to="/calculators" className="btn btn-primary">
-                <span>View All 8 Calculators</span>
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-
-            <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2rem', boxShadow: 'var(--shadow-sm)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <h4 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Profit Margin Engine</h4>
-                <span className="badge badge-gold">Interactive Preview</span>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Internal Project Cost</label>
-                <input className="form-input" defaultValue="$1,200.00" readOnly />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Desired Net Margin Target</label>
-                <input className="form-input" defaultValue="45%" readOnly />
-              </div>
-              <div style={{ background: '#0A0A0A', color: '#ffffff', borderRadius: 'var(--radius-lg)', padding: '1.25rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>RECOMMENDED PRICE</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#C9A227' }}>$2,181.82</div>
-                </div>
-                <Link to="/calculators/profit-margin" className="btn btn-gold btn-sm">Try Interactive</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. CREATE DOCUMENTS SECTION */}
+      {/* 4. SECTION 03: THREE PILLARS (CALCULATE, CREATE, MANAGE) */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
-            <div style={{ order: 2 }}>
-              <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2rem', boxShadow: 'var(--shadow-md)' }}>
-                <div style={{ borderBottom: '2px solid #0B1F3A', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0B1F3A' }}>INVOICE</div>
-                  <div style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: '#64748b' }}>INV-2026-0001</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+            <span className="editorial-number">03</span>
+            <span className="editorial-divider" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
+              Functional Pillars
+            </span>
+          </div>
+          <h2 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '3.5rem' }}>
+            Calculate Accurately. Create Fast. Manage With Clarity.
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem' }}>
+            {/* Pillar 1: Calculate */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
+              <div>
+                <div className="badge badge-info" style={{ marginBottom: '1rem' }}>Pillar 1: Calculate</div>
+                <h3 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1rem' }}>
+                  Stop Guessing Your Rates. Price for Real Profit.
+                </h3>
+                <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                  Undercharging is the #1 mistake freelancers make. Use BizPilotly calculators to determine exact markups, break-even hourly rates, and target margins before sending proposals.
+                </p>
+                <Link to="/calculators" className="btn btn-primary">
+                  <span>View All 8 Calculators</span>
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2rem', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                  <h4 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Profit Margin Engine</h4>
+                  <span className="badge badge-gold">Interactive Preview</span>
                 </div>
-                <div style={{ margin: '1rem 0', fontSize: '0.8125rem', color: '#475569' }}>
-                  <strong>Apex Digital Studio</strong><br />
-                  UX Design & Interactive Retainer (August)
+                <div className="form-group">
+                  <label className="form-label">Internal Project Cost</label>
+                  <input className="form-input" defaultValue="$1,200.00" readOnly />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', fontWeight: 800, fontSize: '1.125rem' }}>
-                  <span>Total Due:</span>
-                  <span style={{ color: '#0B1F3A' }}>$2,500.00</span>
+                <div className="form-group">
+                  <label className="form-label">Desired Net Margin Target</label>
+                  <input className="form-input" defaultValue="45%" readOnly />
+                </div>
+                <div style={{ background: '#0A0A0A', color: '#ffffff', borderRadius: 'var(--radius-lg)', padding: '1.25rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>RECOMMENDED PRICE</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#C9A227' }}>$2,181.82</div>
+                  </div>
+                  <Link to="/calculators/profit-margin" className="btn btn-gold btn-sm">Try Interactive</Link>
                 </div>
               </div>
             </div>
 
-            <div style={{ order: 1 }}>
-              <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>Pillar 2: Create</div>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}>
-                Instant, Professional Business Documents.
-              </h2>
-              <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                Generate clean, printable Invoices, Estimates/Quotes, Receipts, and Proposals with side-by-side live sheet updates. No clunky formatting, no messy spreadsheets.
-              </p>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-                <Link to="/documents/invoice" className="btn btn-secondary btn-sm">Invoices</Link>
-                <Link to="/documents/quote" className="btn btn-secondary btn-sm">Quotes</Link>
-                <Link to="/documents/receipt" className="btn btn-secondary btn-sm">Receipts</Link>
-                <Link to="/documents/proposal" className="btn btn-secondary btn-sm">Proposals</Link>
+            {/* Pillar 2: Create Documents */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
+              <div style={{ order: 2 }}>
+                <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-2xl)', padding: '2rem', boxShadow: 'var(--shadow-md)' }}>
+                  <div style={{ borderBottom: '2px solid #0B1F3A', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0B1F3A' }}>INVOICE</div>
+                    <div style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: '#64748b' }}>INV-2026-0001</div>
+                  </div>
+                  <div style={{ margin: '1rem 0', fontSize: '0.8125rem', color: '#475569' }}>
+                    <strong>Apex Digital Studio</strong><br />
+                    UX Design & Interactive Retainer (August)
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', fontWeight: 800, fontSize: '1.125rem' }}>
+                    <span>Total Due:</span>
+                    <span style={{ color: '#0B1F3A' }}>$2,500.00</span>
+                  </div>
+                </div>
               </div>
-              <Link to="/documents" className="btn btn-primary">
-                <span>Explore Document Hub</span>
-                <ArrowRight size={16} />
-              </Link>
+
+              <div style={{ order: 1 }}>
+                <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>Pillar 2: Create</div>
+                <h3 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1rem' }}>
+                  Instant, Professional Business Documents.
+                </h3>
+                <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                  Generate clean, printable Invoices, Estimates/Quotes, Receipts, and Proposals with side-by-side live sheet updates. No clunky formatting, no messy spreadsheets.
+                </p>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                  <Link to="/documents/invoice" className="btn btn-secondary btn-sm">Invoices</Link>
+                  <Link to="/documents/quote" className="btn btn-secondary btn-sm">Quotes</Link>
+                  <Link to="/documents/receipt" className="btn btn-secondary btn-sm">Receipts</Link>
+                  <Link to="/documents/proposal" className="btn btn-secondary btn-sm">Proposals</Link>
+                </div>
+                <Link to="/documents" className="btn btn-primary">
+                  <span>Explore Document Hub</span>
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Pillar 3: Manage Business */}
+            <div>
+              <div className="badge badge-info" style={{ marginBottom: '1rem' }}>Pillar 3: Manage</div>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1.5rem' }}>
+                Keep Your Operations Organized
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                <div className="card card-hover">
+                  <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--brand-navy-50)', color: 'var(--brand-navy-800)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <Building size={20} />
+                  </div>
+                  <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '0.5rem' }}>Client Directory</h4>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                    Keep contact details, active currencies, lifetime billing totals, and payment status history organized.
+                  </p>
+                  <Link to="/app/clients" className="btn btn-outline btn-sm">Manage Clients →</Link>
+                </div>
+
+                <div className="card card-hover">
+                  <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--brand-gold-50)', color: 'var(--brand-gold-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <CreditCard size={20} />
+                  </div>
+                  <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '0.5rem' }}>Payments & Overdue Tracking</h4>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                    Log incoming bank transfers and card deposits. Instantly know which invoices require follow-up.
+                  </p>
+                  <Link to="/app/payments" className="btn btn-outline btn-sm">View Ledger →</Link>
+                </div>
+
+                <div className="card card-hover">
+                  <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--brand-navy-50)', color: 'var(--brand-navy-800)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <TrendingUp size={20} />
+                  </div>
+                  <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, marginBottom: '0.5rem' }}>Profit & Expense Analytics</h4>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                    Categorize business overheads and view real-time monthly profit margins.
+                  </p>
+                  <Link to="/app/profit" className="btn btn-outline btn-sm">View Analytics →</Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 7. MANAGE BUSINESS SECTION */}
-      <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="container">
-          <div className="text-center" style={{ maxWidth: '640px', margin: '0 auto 3.5rem' }}>
-            <div className="badge badge-info" style={{ marginBottom: '1rem' }}>Pillar 3: Manage</div>
-            <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '1rem' }}>
-              Keep Your Business Operations Organized
-            </h2>
-            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>
-              Track clients, monitor which invoices are settled or overdue, record business expenses, and understand net profit margins in one dashboard.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-            <div className="card card-hover">
-              <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-navy-50)', color: 'var(--brand-navy-800)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <Building size={22} />
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>Client Directory</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                Keep contact details, active currencies, lifetime billing totals, and payment status history organized in one central place.
-              </p>
-              <Link to="/app/clients" className="btn btn-outline btn-sm">Manage Clients →</Link>
-            </div>
-
-            <div className="card card-hover">
-              <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-gold-50)', color: 'var(--brand-gold-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <CreditCard size={22} />
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>Payments & Overdue Tracking</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                Log incoming bank transfers, stripe deposits, and card payments. Instantly know which invoices require follow-up.
-              </p>
-              <Link to="/app/payments" className="btn btn-outline btn-sm">View Ledger →</Link>
-            </div>
-
-            <div className="card card-hover">
-              <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--brand-navy-50)', color: 'var(--brand-navy-800)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <TrendingUp size={22} />
-              </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.5rem' }}>Profit & Expense Analytics</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                Categorize business overheads (software, marketing, contractor payouts) and view real-time monthly profit margins.
-              </p>
-              <Link to="/app/profit" className="btn btn-outline btn-sm">View Analytics →</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 8. PRICING SECTION */}
+      {/* 5. SECTION 04: PRICING */}
       <section className="section-py" id="pricing" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
         <div className="container">
           <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
-            <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>
-              <Sparkles size={14} />
-              <span>Transparent Pricing</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+              <span className="editorial-number">04</span>
+              <span className="editorial-divider" />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
+                Subscription Plans
+              </span>
             </div>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
               Simple pricing. Start free.
@@ -600,15 +562,22 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 9. FAQ SECTION */}
+      {/* 6. SECTION 05: FAQ */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container-sm">
           <div className="text-center" style={{ marginBottom: '3rem' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+              <span className="editorial-number">05</span>
+              <span className="editorial-divider" />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C9A227' }}>
+                Inquiries
+              </span>
+            </div>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
               Frequently Asked Questions
             </h2>
             <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
-              Clear answers regarding BizPilotly tools, workflow, and upcoming features.
+              Clear answers regarding BizPilotly tools, workflow, and features.
             </p>
           </div>
 
@@ -665,7 +634,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 10. FINAL CTA */}
+      {/* 7. SECTION 06: FINAL CTA */}
       <section className="section-py" style={{ background: 'linear-gradient(135deg, #0A0A0A 0%, #0B1F3A 100%)', color: '#ffffff' }}>
         <div className="container text-center">
           <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}>
