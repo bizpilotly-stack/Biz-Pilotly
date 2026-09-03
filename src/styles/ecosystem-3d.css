@@ -1,0 +1,324 @@
+/* ==========================================================================
+   BIZPILOTLY 3D ECOSYSTEM & SCROLL STORY STYLESHEET
+   High-performance, hardware-accelerated 3D spatial presentation
+   ========================================================================== */
+
+/* 3D Scene Container */
+.ecosystem-3d-viewport {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.ecosystem-3d-world {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  height: 460px;
+  transform-style: preserve-3d;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+
+/* 3D Floating Module Card */
+.module-card-3d {
+  position: absolute;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  background: rgba(11, 31, 58, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 0.875rem 1rem;
+  color: #ffffff;
+  box-shadow: 
+    0 15px 35px -5px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(201, 162, 39, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
+}
+
+.module-card-3d:hover {
+  border-color: rgba(201, 162, 39, 0.6);
+  box-shadow: 
+    0 20px 45px -5px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(201, 162, 39, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.module-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.module-card-badge {
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.module-card-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+}
+
+.module-card-value {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.module-card-subtext {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Subtle Idle Floating Keyframes */
+@keyframes floatGentleA {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotateZ(0deg);
+  }
+  50% {
+    transform: translate3d(0, -8px, 6px) rotateZ(0.5deg);
+  }
+}
+
+@keyframes floatGentleB {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotateZ(0deg);
+  }
+  50% {
+    transform: translate3d(0, 8px, -6px) rotateZ(-0.5deg);
+  }
+}
+
+@keyframes pulseGlowRing {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+/* Dynamic Circuit Flow Animation */
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.circuit-path-flow {
+  stroke-dasharray: 6, 6;
+  animation: dashFlow 1.2s linear infinite;
+}
+
+/* Ambient Radial Glow in 3D Background */
+.ecosystem-3d-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 480px;
+  height: 480px;
+  transform: translate(-50%, -50%) translateZ(-100px);
+  background: radial-gradient(circle, rgba(201, 162, 39, 0.12) 0%, rgba(11, 31, 58, 0.08) 50%, transparent 70%);
+  pointer-events: none;
+  border-radius: 50%;
+  animation: pulseGlowRing 6s ease-in-out infinite;
+}
+
+/* Central Hub Logo Anchor in 3D */
+.ecosystem-central-anchor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateZ(0);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0B1F3A 0%, #0A0A0A 100%);
+  border: 2px solid #C9A227;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 0 30px rgba(201, 162, 39, 0.4),
+    0 10px 25px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+/* ==========================================================================
+   SCROLL STORY CONTAINER & PHASES
+   ========================================================================== */
+
+.scroll-story-container {
+  position: relative;
+  background: #0A0A0A;
+  color: #ffffff;
+  border-top: 1px solid #1E293B;
+  border-bottom: 1px solid #1E293B;
+}
+
+.scroll-story-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.scroll-story-header {
+  text-align: center;
+  max-width: 680px;
+  margin-bottom: 1.5rem;
+  z-index: 20;
+}
+
+.scroll-story-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(201, 162, 39, 0.15);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  color: #C9A227;
+  padding: 0.25rem 0.875rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+
+.scroll-story-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+}
+
+.scroll-story-desc {
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Morphing Dashboard Window in Stage 3/4 */
+.scroll-story-product-window {
+  width: 100%;
+  max-width: 960px;
+  background: #0B1F3A;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform, opacity;
+}
+
+/* Progress Step Indicator Pill */
+.scroll-step-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  z-index: 30;
+}
+
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.step-dot.active {
+  background: #C9A227;
+  width: 22px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES & REDUCED MOTION
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .ecosystem-3d-world {
+    transform: scale(0.88);
+  }
+}
+
+@media (max-width: 768px) {
+  .ecosystem-3d-viewport {
+    min-height: 380px;
+    perspective: none;
+  }
+  .ecosystem-3d-world {
+    max-width: 100%;
+    height: 360px;
+    transform: none !important;
+  }
+  .scroll-story-sticky {
+    height: auto;
+    min-height: 100vh;
+    padding: 2.5rem 1rem;
+  }
+  .scroll-step-indicator {
+    bottom: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecosystem-3d-world,
+  .module-card-3d,
+  .circuit-path-flow,
+  .ecosystem-3d-ambient-glow {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

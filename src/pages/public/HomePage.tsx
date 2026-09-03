@@ -22,6 +22,9 @@ import { BRAND_NAME, BRAND_TAGLINE, BRAND_SUBTITLE, FAQ_ITEMS } from '../../cons
 import { SEO } from '../../components/common/SEO';
 import { PRICING_PLANS, PricingCurrency, getStoredCurrency, setStoredCurrency } from '../../config/pricing';
 import { CurrencySelector } from '../../components/common/CurrencySelector';
+import { Ecosystem3DHero } from '../../components/landing/Ecosystem3DHero';
+import { EcosystemScrollStory } from '../../components/landing/EcosystemScrollStory';
+import '../../styles/ecosystem-3d.css';
 
 export const HomePage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -54,128 +57,130 @@ export const HomePage: React.FC = () => {
         canonical="https://bizpilotly.com/"
       />
 
-      {/* 1. HERO SECTION */}
+      {/* 1. IMMERSIVE 3D HERO SECTION */}
       <section
         className="section-py"
         style={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(11, 31, 58, 0.07) 0%, rgba(248, 250, 252, 0) 70%)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(11, 31, 58, 0.08) 0%, rgba(248, 250, 252, 0) 70%)',
           borderBottom: '1px solid var(--border-subtle)',
-          paddingTop: '4.5rem',
+          paddingTop: '3.5rem',
+          paddingBottom: '3.5rem',
         }}
       >
-        <div className="container text-center" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
           <div
             style={{
-              display: 'inline-flex',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '2.5rem',
               alignItems: 'center',
-              gap: '0.5rem',
-              background: 'var(--brand-gold-100)',
-              color: 'var(--brand-gold-700)',
-              padding: '0.35rem 1rem',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              marginBottom: '1.75rem',
-              border: '1px solid var(--brand-gold-200)',
             }}
           >
-            <Sparkles size={15} color="#C9A227" />
-            <span>Lightweight Business Operating Platform for Freelancers</span>
-          </div>
+            {/* Left Primary Hero Content */}
+            <div>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: 'var(--brand-gold-100)',
+                  color: 'var(--brand-gold-700)',
+                  padding: '0.35rem 1rem',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  marginBottom: '1.25rem',
+                  border: '1px solid var(--brand-gold-200)',
+                }}
+              >
+                <Sparkles size={14} color="#C9A227" />
+                <span>Lightweight Operating System for Freelancers</span>
+              </div>
 
-          <h1
-            style={{
-              fontSize: 'clamp(2.75rem, 6vw, 4.25rem)',
-              fontWeight: 800,
-              color: 'var(--brand-black)',
-              letterSpacing: '-0.04em',
-              lineHeight: 1.1,
-              maxWidth: '920px',
-              margin: '0 auto 0.75rem',
-            }}
-          >
-            {BRAND_NAME}
-          </h1>
+              <h1
+                style={{
+                  fontSize: 'clamp(2.5rem, 5vw, 3.75rem)',
+                  fontWeight: 800,
+                  color: 'var(--brand-black)',
+                  letterSpacing: '-0.04em',
+                  lineHeight: 1.1,
+                  margin: '0 0 0.5rem',
+                }}
+              >
+                {BRAND_NAME}
+              </h1>
 
-          <div
-            style={{
-              fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)',
-              fontWeight: 700,
-              color: 'var(--brand-navy-800)',
-              letterSpacing: '-0.03em',
-              marginBottom: '1.5rem',
-            }}
-          >
-            {BRAND_TAGLINE}
-          </div>
+              <div
+                style={{
+                  fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)',
+                  fontWeight: 700,
+                  color: 'var(--brand-navy-800)',
+                  letterSpacing: '-0.03em',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                {BRAND_TAGLINE}
+              </div>
 
-          <p
-            style={{
-              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
-              color: 'var(--text-secondary)',
-              maxWidth: '680px',
-              margin: '0 auto 2.5rem',
-              lineHeight: 1.6,
-            }}
-          >
-            {BRAND_SUBTITLE}
-          </p>
+              <p
+                style={{
+                  fontSize: 'clamp(1rem, 1.6vw, 1.125rem)',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.6,
+                  marginBottom: '2rem',
+                  maxWidth: '520px',
+                }}
+              >
+                {BRAND_SUBTITLE}
+              </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '3.5rem' }}>
-            <Link to="/signup" className="btn btn-primary btn-lg" style={{ boxShadow: 'var(--shadow-md)' }}>
-              <span>Get Started Free</span>
-              <ArrowRight size={18} />
-            </Link>
-            <Link to="/calculators" className="btn btn-secondary btn-lg">
-              <span>Explore Free Tools</span>
-            </Link>
-          </div>
+              {/* CTAs */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                <Link to="/signup" className="btn btn-primary btn-lg" style={{ boxShadow: 'var(--shadow-md)' }}>
+                  <span>Get Started Free</span>
+                  <ArrowRight size={18} />
+                </Link>
+                <Link to="/calculators" className="btn btn-secondary btn-lg">
+                  <span>Explore Free Tools</span>
+                </Link>
+              </div>
 
-          {/* Realistic Dashboard Preview Window */}
-          <div
-            style={{
-              maxWidth: '1080px',
-              margin: '0 auto',
-              background: '#0A0A0A',
-              borderRadius: 'var(--radius-2xl)',
-              padding: '1rem',
-              border: '1px solid #262626',
-              boxShadow: 'var(--shadow-xl)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.75rem', paddingLeft: '0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#C9A227', display: 'inline-block' }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-              <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: '1rem', fontFamily: 'var(--font-mono)' }}>app.bizpilotly.com/overview</span>
+              {/* Trust Value Badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <CheckCircle2 size={16} color="#10b981" />
+                  <span>No credit card required</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <CheckCircle2 size={16} color="#10b981" />
+                  <span>Instant 1-click tools</span>
+                </div>
+              </div>
             </div>
 
-            <div style={{ background: '#0B1F3A', borderRadius: 'var(--radius-lg)', padding: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '1rem', textAlign: 'left' }}>
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gross Revenue (August)</div>
-                <div style={{ color: '#ffffff', fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>$19,800.00</div>
-                <div style={{ color: '#10b981', fontSize: '0.75rem', marginTop: '0.25rem' }}>↑ +14.8% vs last month</div>
-              </div>
-
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Outstanding Invoices</div>
-                <div style={{ color: '#C9A227', fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>$7,200.00</div>
-                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.25rem' }}>2 clients pending settlement</div>
-              </div>
-
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Realized Profit</div>
-                <div style={{ color: '#38bdf8', fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>$16,227.52</div>
-                <div style={{ color: 'var(--brand-gold-300)', fontSize: '0.75rem', marginTop: '0.25rem' }}>81.9% net margin</div>
-              </div>
+            {/* Right 3D Spatial Interactive Hero Scene */}
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '460px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ecosystem3DHero />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. VALUE PROPOSITION SECTION */}
+      {/* 2. CONNECTED 3-PHASE SCROLL STORY */}
+      <EcosystemScrollStory />
+
+      {/* 3. VALUE PROPOSITION SECTION */}
       <section className="section-py-sm" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container text-center">
           <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2rem' }}>
@@ -215,7 +220,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. ELEGANT WORKFLOW SECTION */}
+      {/* 4. ELEGANT WORKFLOW SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container text-center">
           <div className="badge badge-gold" style={{ marginBottom: '1rem' }}>
@@ -289,7 +294,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. CALCULATE SECTION */}
+      {/* 5. CALCULATE SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
@@ -343,7 +348,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. CREATE DOCUMENTS SECTION */}
+      {/* 6. CREATE DOCUMENTS SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'center' }}>
@@ -387,7 +392,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. MANAGE BUSINESS SECTION */}
+      {/* 7. MANAGE BUSINESS SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
           <div className="text-center" style={{ maxWidth: '640px', margin: '0 auto 3.5rem' }}>
@@ -437,7 +442,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 7. PRICING SECTION */}
+      {/* 8. PRICING SECTION */}
       <section className="section-py" id="pricing" style={{ background: '#0A0A0A', color: '#ffffff', borderBottom: '1px solid #262626' }}>
         <div className="container">
           <div className="text-center" style={{ maxWidth: '720px', margin: '0 auto 3rem' }}>
@@ -595,7 +600,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 8. FAQ SECTION */}
+      {/* 9. FAQ SECTION */}
       <section className="section-py" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container-sm">
           <div className="text-center" style={{ marginBottom: '3rem' }}>
@@ -660,7 +665,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 9. FINAL CTA */}
+      {/* 10. FINAL CTA */}
       <section className="section-py" style={{ background: 'linear-gradient(135deg, #0A0A0A 0%, #0B1F3A 100%)', color: '#ffffff' }}>
         <div className="container text-center">
           <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: '1.25rem' }}>
