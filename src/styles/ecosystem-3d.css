@@ -371,6 +371,10 @@
     margin: 0 auto !important;
     position: relative !important;
   }
+  .ecosystem-3d-viewport.is-mobile-fixed {
+    perspective: none !important;
+    -webkit-perspective: none !important;
+  }
 }
 
 /* Mobile Screens (<640px) */

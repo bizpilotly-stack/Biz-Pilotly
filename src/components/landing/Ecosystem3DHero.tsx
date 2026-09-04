@@ -5,47 +5,54 @@ import { Sparkles } from 'lucide-react';
 
 export const Ecosystem3DHero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [rotation, setRotation] = useState({ x: 3, y: -4 });
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [scale, setScale] = useState(1);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Dynamic Auto-Scaling for exact symmetrical center fit on all viewports
+  // Responsive scale and device detection
   useEffect(() => {
-    const updateScale = () => {
+    const handleResize = () => {
       const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+      const isLarge = screenWidth >= 1024;
+      setIsDesktop(isLarge);
+
       const measuredWidth = containerRef.current?.clientWidth || screenWidth;
       const availableWidth = Math.min(screenWidth - 24, measuredWidth);
       if (availableWidth > 0) {
         // Base width is 580px
-        const targetScale = Math.min(1, Math.max(0.46, (availableWidth) / 580));
+        const targetScale = Math.min(1, Math.max(0.48, availableWidth / 580));
         setScale(targetScale);
       }
     };
 
-    updateScale();
-    window.addEventListener('resize', updateScale, { passive: true });
-    return () => window.removeEventListener('resize', updateScale);
+    handleResize();
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Smooth mouse parallax interpolation
+  // Desktop Mouse Parallax (Only on Desktop >= 1024px)
   useEffect(() => {
+    if (!isDesktop) {
+      setRotation({ x: 0, y: 0 });
+      return;
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
 
-      // Restrained pitch & yaw (Max ±7 degrees)
-      const targetX = -(y / (rect.height / 2)) * 6;
-      const targetY = (x / (rect.width / 2)) * 7;
+      // Restrained pitch & yaw (Max ±6 degrees)
+      const targetX = -(y / (rect.height / 2)) * 5;
+      const targetY = (x / (rect.width / 2)) * 6;
 
       setRotation({ x: targetX, y: targetY });
     };
 
     const handleMouseLeave = () => {
-      // Settle gently back to default perspective
-      setRotation({ x: 3, y: -4 });
+      setRotation({ x: 0, y: 0 });
       setIsHovered(false);
     };
 
@@ -62,44 +69,16 @@ export const Ecosystem3DHero: React.FC = () => {
         node.removeEventListener('mouseleave', handleMouseLeave);
       }
     };
-  }, []);
-
-  // Touch Parallax Handling on Mobile & Tablet
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartRef.current || e.touches.length !== 1 || !containerRef.current) return;
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const deltaX = currentX - touchStartRef.current.x;
-    const deltaY = currentY - touchStartRef.current.y;
-
-    const targetY = Math.max(-10, Math.min(10, deltaX * 0.08));
-    const targetX = Math.max(-8, Math.min(8, -deltaY * 0.06));
-
-    setRotation({ x: targetX, y: targetY });
-  };
-
-  const handleTouchEnd = () => {
-    touchStartRef.current = null;
-    setRotation({ x: 3, y: -4 });
-  };
+  }, [isDesktop]);
 
   const viewportHeight = Math.round(460 * scale);
 
   return (
     <div
       ref={containerRef}
-      className="ecosystem-3d-viewport"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      className={`ecosystem-3d-viewport ${isDesktop ? 'is-desktop' : 'is-mobile-fixed'}`}
       style={{
-        cursor: isHovered ? 'grab' : 'default',
+        cursor: isDesktop && isHovered ? 'grab' : 'default',
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
@@ -131,7 +110,7 @@ export const Ecosystem3DHero: React.FC = () => {
           position: 'relative',
         }}
       >
-        {/* 3D World Space (Pitch & Yaw Rotation Only) */}
+        {/* World Space (Flat on Mobile, Parallax on Desktop) */}
         <div
           className="ecosystem-3d-world"
           style={{
@@ -139,12 +118,14 @@ export const Ecosystem3DHero: React.FC = () => {
             height: '460px',
             position: 'relative',
             margin: '0 auto',
-            transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-            transformStyle: 'preserve-3d',
+            transform: isDesktop
+              ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`
+              : 'none',
+            transformStyle: isDesktop ? 'preserve-3d' : 'flat',
             transition: 'transform 0.15s ease-out',
           }}
         >
-          {/* Dynamic Vector Connections */}
+          {/* Dynamic Moving Dotted Circuit Lines */}
           <ConnectionLines3D progress={1} />
 
           {/* Central BizPilotly Engine Node (At exact 50% / 50% origin) */}
@@ -171,9 +152,9 @@ export const Ecosystem3DHero: React.FC = () => {
             type="client"
             x={110}
             y={90}
-            z={30}
-            rotateX={2}
-            rotateY={-3}
+            z={isDesktop ? 30 : 0}
+            rotateX={isDesktop ? 2 : 0}
+            rotateY={isDesktop ? -3 : 0}
             floatDelay="0s"
           />
 
@@ -182,9 +163,9 @@ export const Ecosystem3DHero: React.FC = () => {
             type="proposal"
             x={290}
             y={60}
-            z={15}
-            rotateX={-2}
-            rotateY={2}
+            z={isDesktop ? 15 : 0}
+            rotateX={isDesktop ? -2 : 0}
+            rotateY={isDesktop ? 2 : 0}
             floatDelay="1.2s"
           />
 
@@ -193,9 +174,9 @@ export const Ecosystem3DHero: React.FC = () => {
             type="invoice"
             x={470}
             y={110}
-            z={35}
-            rotateX={4}
-            rotateY={-4}
+            z={isDesktop ? 35 : 0}
+            rotateX={isDesktop ? 4 : 0}
+            rotateY={isDesktop ? -4 : 0}
             floatDelay="2.1s"
           />
 
@@ -204,9 +185,9 @@ export const Ecosystem3DHero: React.FC = () => {
             type="payment"
             x={450}
             y={330}
-            z={20}
-            rotateX={-3}
-            rotateY={3}
+            z={isDesktop ? 20 : 0}
+            rotateX={isDesktop ? -3 : 0}
+            rotateY={isDesktop ? 3 : 0}
             floatDelay="0.8s"
           />
 
@@ -215,9 +196,9 @@ export const Ecosystem3DHero: React.FC = () => {
             type="expense"
             x={120}
             y={330}
-            z={10}
-            rotateX={3}
-            rotateY={-2}
+            z={isDesktop ? 10 : 0}
+            rotateX={isDesktop ? 3 : 0}
+            rotateY={isDesktop ? -2 : 0}
             floatDelay="1.8s"
           />
 
@@ -226,9 +207,9 @@ export const Ecosystem3DHero: React.FC = () => {
             type="profit"
             x={290}
             y={390}
-            z={45}
-            rotateX={-4}
-            rotateY={1}
+            z={isDesktop ? 45 : 0}
+            rotateX={isDesktop ? -4 : 0}
+            rotateY={isDesktop ? 1 : 0}
             floatDelay="2.5s"
           />
         </div>
