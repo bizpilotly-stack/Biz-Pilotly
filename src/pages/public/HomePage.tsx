@@ -71,6 +71,7 @@ export const HomePage: React.FC = () => {
       >
         <div className="container" style={{ position: 'relative', zIndex: 1 }}>
           <div
+            className="hero-main-grid"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -168,6 +169,7 @@ export const HomePage: React.FC = () => {
 
             {/* Right 3D Spatial Interactive Hero Scene */}
             <div
+              className="hero-3d-container"
               style={{
                 position: 'relative',
                 width: '100%',
@@ -175,6 +177,7 @@ export const HomePage: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                margin: '0 auto',
               }}
             >
               <Ecosystem3DHero />

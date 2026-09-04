@@ -7,17 +7,25 @@ export const Ecosystem3DHero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 3, y: -4 });
   const [isHovered, setIsHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [scale, setScale] = useState(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Detect Mobile Viewport (< 640px)
+  // Dynamic Auto-Scaling for exact fit on any screen (mobile, tablet, desktop)
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+    const updateScale = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.clientWidth;
+        if (width > 0) {
+          // 580px is base coordinate width
+          const targetScale = Math.min(1, Math.max(0.52, (width - 12) / 580));
+          setScale(targetScale);
+        }
+      }
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    updateScale();
+    window.addEventListener('resize', updateScale, { passive: true });
+    return () => window.removeEventListener('resize', updateScale);
   }, []);
 
   // Smooth mouse parallax interpolation
@@ -56,7 +64,7 @@ export const Ecosystem3DHero: React.FC = () => {
     };
   }, []);
 
-  // Touch Parallax Handling on Mobile
+  // Touch Parallax Handling on Mobile & Tablet
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -84,156 +92,125 @@ export const Ecosystem3DHero: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`ecosystem-3d-viewport ${isMobile ? 'is-mobile-hero' : ''}`}
+      className="ecosystem-3d-viewport"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
         cursor: isHovered ? 'grab' : 'default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        maxWidth: '100%',
+        margin: '0 auto',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {/* Ambient 3D Depth Glow */}
       <div className="ecosystem-3d-ambient-glow" />
 
-      {/* 3D World Space */}
+      {/* 3D World Space (Full 6-Card Desktop Network everywhere with dynamic auto-scaling) */}
       <div
-        className={`ecosystem-3d-world ${isMobile ? 'mobile-3d-world' : 'desktop-3d-world'}`}
+        className="ecosystem-3d-world"
         style={{
-          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) translateZ(0px)`,
+          width: '580px',
+          height: '460px',
+          position: 'relative',
+          margin: '0 auto',
+          transform: `scale(${scale}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) translateZ(0px)`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.15s ease-out',
         }}
       >
         {/* Dynamic Vector Connections */}
-        <ConnectionLines3D progress={1} isMobile={isMobile} />
+        <ConnectionLines3D progress={1} />
 
-        {isMobile ? (
-          /* ============================================================
-             MOBILE 3-CARD SPATIAL FOCUS (Crisp, Readable, Elegant)
-             ============================================================ */
-          <>
-            {/* 1. Client Card (Top) */}
-            <FloatingModule3D
-              type="client"
-              x={180}
-              y={55}
-              z={25}
-              rotateX={2}
-              rotateY={-2}
-              floatDelay="0s"
-            />
+        {/* Central BizPilotly Engine Node */}
+        <div className="ecosystem-central-anchor" title="BizPilotly Unified Engine">
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: '#0B1F3A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#C9A227',
+              boxShadow: 'inset 0 0 10px rgba(201, 162, 39, 0.5)',
+            }}
+          >
+            <Sparkles size={22} color="#C9A227" />
+          </div>
+        </div>
 
-            {/* 2. Invoice Card (Middle) */}
-            <FloatingModule3D
-              type="invoice"
-              x={180}
-              y={185}
-              z={35}
-              rotateX={-1}
-              rotateY={2}
-              floatDelay="1.4s"
-            />
+        {/* 1. Client Card (Top-Left, z: 30) */}
+        <FloatingModule3D
+          type="client"
+          x={110}
+          y={90}
+          z={30}
+          rotateX={2}
+          rotateY={-3}
+          floatDelay="0s"
+        />
 
-            {/* 3. Realized Net Profit (Bottom) */}
-            <FloatingModule3D
-              type="profit"
-              x={180}
-              y={315}
-              z={30}
-              rotateX={-3}
-              rotateY={-1}
-              floatDelay="2.2s"
-            />
-          </>
-        ) : (
-          /* ============================================================
-             DESKTOP & TABLET 6-CARD NETWORK
-             ============================================================ */
-          <>
-            {/* Central BizPilotly Engine Node */}
-            <div className="ecosystem-central-anchor" title="BizPilotly Unified Engine">
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  background: '#0B1F3A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#C9A227',
-                  boxShadow: 'inset 0 0 10px rgba(201, 162, 39, 0.5)',
-                }}
-              >
-                <Sparkles size={22} color="#C9A227" />
-              </div>
-            </div>
+        {/* 2. Proposal / Scope Card (Top-Middle, z: 15) */}
+        <FloatingModule3D
+          type="proposal"
+          x={290}
+          y={60}
+          z={15}
+          rotateX={-2}
+          rotateY={2}
+          floatDelay="1.2s"
+        />
 
-            {/* 1. Client Card (Top-Left, z: 30) */}
-            <FloatingModule3D
-              type="client"
-              x={110}
-              y={90}
-              z={30}
-              rotateX={2}
-              rotateY={-3}
-              floatDelay="0s"
-            />
+        {/* 3. Invoice Card (Top-Right, z: 35) */}
+        <FloatingModule3D
+          type="invoice"
+          x={470}
+          y={110}
+          z={35}
+          rotateX={4}
+          rotateY={-4}
+          floatDelay="2.1s"
+        />
 
-            {/* 2. Proposal / Scope Card (Top-Middle, z: 15) */}
-            <FloatingModule3D
-              type="proposal"
-              x={290}
-              y={60}
-              z={15}
-              rotateX={-2}
-              rotateY={2}
-              floatDelay="1.2s"
-            />
+        {/* 4. Payment Card (Bottom-Right, z: 20) */}
+        <FloatingModule3D
+          type="payment"
+          x={450}
+          y={330}
+          z={20}
+          rotateX={-3}
+          rotateY={3}
+          floatDelay="0.8s"
+        />
 
-            {/* 3. Invoice Card (Top-Right, z: 35) */}
-            <FloatingModule3D
-              type="invoice"
-              x={470}
-              y={110}
-              z={35}
-              rotateX={4}
-              rotateY={-4}
-              floatDelay="2.1s"
-            />
+        {/* 5. Expense Card (Bottom-Left, z: 10) */}
+        <FloatingModule3D
+          type="expense"
+          x={120}
+          y={330}
+          z={10}
+          rotateX={3}
+          rotateY={-2}
+          floatDelay="1.8s"
+        />
 
-            {/* 4. Payment Card (Bottom-Right, z: 20) */}
-            <FloatingModule3D
-              type="payment"
-              x={450}
-              y={330}
-              z={20}
-              rotateX={-3}
-              rotateY={3}
-              floatDelay="0.8s"
-            />
-
-            {/* 5. Expense Card (Bottom-Left, z: 10) */}
-            <FloatingModule3D
-              type="expense"
-              x={120}
-              y={330}
-              z={10}
-              rotateX={3}
-              rotateY={-2}
-              floatDelay="1.8s"
-            />
-
-            {/* 6. Realized Net Profit (Bottom-Center, z: 45) */}
-            <FloatingModule3D
-              type="profit"
-              x={290}
-              y={390}
-              z={45}
-              rotateX={-4}
-              rotateY={1}
-              floatDelay="2.5s"
-            />
-          </>
-        )}
+        {/* 6. Realized Net Profit (Bottom-Center, z: 45) */}
+        <FloatingModule3D
+          type="profit"
+          x={290}
+          y={390}
+          z={45}
+          rotateX={-4}
+          rotateY={1}
+          floatDelay="2.5s"
+        />
       </div>
     </div>
   );

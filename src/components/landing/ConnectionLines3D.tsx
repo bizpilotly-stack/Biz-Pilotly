@@ -2,12 +2,10 @@ import React from 'react';
 
 interface ConnectionLines3DProps {
   progress?: number;
-  isMobile?: boolean;
 }
 
 export const ConnectionLines3D: React.FC<ConnectionLines3DProps> = ({
   progress = 1,
-  isMobile = false,
 }) => {
   const opacity = Math.min(1, Math.max(0.3, progress));
 
@@ -24,7 +22,7 @@ export const ConnectionLines3D: React.FC<ConnectionLines3DProps> = ({
         opacity: opacity,
         transition: 'opacity 0.3s ease',
       }}
-      viewBox={isMobile ? "0 0 360 380" : "0 0 580 460"}
+      viewBox="0 0 580 460"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -35,10 +33,10 @@ export const ConnectionLines3D: React.FC<ConnectionLines3DProps> = ({
           <stop offset="100%" stopColor="#10B981" stopOpacity="0.8" />
         </linearGradient>
 
-        <linearGradient id="mobileFlowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.9" />
-          <stop offset="50%" stopColor="#FBBF24" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#10B981" stopOpacity="1" />
+        <linearGradient id="pulseGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#C9A227" stopOpacity="0" />
+          <stop offset="50%" stopColor="#F59E0B" stopOpacity="1" />
+          <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
         </linearGradient>
 
         <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
@@ -47,124 +45,89 @@ export const ConnectionLines3D: React.FC<ConnectionLines3DProps> = ({
         </filter>
       </defs>
 
-      {isMobile ? (
-        <>
-          {/* Mobile Flow: Client (Top) -> Invoice (Middle) -> Profit (Bottom) */}
-          <path
-            d="M 180 85 L 180 150"
-            stroke="rgba(255, 255, 255, 0.2)"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-          />
-          <path
-            d="M 180 85 L 180 150"
-            stroke="url(#mobileFlowGradient)"
-            strokeWidth="2.5"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
+      {/* 1. Client -> Proposal Pathway */}
+      <path
+        d="M 120 110 C 180 80, 220 70, 270 80"
+        stroke="rgba(255, 255, 255, 0.15)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 120 110 C 180 80, 220 70, 270 80"
+        stroke="url(#circuitGoldGradient)"
+        strokeWidth="2"
+        className="circuit-path-flow"
+        filter="url(#glowFilter)"
+      />
 
-          <path
-            d="M 180 220 L 180 285"
-            stroke="rgba(255, 255, 255, 0.2)"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-          />
-          <path
-            d="M 180 220 L 180 285"
-            stroke="url(#mobileFlowGradient)"
-            strokeWidth="2.5"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
-        </>
-      ) : (
-        <>
-          {/* 1. Client -> Proposal Pathway */}
-          <path
-            d="M 120 110 C 180 80, 220 70, 270 80"
-            stroke="rgba(255, 255, 255, 0.15)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M 120 110 C 180 80, 220 70, 270 80"
-            stroke="url(#circuitGoldGradient)"
-            strokeWidth="2"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
+      {/* 2. Proposal -> Central Hub Pathway */}
+      <path
+        d="M 310 110 C 310 160, 290 180, 290 200"
+        stroke="rgba(255, 255, 255, 0.15)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 310 110 C 310 160, 290 180, 290 200"
+        stroke="#A78BFA"
+        strokeWidth="2"
+        className="circuit-path-flow"
+        filter="url(#glowFilter)"
+      />
 
-          {/* 2. Proposal -> Central Hub Pathway */}
-          <path
-            d="M 310 110 C 310 160, 290 180, 290 200"
-            stroke="rgba(255, 255, 255, 0.15)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M 310 110 C 310 160, 290 180, 290 200"
-            stroke="#A78BFA"
-            strokeWidth="2"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
+      {/* 3. Central Hub -> Invoice Pathway */}
+      <path
+        d="M 325 220 C 380 200, 420 160, 460 140"
+        stroke="rgba(255, 255, 255, 0.15)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 325 220 C 380 200, 420 160, 460 140"
+        stroke="#FBBF24"
+        strokeWidth="2"
+        className="circuit-path-flow"
+        filter="url(#glowFilter)"
+      />
 
-          {/* 3. Central Hub -> Invoice Pathway */}
-          <path
-            d="M 325 220 C 380 200, 420 160, 460 140"
-            stroke="rgba(255, 255, 255, 0.15)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M 325 220 C 380 200, 420 160, 460 140"
-            stroke="#FBBF24"
-            strokeWidth="2"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
+      {/* 4. Invoice -> Payment Pathway */}
+      <path
+        d="M 470 170 C 490 240, 480 280, 460 320"
+        stroke="rgba(255, 255, 255, 0.15)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 470 170 C 490 240, 480 280, 460 320"
+        stroke="#34D399"
+        strokeWidth="2"
+        className="circuit-path-flow"
+        filter="url(#glowFilter)"
+      />
 
-          {/* 4. Invoice -> Payment Pathway */}
-          <path
-            d="M 470 170 C 490 240, 480 280, 460 320"
-            stroke="rgba(255, 255, 255, 0.15)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M 470 170 C 490 240, 480 280, 460 320"
-            stroke="#34D399"
-            strokeWidth="2"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
+      {/* 5. Expense -> Profit Inflow Pathway */}
+      <path
+        d="M 140 340 C 180 370, 220 380, 260 380"
+        stroke="rgba(255, 255, 255, 0.15)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 140 340 C 180 370, 220 380, 260 380"
+        stroke="#F87171"
+        strokeWidth="2"
+        className="circuit-path-flow"
+        filter="url(#glowFilter)"
+      />
 
-          {/* 5. Expense -> Profit Inflow Pathway */}
-          <path
-            d="M 140 340 C 180 370, 220 380, 260 380"
-            stroke="rgba(255, 255, 255, 0.15)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M 140 340 C 180 370, 220 380, 260 380"
-            stroke="#F87171"
-            strokeWidth="2"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
-
-          {/* 6. Payment -> Realized Net Profit Pathway */}
-          <path
-            d="M 420 350 C 380 380, 340 380, 310 380"
-            stroke="rgba(255, 255, 255, 0.15)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M 420 350 C 380 380, 340 380, 310 380"
-            stroke="url(#circuitGoldGradient)"
-            strokeWidth="2.5"
-            className="circuit-path-flow"
-            filter="url(#glowFilter)"
-          />
-        </>
-      )}
+      {/* 6. Payment -> Realized Net Profit Pathway */}
+      <path
+        d="M 420 350 C 380 380, 340 380, 310 380"
+        stroke="rgba(255, 255, 255, 0.15)"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 420 350 C 380 380, 340 380, 310 380"
+        stroke="url(#circuitGoldGradient)"
+        strokeWidth="2.5"
+        className="circuit-path-flow"
+        filter="url(#glowFilter)"
+      />
     </svg>
   );
 };
