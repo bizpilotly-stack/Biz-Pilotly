@@ -18,15 +18,24 @@
   user-select: none;
 }
 
+.ecosystem-scaler {
+  position: relative;
+  width: 580px;
+  height: 460px;
+  flex-shrink: 0;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .ecosystem-3d-world {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  width: 580px !important;
-  height: 460px !important;
+  position: relative;
+  width: 580px;
+  height: 460px;
+  margin: 0 auto;
   transform-style: preserve-3d;
-  transform-origin: center center !important;
-  margin: 0 !important;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
   will-change: transform;
 }
 
@@ -328,6 +337,21 @@
 
 /* Tablet & Mobile Screens (<1024px) */
 @media (max-width: 1024px) {
+  .hero-main-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+  }
+  .hero-content-col {
+    width: 100% !important;
+    max-width: 620px !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+  }
   .hero-3d-container {
     width: 100% !important;
     max-width: 100vw !important;
@@ -336,6 +360,7 @@
     align-items: center !important;
     margin: 1.5rem auto 0 !important;
     height: auto !important;
+    overflow: visible !important;
   }
   .ecosystem-3d-viewport {
     width: 100% !important;

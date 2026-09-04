@@ -7,24 +7,18 @@ export const Ecosystem3DHero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 3, y: -4 });
   const [isHovered, setIsHovered] = useState(false);
-  const [scale, setScale] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const availableWidth = Math.min(window.innerWidth - 32, 580);
-      return Math.min(1, Math.max(0.46, availableWidth / 580));
-    }
-    return 1;
-  });
+  const [scale, setScale] = useState(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Dynamic Auto-Scaling for exact 50% center fit on any screen (mobile, tablet, desktop)
+  // Dynamic Auto-Scaling for exact symmetrical center fit on all viewports
   useEffect(() => {
     const updateScale = () => {
       const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
       const measuredWidth = containerRef.current?.clientWidth || screenWidth;
-      const availableWidth = Math.min(screenWidth - 32, measuredWidth);
+      const availableWidth = Math.min(screenWidth - 24, measuredWidth);
       if (availableWidth > 0) {
-        // 580px is base coordinate width
-        const targetScale = Math.min(1, Math.max(0.46, availableWidth / 580));
+        // Base width is 580px
+        const targetScale = Math.min(1, Math.max(0.46, (availableWidth) / 580));
         setScale(targetScale);
       }
     };
@@ -115,113 +109,129 @@ export const Ecosystem3DHero: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'visible',
+        overflow: 'hidden',
       }}
     >
       {/* Ambient 3D Depth Glow */}
       <div className="ecosystem-3d-ambient-glow" />
 
-      {/* 3D World Space (Anchored directly at 50% center on all devices) */}
+      {/* Symmetrical Scaling Wrapper */}
       <div
-        className="ecosystem-3d-world"
+        className="ecosystem-scaler"
         style={{
           width: '580px',
           height: '460px',
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: `translate(-50%, -50%) scale(${scale}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) translateZ(0px)`,
+          flexShrink: 0,
+          margin: '0 auto',
+          transform: `scale(${scale})`,
           transformOrigin: 'center center',
-          transition: 'transform 0.15s ease-out',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
         }}
       >
-        {/* Dynamic Vector Connections */}
-        <ConnectionLines3D progress={1} />
+        {/* 3D World Space (Pitch & Yaw Rotation Only) */}
+        <div
+          className="ecosystem-3d-world"
+          style={{
+            width: '580px',
+            height: '460px',
+            position: 'relative',
+            margin: '0 auto',
+            transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.15s ease-out',
+          }}
+        >
+          {/* Dynamic Vector Connections */}
+          <ConnectionLines3D progress={1} />
 
-        {/* Central BizPilotly Engine Node (At exact 50% / 50% origin) */}
-        <div className="ecosystem-central-anchor" title="BizPilotly Unified Engine">
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              background: '#0B1F3A',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#C9A227',
-              boxShadow: 'inset 0 0 10px rgba(201, 162, 39, 0.5)',
-            }}
-          >
-            <Sparkles size={22} color="#C9A227" />
+          {/* Central BizPilotly Engine Node (At exact 50% / 50% origin) */}
+          <div className="ecosystem-central-anchor" title="BizPilotly Unified Engine">
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: '#0B1F3A',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#C9A227',
+                boxShadow: 'inset 0 0 10px rgba(201, 162, 39, 0.5)',
+              }}
+            >
+              <Sparkles size={22} color="#C9A227" />
+            </div>
           </div>
+
+          {/* 1. Client Card (Top-Left, z: 30) */}
+          <FloatingModule3D
+            type="client"
+            x={110}
+            y={90}
+            z={30}
+            rotateX={2}
+            rotateY={-3}
+            floatDelay="0s"
+          />
+
+          {/* 2. Proposal / Scope Card (Top-Middle, z: 15) */}
+          <FloatingModule3D
+            type="proposal"
+            x={290}
+            y={60}
+            z={15}
+            rotateX={-2}
+            rotateY={2}
+            floatDelay="1.2s"
+          />
+
+          {/* 3. Invoice Card (Top-Right, z: 35) */}
+          <FloatingModule3D
+            type="invoice"
+            x={470}
+            y={110}
+            z={35}
+            rotateX={4}
+            rotateY={-4}
+            floatDelay="2.1s"
+          />
+
+          {/* 4. Payment Card (Bottom-Right, z: 20) */}
+          <FloatingModule3D
+            type="payment"
+            x={450}
+            y={330}
+            z={20}
+            rotateX={-3}
+            rotateY={3}
+            floatDelay="0.8s"
+          />
+
+          {/* 5. Expense Card (Bottom-Left, z: 10) */}
+          <FloatingModule3D
+            type="expense"
+            x={120}
+            y={330}
+            z={10}
+            rotateX={3}
+            rotateY={-2}
+            floatDelay="1.8s"
+          />
+
+          {/* 6. Realized Net Profit (Bottom-Center, z: 45) */}
+          <FloatingModule3D
+            type="profit"
+            x={290}
+            y={390}
+            z={45}
+            rotateX={-4}
+            rotateY={1}
+            floatDelay="2.5s"
+          />
         </div>
-
-        {/* 1. Client Card (Top-Left, z: 30) */}
-        <FloatingModule3D
-          type="client"
-          x={110}
-          y={90}
-          z={30}
-          rotateX={2}
-          rotateY={-3}
-          floatDelay="0s"
-        />
-
-        {/* 2. Proposal / Scope Card (Top-Middle, z: 15) */}
-        <FloatingModule3D
-          type="proposal"
-          x={290}
-          y={60}
-          z={15}
-          rotateX={-2}
-          rotateY={2}
-          floatDelay="1.2s"
-        />
-
-        {/* 3. Invoice Card (Top-Right, z: 35) */}
-        <FloatingModule3D
-          type="invoice"
-          x={470}
-          y={110}
-          z={35}
-          rotateX={4}
-          rotateY={-4}
-          floatDelay="2.1s"
-        />
-
-        {/* 4. Payment Card (Bottom-Right, z: 20) */}
-        <FloatingModule3D
-          type="payment"
-          x={450}
-          y={330}
-          z={20}
-          rotateX={-3}
-          rotateY={3}
-          floatDelay="0.8s"
-        />
-
-        {/* 5. Expense Card (Bottom-Left, z: 10) */}
-        <FloatingModule3D
-          type="expense"
-          x={120}
-          y={330}
-          z={10}
-          rotateX={3}
-          rotateY={-2}
-          floatDelay="1.8s"
-        />
-
-        {/* 6. Realized Net Profit (Bottom-Center, z: 45) */}
-        <FloatingModule3D
-          type="profit"
-          x={290}
-          y={390}
-          z={45}
-          rotateX={-4}
-          rotateY={1}
-          floatDelay="2.5s"
-        />
       </div>
     </div>
   );
