@@ -7,7 +7,13 @@ export const Ecosystem3DHero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 3, y: -4 });
   const [isHovered, setIsHovered] = useState(false);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const availableWidth = Math.min(window.innerWidth - 32, 580);
+      return Math.min(1, Math.max(0.46, availableWidth / 580));
+    }
+    return 1;
+  });
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Dynamic Auto-Scaling for exact 50% center fit on any screen (mobile, tablet, desktop)
