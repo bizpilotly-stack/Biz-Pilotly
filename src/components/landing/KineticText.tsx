@@ -92,23 +92,23 @@ export const KineticText: React.FC<KineticTextProps> = ({
     >
       {words.map((word, index) => {
         // Staggered timing per word
-        const wordOffset = (index / Math.max(1, words.length - 1)) * (isHigh ? 0.22 : 0.15);
-        const wordProgress = Math.max(0, Math.min(1, (progress - wordOffset) / (1 - (isHigh ? 0.22 : 0.15))));
+        const wordOffset = (index / Math.max(1, words.length - 1)) * (isHigh ? 0.20 : 0.12);
+        const wordProgress = Math.max(0, Math.min(1, (progress - wordOffset) / (1 - (isHigh ? 0.20 : 0.12))));
 
         const remaining = 1 - wordProgress;
 
-        // Alternating Left & Right initial displacement
-        const maxOffset = isMobile
-          ? (isHigh ? 12 : 6)
-          : (isHigh ? 24 : 10);
-
+        // Mobile touch devices: smooth vertical emergence + clarity unfolding
+        // Desktop: alternating spatial convergence
         const isLeft = index % 2 === 0;
-        const translateX = (isLeft ? -maxOffset : maxOffset) * remaining;
-        const translateY = remaining * (isMobile ? (isHigh ? 8 : 4) : (isHigh ? 14 : 6));
-        const rotateZ = (isLeft ? -1.5 : 1.5) * remaining * (isHigh ? 1 : 0.5);
-        const blur = remaining * (isMobile ? (isHigh ? 2.5 : 1.2) : (isHigh ? 4 : 2));
-        const scale = 0.95 + (wordProgress * 0.05);
-        const opacity = isHigh ? Math.max(0.25, wordProgress) : Math.max(0.4, wordProgress);
+        const translateX = isMobile
+          ? (isLeft ? -4 : 4) * remaining
+          : (isLeft ? -24 : 24) * remaining * (isHigh ? 1 : 0.5);
+
+        const translateY = remaining * (isMobile ? (isHigh ? 10 : 5) : (isHigh ? 14 : 6));
+        const rotateZ = isMobile ? 0 : (isLeft ? -1.5 : 1.5) * remaining * (isHigh ? 1 : 0.5);
+        const blur = remaining * (isMobile ? (isHigh ? 2 : 1) : (isHigh ? 3.5 : 1.8));
+        const scale = 0.96 + (wordProgress * 0.04);
+        const opacity = isHigh ? Math.max(0.2, wordProgress) : Math.max(0.35, wordProgress);
 
         return (
           <span
@@ -118,11 +118,9 @@ export const KineticText: React.FC<KineticTextProps> = ({
               transform: wordProgress >= 0.99
                 ? 'none'
                 : `translate3d(${translateX}px, ${translateY}px, 0) rotate(${rotateZ}deg) scale(${scale})`,
-              filter: blur > 0.2 ? `blur(${blur}px)` : 'none',
+              filter: blur > 0.15 ? `blur(${blur}px)` : 'none',
               opacity,
-              transition: isHigh
-                ? 'transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), filter 0.16s ease, opacity 0.16s ease'
-                : 'transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), filter 0.12s ease, opacity 0.12s ease',
+              transition: 'transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), filter 0.14s ease, opacity 0.14s ease',
               willChange: 'transform, filter, opacity',
             }}
           >
