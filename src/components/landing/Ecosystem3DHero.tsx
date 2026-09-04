@@ -10,16 +10,16 @@ export const Ecosystem3DHero: React.FC = () => {
   const [scale, setScale] = useState(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Dynamic Auto-Scaling for exact fit on any screen (mobile, tablet, desktop)
+  // Dynamic Auto-Scaling for exact 50% center fit on any screen (mobile, tablet, desktop)
   useEffect(() => {
     const updateScale = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.clientWidth;
-        if (width > 0) {
-          // 580px is base coordinate width
-          const targetScale = Math.min(1, Math.max(0.52, (width - 12) / 580));
-          setScale(targetScale);
-        }
+      const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+      const measuredWidth = containerRef.current?.clientWidth || screenWidth;
+      const availableWidth = Math.min(screenWidth - 32, measuredWidth);
+      if (availableWidth > 0) {
+        // 580px is base coordinate width
+        const targetScale = Math.min(1, Math.max(0.46, availableWidth / 580));
+        setScale(targetScale);
       }
     };
 
@@ -89,6 +89,8 @@ export const Ecosystem3DHero: React.FC = () => {
     setRotation({ x: 3, y: -4 });
   };
 
+  const viewportHeight = Math.round(460 * scale);
+
   return (
     <div
       ref={containerRef}
@@ -98,28 +100,31 @@ export const Ecosystem3DHero: React.FC = () => {
       onTouchEnd={handleTouchEnd}
       style={{
         cursor: isHovered ? 'grab' : 'default',
+        position: 'relative',
+        width: '100%',
+        maxWidth: '100%',
+        height: `${viewportHeight}px`,
+        minHeight: `${viewportHeight}px`,
+        margin: '0 auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '100%',
-        maxWidth: '100%',
-        margin: '0 auto',
-        position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* Ambient 3D Depth Glow */}
       <div className="ecosystem-3d-ambient-glow" />
 
-      {/* 3D World Space (Full 6-Card Desktop Network everywhere with dynamic auto-scaling) */}
+      {/* 3D World Space (Anchored directly at 50% center on all devices) */}
       <div
         className="ecosystem-3d-world"
         style={{
           width: '580px',
           height: '460px',
-          position: 'relative',
-          margin: '0 auto',
-          transform: `scale(${scale}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) translateZ(0px)`,
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: `translate(-50%, -50%) scale(${scale}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) translateZ(0px)`,
           transformOrigin: 'center center',
           transition: 'transform 0.15s ease-out',
         }}
@@ -127,7 +132,7 @@ export const Ecosystem3DHero: React.FC = () => {
         {/* Dynamic Vector Connections */}
         <ConnectionLines3D progress={1} />
 
-        {/* Central BizPilotly Engine Node */}
+        {/* Central BizPilotly Engine Node (At exact 50% / 50% origin) */}
         <div className="ecosystem-central-anchor" title="BizPilotly Unified Engine">
           <div
             style={{
