@@ -428,6 +428,8 @@ export const BusinessSettingsPage: React.FC = () => {
                 </button>
               )}
             </div>
+          </div>
+
           {/* Brand Color Theme Selection */}
           <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
