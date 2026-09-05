@@ -6,17 +6,20 @@ import { Sparkles } from 'lucide-react';
 export const Ecosystem3DHero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 4, y: -6 });
-  const [isHovered, setIsHovered] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
   const [scale, setScale] = useState(1);
+  const animFrameRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Responsive dynamic auto-scaling
+  // Responsive dynamic auto-scaling tailored for Mobile & Desktop Profile
   useEffect(() => {
     const handleResize = () => {
       const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
       const measuredWidth = containerRef.current?.clientWidth || screenWidth;
-      const availableWidth = Math.min(screenWidth - 24, measuredWidth);
+      const availableWidth = Math.min(screenWidth - 16, measuredWidth);
       if (availableWidth > 0) {
-        const targetScale = Math.min(1, Math.max(0.48, availableWidth / 580));
+        // High-precision scale fitting from 320px mobile to 1440px desktop
+        const targetScale = Math.min(1, Math.max(0.45, availableWidth / 580));
         setScale(targetScale);
       }
     };
@@ -26,63 +29,116 @@ export const Ecosystem3DHero: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Desktop Mouse Parallax
+  // Autonomous Smooth Floating Orbital Animation (Active on both Mobile & Desktop)
   useEffect(() => {
+    let startTime = performance.now();
+
+    const animate = (time: number) => {
+      if (!isInteracting) {
+        const elapsed = (time - startTime) / 1000;
+        // Fluid continuous 3D wave oscillation
+        const autoX = Math.sin(elapsed * 0.75) * 4.5 + 2.5;
+        const autoY = Math.cos(elapsed * 0.55) * 6.5 - 1.5;
+        setRotation({ x: autoX, y: autoY });
+      } else {
+        startTime = performance.now();
+      }
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [isInteracting]);
+
+  // Desktop Mouse Parallax & Mobile Touch Interaction
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    // Desktop Mouse movement
     const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      setIsInteracting(true);
+      const rect = node.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
 
-      // Restrained pitch & yaw (Max ±7 degrees)
-      const targetX = -(y / (rect.height / 2)) * 6;
-      const targetY = (x / (rect.width / 2)) * 8;
+      const targetX = -(y / (rect.height / 2)) * 6.5;
+      const targetY = (x / (rect.width / 2)) * 8.5;
 
       setRotation({ x: targetX, y: targetY });
     };
 
     const handleMouseLeave = () => {
-      // Return gracefully to default 3D isometric angle
-      setRotation({ x: 4, y: -6 });
-      setIsHovered(false);
+      setIsInteracting(false);
     };
 
-    const node = containerRef.current;
-    if (node) {
-      node.addEventListener('mousemove', handleMouseMove);
-      node.addEventListener('mouseleave', handleMouseLeave);
-      node.addEventListener('mouseenter', () => setIsHovered(true));
-    }
-
-    return () => {
-      if (node) {
-        node.removeEventListener('mousemove', handleMouseMove);
-        node.removeEventListener('mouseleave', handleMouseLeave);
+    // Mobile Touch Drag & Swiping
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        setIsInteracting(true);
+        touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1 && touchStartRef.current) {
+        const rect = node.getBoundingClientRect();
+        const deltaX = e.touches[0].clientX - rect.left - rect.width / 2;
+        const deltaY = e.touches[0].clientY - rect.top - rect.height / 2;
+
+        const targetX = -(deltaY / (rect.height / 2)) * 6.5;
+        const targetY = (deltaX / (rect.width / 2)) * 8.5;
+
+        setRotation({ x: targetX, y: targetY });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      touchStartRef.current = null;
+      setIsInteracting(false);
+    };
+
+    node.addEventListener('mousemove', handleMouseMove, { passive: true });
+    node.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+    node.addEventListener('touchstart', handleTouchStart, { passive: true });
+    node.addEventListener('touchmove', handleTouchMove, { passive: true });
+    node.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      node.removeEventListener('mousemove', handleMouseMove);
+      node.removeEventListener('mouseleave', handleMouseLeave);
+      node.removeEventListener('touchstart', handleTouchStart);
+      node.removeEventListener('touchmove', handleTouchMove);
+      node.removeEventListener('touchend', handleTouchEnd);
+    };
   }, []);
+
+  const viewportHeight = Math.max(280, Math.round(460 * scale));
 
   return (
     <div
       ref={containerRef}
       className="ecosystem-3d-viewport"
       style={{
-        cursor: isHovered ? 'grab' : 'default',
+        cursor: isInteracting ? 'grab' : 'default',
         position: 'relative',
         width: '100%',
         maxWidth: '100%',
-        height: '460px',
+        height: `${viewportHeight}px`,
         margin: '0 auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'visible',
+        touchAction: 'pan-y',
       }}
     >
       {/* Ambient 3D Depth Glow */}
       <div className="ecosystem-3d-ambient-glow" />
 
-      {/* 3D World Space with Parallax and Scale */}
+      {/* 3D World Space with Parallax, Continuous Floating, and Dynamic Scale */}
       <div
         className="ecosystem-3d-world"
         style={{
@@ -93,7 +149,8 @@ export const Ecosystem3DHero: React.FC = () => {
           transform: `scale(${scale}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) translateZ(0px)`,
           transformOrigin: 'center center',
           transformStyle: 'preserve-3d',
-          transition: 'transform 0.18s cubic-bezier(0.2, 0, 0, 1)',
+          transition: isInteracting ? 'transform 0.15s cubic-bezier(0.2, 0, 0, 1)' : 'transform 0.3s ease-out',
+          willChange: 'transform',
         }}
       >
         {/* Dynamic Moving Dotted Circuit Lines */}
@@ -187,3 +244,4 @@ export const Ecosystem3DHero: React.FC = () => {
     </div>
   );
 };
+

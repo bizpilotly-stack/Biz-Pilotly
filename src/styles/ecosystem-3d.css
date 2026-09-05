@@ -359,7 +359,7 @@
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    margin: 1.5rem auto 0 !important;
+    margin: 1rem auto 0 !important;
     height: auto !important;
     overflow: visible !important;
   }
@@ -371,10 +371,10 @@
     align-items: center !important;
     margin: 0 auto !important;
     position: relative !important;
-  }
-  .ecosystem-3d-viewport.is-mobile-fixed {
-    perspective: none !important;
-    -webkit-perspective: none !important;
+    perspective: 1000px !important;
+    -webkit-perspective: 1000px !important;
+    transform-style: preserve-3d !important;
+    touch-action: pan-y;
   }
 }
 
@@ -388,11 +388,15 @@
     grid-column: span 1;
   }
   .hero-3d-container {
-    margin: 1.25rem auto 0 !important;
+    margin: 0.75rem auto 0 !important;
     height: auto !important;
+    padding: 0 4px !important;
   }
   .ecosystem-3d-viewport {
-    touch-action: pan-y;
+    perspective: 800px !important;
+    -webkit-perspective: 800px !important;
+    touch-action: pan-y !important;
+    min-height: 280px !important;
   }
   .hero-content-col {
     align-items: center !important;
@@ -405,6 +409,11 @@
     text-align: center !important;
   }
   .hero-content-col .hero-cta-group {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+  .hero-content-col .hero-cta-group .btn {
+    width: 100% !important;
     justify-content: center !important;
   }
   .hero-content-col .hero-trust-badges {
