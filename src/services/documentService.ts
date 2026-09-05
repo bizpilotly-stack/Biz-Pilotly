@@ -167,6 +167,18 @@ class DocumentService {
       if (existing?.id) existingId = existing.id;
     }
 
+    if (!existingId && doc.documentNumber && business.id) {
+      const { data: byNum } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('business_id', business.id)
+        .eq('document_number', doc.documentNumber)
+        .maybeSingle();
+      if (byNum?.id) {
+        existingId = byNum.id;
+      }
+    }
+
     // Pack extended metadata (rejectionReason, sourceDocument, contractTerms, etc.) into client/business/payment snapshots
     const extendedMeta: Record<string, any> = {
       sourceDocumentId: doc.sourceDocumentId || null,

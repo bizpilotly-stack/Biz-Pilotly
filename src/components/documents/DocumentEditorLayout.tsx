@@ -461,60 +461,85 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
   };
 
-  const markAsSentAndSave = async (): Promise<BusinessDocument> => {
+  const markAsSentAndSave = async (docToSave: BusinessDocument = doc): Promise<BusinessDocument> => {
     const updatedDoc: BusinessDocument = {
-      ...doc,
-      status: (doc.status === 'paid' ? 'paid' : 'sent') as any,
+      ...docToSave,
+      status: (docToSave.status === 'paid' ? 'paid' : 'sent') as any,
     };
     setDoc(updatedDoc);
-    if (user) {
-      try {
-        const saved = await documentService.saveDocument(updatedDoc);
-        return saved;
-      } catch {
-        // storage fallback
-      }
+    try {
+      const saved = await documentService.saveDocument(updatedDoc);
+      setDoc(saved);
+      return saved;
+    } catch {
+      // storage fallback
     }
     return updatedDoc;
   };
 
-  const handleWhatsAppShare = async () => {
+  const handleSaveAsNewAndSend = async () => {
+    try {
+      const nextNum = await documentService.getNextDocumentNumber(documentType);
+      const newDoc: BusinessDocument = {
+        ...doc,
+        id: undefined,
+        documentNumber: nextNum,
+        status: 'sent' as any,
+        date: new Date().toISOString().split('T')[0],
+      };
+      const saved = await documentService.saveDocument(newDoc);
+      setDoc(saved);
+      setResendConfirmed(true);
+      showToast(`✓ Saved as new ${documentType.toUpperCase()} #${saved.documentNumber}!`, 'success');
+    } catch {
+      showToast('Error creating new document.', 'error');
+    }
+  };
+
+  const handleOverrideExistingAndSend = async () => {
     await markAsSentAndSave();
-    const clientPhone = (doc.client.phone || '').replace(/[^0-9]/g, '');
-    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
-    const textMsg = `Hello ${doc.client.name || 'Valued Client'},\n\nPlease find your official ${doc.type.toUpperCase()} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)} from ${doc.business.name || 'our studio'}.\n\nYou can view your invoice statement & payment options online here:\n${invoiceUrl}\n\nThank you for your business!`;
+    setResendConfirmed(true);
+    showToast(`✓ Overriding existing ${documentType.toUpperCase()} #${doc.documentNumber}`, 'info');
+  };
+
+  const handleWhatsAppShare = async () => {
+    const saved = await markAsSentAndSave();
+    const clientPhone = (saved.client.phone || '').replace(/[^0-9]/g, '');
+    const docUrl = `${window.location.origin}/invoice/${saved.id}`;
+    const textMsg = `Hello ${saved.client.name || 'Valued Client'},\n\nPlease find your official ${saved.type.toUpperCase()} #${saved.documentNumber} for ${formatCurrencyAmount(saved.total, saved.currency, saved.currencySymbol)} from ${saved.business.name || 'our studio'}.\n\nYou can view your ${saved.type} statement online here:\n${docUrl}\n\nThank you for your business!`;
 
     const waLink = clientPhone
       ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(textMsg)}`
       : `https://wa.me/?text=${encodeURIComponent(textMsg)}`;
 
     window.open(waLink, '_blank');
-    showToast('✓ WhatsApp opened & invoice marked as Sent!', 'success');
+    showToast(`✓ WhatsApp opened & ${saved.type.toUpperCase()} marked as Sent!`, 'success');
     if (isApp) {
       setTimeout(() => navigate('/app/documents'), 1500);
     }
   };
 
   const handleDiscordShare = async () => {
-    await markAsSentAndSave();
-    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
-    const discordText = `**${doc.type.toUpperCase()} #${doc.documentNumber}** from **${doc.business.name || 'Vendor'}**\n**Total Due:** ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}\n**Client:** ${doc.client.name}\n**Due Date:** ${doc.dueDate || 'Upon Receipt'}\n\nView & Settle Online: ${invoiceUrl}`;
+    const saved = await markAsSentAndSave();
+    const docUrl = `${window.location.origin}/invoice/${saved.id}`;
+    const discordText = `**${saved.type.toUpperCase()} #${saved.documentNumber}** from **${saved.business.name || 'Vendor'}**\n**Total:** ${formatCurrencyAmount(saved.total, saved.currency, saved.currencySymbol)}\n**Client:** ${saved.client.name}\n\nView & Settle Online: ${docUrl}`;
     navigator.clipboard.writeText(discordText);
-    showToast('✓ Discord formatted invoice message copied to clipboard & marked as Sent!', 'success');
+    showToast(`✓ Discord formatted ${saved.type} message copied & marked as Sent!`, 'success');
   };
 
   const handleTelegramShare = async () => {
-    await markAsSentAndSave();
-    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
-    const text = `Official ${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name || 'Vendor'} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}: ${invoiceUrl}`;
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(invoiceUrl)}&text=${encodeURIComponent(text)}`, '_blank');
+    const saved = await markAsSentAndSave();
+    const docUrl = `${window.location.origin}/invoice/${saved.id}`;
+    const text = `Official ${saved.type.toUpperCase()} #${saved.documentNumber} from ${saved.business.name || 'Vendor'} for ${formatCurrencyAmount(saved.total, saved.currency, saved.currencySymbol)}: ${docUrl}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(docUrl)}&text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`✓ Telegram share opened & ${saved.type.toUpperCase()} marked as Sent!`, 'success');
   };
 
   const handleCopyInvoiceLink = async () => {
-    await markAsSentAndSave();
-    const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
-    navigator.clipboard.writeText(invoiceUrl);
-    showToast('✓ Dedicated Buyer Invoice Link copied to clipboard & marked as Sent!', 'success');
+    const saved = await markAsSentAndSave();
+    const docUrl = `${window.location.origin}/invoice/${saved.id}`;
+    navigator.clipboard.writeText(docUrl);
+    showToast(`✓ Dedicated Buyer ${saved.type.toUpperCase()} Link copied to clipboard & marked as Sent!`, 'success');
   };
 
   const handleSendClientEmail = async () => {
@@ -525,19 +550,19 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
 
     setEmailSending(true);
     try {
-      await markAsSentAndSave();
-      const invoiceUrl = `${window.location.origin}/invoice/${doc.id}`;
+      const saved = await markAsSentAndSave();
+      const docUrl = `${window.location.origin}/invoice/${saved.id}`;
 
       await emailService.sendTransactionalEmail({
         templateType: 'invoice_sent',
-        recipientEmail: doc.client.email,
-        recipientName: doc.client.name,
-        documentId: doc.id,
-        customSubject: `${doc.type.toUpperCase()} #${doc.documentNumber} from ${doc.business.name} (${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)})`,
-        customMessage: `Dear ${doc.client.name},\n\nPlease find attached your ${doc.type} #${doc.documentNumber} for ${formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}.\n\nYou can also view and settle this invoice online here:\n${invoiceUrl}\n\nPayment due date: ${doc.dueDate || 'Upon receipt'}. Thank you for your business!`,
+        recipientEmail: saved.client.email,
+        recipientName: saved.client.name,
+        documentId: saved.id,
+        customSubject: `${saved.type.toUpperCase()} #${saved.documentNumber} from ${saved.business.name} (${formatCurrencyAmount(saved.total, saved.currency, saved.currencySymbol)})`,
+        customMessage: `Dear ${saved.client.name},\n\nPlease find attached your ${saved.type} #${saved.documentNumber} for ${formatCurrencyAmount(saved.total, saved.currency, saved.currencySymbol)}.\n\nYou can view and settle this document online here:\n${docUrl}\n\nThank you for your business!`,
       });
 
-      showToast(`✓ Invoice dispatched to ${doc.client.email} & saved as Sent!`, 'success');
+      showToast(`✓ ${saved.type.toUpperCase()} dispatched to ${saved.client.email} & saved as Sent!`, 'success');
       setShareModalOpen(false);
       if (isApp) {
         setTimeout(() => navigate('/app/documents'), 1500);
@@ -1823,10 +1848,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   <div style={{ background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>
-                        Direct Bank Transfer (0% Fee • Instant Bank Credit)
+                        Direct Bank Transfer
                       </div>
                       <span style={{ fontSize: '0.6875rem', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
-                        ₦0 Gateway Charge
+                        Instant Settlement
                       </span>
                     </div>
 
@@ -2112,15 +2137,15 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   <AlertTriangle size={22} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#92400E' }}>
-                      Document Already Dispatched
+                      {doc.type.toUpperCase()} #{doc.documentNumber} Already Sent
                     </div>
                     <div style={{ fontSize: '0.8125rem', color: '#78350F', marginTop: '3px', lineHeight: 1.4 }}>
-                      #{doc.documentNumber} is already marked as <strong>{(doc.status || 'sent').toUpperCase()}</strong> on your dashboard. Would you like to resend this document link or send an additional notification to <strong>{doc.client.name || 'this client'}</strong>?
+                      This {doc.type} is already recorded as <strong>{(doc.status || 'sent').toUpperCase()}</strong> on your dashboard. Would you like to override the previous document or save this as a brand new {doc.type}?
                     </div>
                   </div>
                 </div>
 
-                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
+                <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -2134,11 +2159,21 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setResendConfirmed(true)}
+                    onClick={handleOverrideExistingAndSend}
                     className="btn btn-sm"
-                    style={{ background: '#D97706', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '0.8125rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
+                    style={{ background: '#D97706', color: '#ffffff', border: 'none', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
+                    title="Keep this document number and update the existing record"
                   >
-                    Yes, Resend Document
+                    Override Previous {doc.type.toUpperCase()}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveAsNewAndSend}
+                    className="btn btn-primary btn-sm"
+                    style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: 700 }}
+                    title="Generate a new sequential number and create a new distinct record"
+                  >
+                    Save as New {doc.type.toUpperCase()}
                   </button>
                 </div>
               </div>
