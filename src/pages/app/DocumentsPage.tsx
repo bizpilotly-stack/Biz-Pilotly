@@ -92,6 +92,7 @@ export const DocumentsPage: React.FC = () => {
   };
 
   const handleDownloadPdf = async (doc: BusinessDocument) => {
+    if (!doc.id) return;
     setDownloadingId(doc.id);
     try {
       showToast(`Preparing PDF for #${doc.documentNumber}...`, 'info');
@@ -114,6 +115,7 @@ export const DocumentsPage: React.FC = () => {
   };
 
   const handleGenerateInvoice = async (doc: BusinessDocument) => {
+    if (!doc.id) return;
     setConvertingId(doc.id);
     try {
       let newInv: BusinessDocument;
@@ -138,6 +140,7 @@ export const DocumentsPage: React.FC = () => {
   };
 
   const handleConvertToReceipt = async (doc: BusinessDocument) => {
+    if (!doc.id) return;
     setConvertingId(doc.id);
     try {
       const receipt = await documentService.autoGenerateReceiptForInvoice(doc);
@@ -152,6 +155,7 @@ export const DocumentsPage: React.FC = () => {
   };
 
   const handleDuplicate = async (doc: BusinessDocument) => {
+    if (!doc.id) return;
     try {
       const cloned = await documentService.duplicateDocument(doc.id);
       showToast(`✓ Created duplicate ${cloned.type.toUpperCase()} #${cloned.documentNumber}`, 'success');
@@ -162,6 +166,7 @@ export const DocumentsPage: React.FC = () => {
   };
 
   const openRelatedTree = async (doc: BusinessDocument) => {
+    if (!doc.id) return;
     setRelatedModalDoc(doc);
     setLoadingRelated(true);
     try {

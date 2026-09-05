@@ -60,13 +60,15 @@ export interface ContractTerms {
 }
 
 export interface BusinessDocument {
-  id: string;
+  id?: string;
   type: DocumentType;
   documentNumber: string;
   title: string;
   date: string;
   dueDate?: string;
   validUntil?: string;
+  paymentTerms?: string;
+  deliveryDate?: string;
   status: DocumentStatus;
   business: BusinessEntity;
   client: ClientEntity;
@@ -91,6 +93,7 @@ export interface BusinessDocument {
   signerInfo?: SignerInfo;
   contractTerms?: ContractTerms;
   projectOverview?: string;
+  projectScope?: string;
   scope?: string;
   deliverables?: string;
   timeline?: string;
@@ -120,8 +123,8 @@ export interface BusinessDocument {
     signerTitle?: string;
     signedAt: string;
   };
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Client {
