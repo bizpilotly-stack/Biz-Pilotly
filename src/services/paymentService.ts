@@ -109,6 +109,7 @@ class PaymentService {
 
   async recordPayment(paymentData: Omit<Payment, 'id' | 'paymentNumber'>): Promise<Payment> {
     const business = await businessService.getOrCreateDefaultBusiness();
+    if (!business) throw new Error('No active business found');
 
     // Generate clean payment number based on current count
     const { count } = await supabase

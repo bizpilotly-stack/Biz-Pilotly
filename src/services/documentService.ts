@@ -155,6 +155,10 @@ class DocumentService {
    */
   async saveDocument(doc: BusinessDocument): Promise<BusinessDocument> {
     const business = await businessService.getOrCreateDefaultBusiness();
+    if (!business) {
+      localStorage.setItem(`bizpilotly_draft_${doc.type}`, JSON.stringify(doc));
+      return doc;
+    }
 
     // Check if doc exists in database
     let existingId: string | null = null;
@@ -673,7 +677,7 @@ class DocumentService {
    */
   async publicAcceptDocument(docId: string, clientInfo?: { name: string; email?: string }): Promise<BusinessDocument> {
     const doc = await this.getPublicDocumentById(docId);
-    if (!doc) throw new Error('Document not found');
+    if (!doc || !doc.id) throw new Error('Document not found');
     if (doc.status === 'accepted') return doc;
 
     const updatedDoc: BusinessDocument = {
@@ -724,7 +728,7 @@ class DocumentService {
    */
   async publicRejectDocument(docId: string, reason: string, clientInfo?: { name: string; email?: string }): Promise<BusinessDocument> {
     const doc = await this.getPublicDocumentById(docId);
-    if (!doc) throw new Error('Document not found');
+    if (!doc || !doc.id) throw new Error('Document not found');
 
     const updatedDoc: BusinessDocument = {
       ...doc,
@@ -766,9 +770,15 @@ class DocumentService {
   /**
    * Public Client Action: Sign a Contract
    */
-  async publicSignContract(contractId: string, signatureDataUrl: string, signerName: string, signerEmail?: string): Promise<BusinessDocument> {
+  async publicSignContract(
+    contractId: string,
+    signerName: string,
+    signerEmail: string,
+    signatureDataUrl: string
+  ): Promise<BusinessDocument> {
     const doc = await this.getPublicDocumentById(contractId);
-    if (!doc) throw new Error('Contract not found');
+    if (!doc || !doc.id) throw new Error('Contract not found');
+    if (doc.status === 'signed') return doc;
 
     const signedAt = new Date().toISOString();
     const updatedDoc: BusinessDocument = {
@@ -829,7 +839,7 @@ class DocumentService {
    */
   async publicDeclineContract(contractId: string, reason: string, clientInfo?: { name: string }): Promise<BusinessDocument> {
     const doc = await this.getPublicDocumentById(contractId);
-    if (!doc) throw new Error('Contract not found');
+    if (!doc || !doc.id) throw new Error('Contract not found');
 
     const updatedDoc: BusinessDocument = {
       ...doc,

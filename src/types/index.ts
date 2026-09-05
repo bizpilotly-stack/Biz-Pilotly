@@ -94,6 +94,8 @@ export interface BusinessDocument {
   scope?: string;
   deliverables?: string;
   timeline?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
   paymentDetails?: {
     bankName?: string;
     accountName?: string;

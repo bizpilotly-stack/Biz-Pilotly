@@ -97,9 +97,13 @@ export interface BusinessDocument {
   validUntil?: string;
   paymentTerms?: string;
   deliveryDate?: string;
+  projectOverview?: string;
   projectScope?: string;
+  scope?: string;
   deliverables?: string;
   timeline?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
   status: DocumentStatus;
   business: BusinessEntity;
   client: ClientEntity;

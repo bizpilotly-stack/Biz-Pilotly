@@ -158,7 +158,7 @@ class RecurringInvoiceService {
       this.saveSchedules(schedule.businessId, updated);
     }
 
-    return doc.id;
+    return doc.id || '';
   }
 
   private calculateNextDate(currentDateStr: string, frequency: RecurringFrequency): string {
