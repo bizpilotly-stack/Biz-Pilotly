@@ -6,6 +6,9 @@ import {
   DollarSign,
   Receipt,
   Percent,
+  Printer,
+  Calendar,
+  ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/common/Button';
@@ -21,6 +24,7 @@ export const AccountingPage: React.FC = () => {
   const [metrics, setMetrics] = useState<ProfitMetrics | null>(null);
   const [financials, setFinancials] = useState<MonthlyFinancialSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState<'all' | 'ytd' | '6m' | '3m'>('all');
 
   useEffect(() => {
     const loadData = async () => {
@@ -41,15 +45,25 @@ export const AccountingPage: React.FC = () => {
     loadData();
   }, []);
 
+  const displayedFinancials = financials.slice(
+    0,
+    timeRange === '3m' ? 3 : timeRange === '6m' ? 6 : financials.length
+  );
+
+  const displayedRevenue = displayedFinancials.reduce((sum, f) => sum + f.revenue, 0);
+  const displayedExpenses = displayedFinancials.reduce((sum, f) => sum + f.expenses, 0);
+  const displayedNetProfit = displayedRevenue - displayedExpenses;
+  const estimatedTaxReserve = Math.max(0, displayedNetProfit * 0.2);
+
   // 1-Click Export Complete Accounting Ledger CSV
   const handleExportAccountingCSV = () => {
-    if (!metrics || financials.length === 0) {
+    if (!metrics || displayedFinancials.length === 0) {
       showToast('No accounting records available to export.', 'info');
       return;
     }
 
     const headers = ['Financial Month', 'Gross Revenue Inflow ($)', 'Operating Expenses Outflow ($)', 'Gross Profit ($)', 'Net Realized Profit ($)', 'Operating Margin (%)'];
-    const rows = financials.map((f) => [
+    const rows = displayedFinancials.map((f) => [
       f.month,
       f.revenue,
       f.expenses,
@@ -59,12 +73,12 @@ export const AccountingPage: React.FC = () => {
     ]);
 
     rows.push([
-      'YEAR-TO-DATE (TOTAL)',
-      metrics.totalRevenue,
-      metrics.totalExpenses,
-      metrics.grossProfit,
-      metrics.netProfit,
-      `${metrics.profitMargin.toFixed(1)}%`,
+      'STATEMENT PERIOD TOTAL',
+      displayedRevenue,
+      displayedExpenses,
+      displayedRevenue - displayedExpenses,
+      displayedNetProfit,
+      `${displayedRevenue > 0 ? ((displayedNetProfit / displayedRevenue) * 100).toFixed(1) : 0}%`,
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -81,13 +95,13 @@ export const AccountingPage: React.FC = () => {
 
   // 1-Click Export Tax Filing Report CSV
   const handleExportTaxCSV = () => {
-    if (!metrics || financials.length === 0) {
+    if (!metrics || displayedFinancials.length === 0) {
       showToast('No tax records available.', 'info');
       return;
     }
 
     const headers = ['Tax Filing Period', 'Taxable Gross Receipts', 'Allowable Operating Deductions', 'Net Taxable Profit', 'Estimated Tax Reserve (20%)'];
-    const rows = financials.map((f) => [
+    const rows = displayedFinancials.map((f) => [
       f.month,
       f.revenue,
       f.expenses,
@@ -127,6 +141,10 @@ export const AccountingPage: React.FC = () => {
         description="Consolidated financial statements, P&L breakdowns, deductible tax ledgers, and 1-click CSV exports."
         actions={
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button variant="secondary" size="sm" onClick={() => window.print()} title="Print Official P&L Statement">
+              <Printer size={14} />
+              <span>Print P&L</span>
+            </Button>
             <Button variant="secondary" size="sm" onClick={handleExportTaxCSV} title="Export Tax Deductions CSV">
               <FileSpreadsheet size={14} />
               <span>Export Tax CSV</span>
@@ -139,16 +157,52 @@ export const AccountingPage: React.FC = () => {
         }
       />
 
+      {/* Date Range Selector Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F1F5F9', padding: '3px', borderRadius: '8px' }}>
+          {[
+            { id: 'all', label: 'All Statements' },
+            { id: 'ytd', label: 'Year to Date' },
+            { id: '6m', label: 'Last 6 Months' },
+            { id: '3m', label: 'Last Quarter (3M)' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setTimeRange(tab.id as any)}
+              style={{
+                border: 'none',
+                background: timeRange === tab.id ? '#ffffff' : 'transparent',
+                color: timeRange === tab.id ? '#0B1F3A' : '#64748B',
+                fontWeight: timeRange === tab.id ? 700 : 500,
+                fontSize: '0.8125rem',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                boxShadow: timeRange === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ fontSize: '0.8125rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <ShieldCheck size={14} color="#10B981" />
+          <span>Accounting Period: <strong>{timeRange.toUpperCase()}</strong> ({displayedFinancials.length} Months)</span>
+        </div>
+      </div>
+
       {/* KPI Metric Summary Cards (Responsive 2x2 on Mobile) */}
       <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
         <div className="metric-card">
           <div className="metric-card-top">
-            <span className="metric-card-label">YTD Gross Revenue</span>
+            <span className="metric-card-label">Period Revenue</span>
             <div className="metric-card-icon" style={{ background: 'var(--brand-navy-50)', color: 'var(--brand-navy-600)' }}>
               <DollarSign size={18} />
             </div>
           </div>
-          <div className="metric-card-value">{formatCurrency(metrics.totalRevenue)}</div>
+          <div className="metric-card-value">{formatCurrency(displayedRevenue)}</div>
           <div className="metric-card-subtext" style={{ color: '#10b981' }}>
             <span>Inflows from client settlements</span>
           </div>
@@ -161,8 +215,8 @@ export const AccountingPage: React.FC = () => {
               <Receipt size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: metrics.totalExpenses > 0 ? '#b91c1c' : 'inherit' }}>
-            {formatCurrency(metrics.totalExpenses)}
+          <div className="metric-card-value" style={{ color: displayedExpenses > 0 ? '#b91c1c' : 'inherit' }}>
+            {formatCurrency(displayedExpenses)}
           </div>
           <div className="metric-card-subtext">
             <span>Deductible overheads</span>
@@ -176,8 +230,8 @@ export const AccountingPage: React.FC = () => {
               <TrendingUp size={18} />
             </div>
           </div>
-          <div className="metric-card-value" style={{ color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
-            {formatCurrency(metrics.netProfit)}
+          <div className="metric-card-value" style={{ color: displayedNetProfit >= 0 ? '#10b981' : '#ef4444' }}>
+            {formatCurrency(displayedNetProfit)}
           </div>
           <div className="metric-card-subtext">
             <span>Bottom-line realized return</span>
@@ -186,14 +240,14 @@ export const AccountingPage: React.FC = () => {
 
         <div className="metric-card">
           <div className="metric-card-top">
-            <span className="metric-card-label">Profit Margin</span>
+            <span className="metric-card-label">Tax Reserve (20% Est.)</span>
             <div className="metric-card-icon" style={{ background: 'var(--brand-gold-100)', color: 'var(--brand-gold-700)' }}>
               <Percent size={18} />
             </div>
           </div>
-          <div className="metric-card-value">{metrics.profitMargin}%</div>
+          <div className="metric-card-value">{formatCurrency(estimatedTaxReserve)}</div>
           <div className="metric-card-subtext">
-            <span>Realized operating efficiency</span>
+            <span>Recommended tax set-aside</span>
           </div>
         </div>
       </div>
@@ -225,7 +279,7 @@ export const AccountingPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {financials.map((f, idx) => (
+              {displayedFinancials.map((f, idx) => (
                 <tr key={idx}>
                   <td style={{ fontWeight: 700, color: '#0B1F3A' }}>{f.month}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600 }}>
@@ -256,7 +310,7 @@ export const AccountingPage: React.FC = () => {
 
         {/* 2. MOBILE RESPONSIVE CARDS */}
         <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.75rem' }}>
-          {financials.map((f, idx) => (
+          {displayedFinancials.map((f, idx) => (
             <div
               key={idx}
               style={{

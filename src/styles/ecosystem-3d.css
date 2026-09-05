@@ -41,7 +41,7 @@
 
 /* 3D Floating Module Card */
 .module-card-3d {
-  position: absolute;
+  position: relative;
   transform-style: preserve-3d;
   backface-visibility: hidden;
   background: rgba(11, 31, 58, 0.94);
@@ -49,9 +49,10 @@
   border-radius: 14px;
   padding: 0.875rem 1rem;
   color: #ffffff;
+  min-width: 160px;
   box-shadow: 
-    0 15px 35px -5px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(201, 162, 39, 0.15),
+    0 15px 35px -5px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(201, 162, 39, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -110,10 +111,10 @@
 /* Subtle Idle Floating Keyframes */
 @keyframes floatGentleA {
   0%, 100% {
-    transform: translate3d(0, 0, 0) rotateZ(0deg);
+    transform: translateY(0px) rotateZ(0deg);
   }
   50% {
-    transform: translate3d(0, -8px, 6px) rotateZ(0.5deg);
+    transform: translateY(-8px) rotateZ(0.5deg);
   }
 }
 

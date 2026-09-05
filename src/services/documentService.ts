@@ -612,6 +612,40 @@ class DocumentService {
   }
 
   /**
+   * Duplicate / Clone an existing document with a fresh document number and draft status.
+   */
+  async duplicateDocument(documentId: string): Promise<BusinessDocument> {
+    const original = await this.getDocumentById(documentId) || await this.getPublicDocumentById(documentId);
+    if (!original) throw new Error('Original document not found to duplicate');
+
+    const freshNumber = await this.getNextDocumentNumber(original.type);
+    const today = new Date().toISOString().split('T')[0];
+
+    const cloned: BusinessDocument = {
+      ...original,
+      id: '',
+      documentNumber: freshNumber,
+      title: `${original.title || original.type.toUpperCase()} (Copy)`,
+      date: today,
+      dueDate: original.dueDate ? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0] : undefined,
+      validUntil: original.validUntil ? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0] : undefined,
+      status: 'draft',
+      acceptedAt: undefined,
+      rejectedAt: undefined,
+      signedAt: undefined,
+      signerInfo: undefined,
+      sourceDocumentId: original.id,
+      sourceDocumentNumber: original.documentNumber,
+      sourceDocumentType: original.type,
+      items: original.items.map((it, idx) => ({ ...it, id: `item-${idx + 1}` })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return await this.saveDocument(cloned);
+  }
+
+  /**
    * Fetch all documents related to a given document (e.g. Proposal -> Invoice -> Receipt).
    */
   async getRelatedDocuments(docId: string): Promise<BusinessDocument[]> {
@@ -741,7 +775,13 @@ class DocumentService {
       ...doc,
       status: 'signed',
       signedAt,
-      signature: {
+      // Preserve provider signature if exists, otherwise assign if none
+      signature: doc.signature || {
+        image: signatureDataUrl,
+        signerName: doc.business.name,
+        signedAt,
+      },
+      clientSignature: {
         image: signatureDataUrl,
         signerName,
         signedAt,
@@ -749,7 +789,7 @@ class DocumentService {
       signerInfo: {
         name: signerName,
         email: signerEmail || doc.client.email,
-        timestamp: signedAt,
+        signedAt,
         signatureDataUrl,
       },
     };

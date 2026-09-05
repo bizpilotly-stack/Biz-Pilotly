@@ -13,8 +13,23 @@ import {
   Users,
   X,
   Sparkles,
+  Layers,
+  FileSpreadsheet,
+  PenTool,
+  RefreshCw,
+  AlertCircle,
+  ExternalLink,
+  CheckSquare,
+  AlertTriangle,
 } from 'lucide-react';
-import { DashboardStats, ActivityItem, BusinessDocument, Payment } from '../../types';
+import {
+  DashboardStats,
+  ActivityItem,
+  BusinessDocument,
+  Payment,
+  LifecycleFunnelStats,
+  Client,
+} from '../../types';
 import { dashboardService } from '../../services/dashboardService';
 import { documentService } from '../../services/documentService';
 import { paymentService } from '../../services/paymentService';
@@ -31,9 +46,11 @@ const ONBOARDING_DISMISSED_KEY = 'bizpilotly_onboarding_dismissed';
 
 export const OverviewPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [lifecycle, setLifecycle] = useState<LifecycleFunnelStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<BusinessDocument[]>([]);
   const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [clientsList, setClientsList] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   // Onboarding Checklist States
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
@@ -47,8 +64,18 @@ export const OverviewPage: React.FC = () => {
     const loadOverviewData = async () => {
       setLoading(true);
       try {
-        const [statsData, docsData, paymentsData, activitiesData, clientsData, expensesData, businessData] = await Promise.all([
+        const [
+          statsData,
+          lifecycleData,
+          docsData,
+          paymentsData,
+          activitiesData,
+          clientsData,
+          expensesData,
+          businessData,
+        ] = await Promise.all([
           dashboardService.getDashboardStats(),
+          dashboardService.getLifecycleStats(),
           documentService.getDocuments(),
           paymentService.getPayments(),
           dashboardService.getRecentActivities(),
@@ -57,9 +84,11 @@ export const OverviewPage: React.FC = () => {
           businessService.getCurrentBusiness(),
         ]);
         setStats(statsData);
-        setRecentInvoices(docsData.slice(0, 4));
-        setRecentPayments(paymentsData.slice(0, 4));
+        setLifecycle(lifecycleData);
+        setRecentInvoices(docsData.slice(0, 5));
+        setRecentPayments(paymentsData.slice(0, 5));
         setActivities(activitiesData);
+        setClientsList(clientsData);
         setHasClients(clientsData.length > 0);
         setHasExpenses(expensesData.length > 0);
         const isBusinessFullyConfigured = Boolean(
@@ -390,8 +419,331 @@ export const OverviewPage: React.FC = () => {
         </div>
       </div>
 
+      {/* =========================================================================
+          LAYER 2: DEAL FLOW & DOCUMENT LIFECYCLE COCKPIT (4 Executive Segments)
+         ========================================================================= */}
+      {lifecycle && (
+        <div className="lifecycle-cockpit-grid">
+          {/* Card 1: Proposals & Estimates */}
+          <Link to="/app/documents" className="cockpit-card">
+            <div>
+              <div className="cockpit-card-header">
+                <div className="cockpit-card-title">
+                  <FileText size={15} color="#2563EB" />
+                  <span>Proposals & Quotes</span>
+                </div>
+                <span
+                  className="cockpit-card-badge"
+                  style={{ background: '#EFF6FF', color: '#1E40AF' }}
+                >
+                  {lifecycle.proposals.total + lifecycle.quotes.total > 0
+                    ? `${lifecycle.proposals.winRatePct}% Win Rate`
+                    : '0 Pitches Created'}
+                </span>
+              </div>
 
-      {/* Main Two Column Grid */}
+              <div className="cockpit-main-value">
+                {lifecycle.proposals.accepted + lifecycle.quotes.accepted} Won /{' '}
+                <span style={{ color: '#64748B', fontSize: '1rem', fontWeight: 600 }}>
+                  {lifecycle.proposals.total + lifecycle.quotes.total} Pitches
+                </span>
+              </div>
+
+              <div className="cockpit-subtext">
+                <span>Won: ${lifecycle.proposals.closedValue.toLocaleString()}</span>
+                <span>Open: ${lifecycle.proposals.pendingValue.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="ratio-track" title={`${lifecycle.proposals.winRatePct}% conversion win rate`}>
+              <div
+                className="ratio-seg-green"
+                style={{
+                  width: `${
+                    lifecycle.proposals.total + lifecycle.quotes.total > 0
+                      ? Math.min(100, lifecycle.proposals.winRatePct)
+                      : 0
+                  }%`,
+                }}
+              />
+              <div
+                className="ratio-seg-blue"
+                style={{
+                  width: `${
+                    lifecycle.proposals.total + lifecycle.quotes.total > 0
+                      ? Math.max(0, 100 - lifecycle.proposals.winRatePct)
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+          </Link>
+
+          {/* Card 2: Contracts & Agreements */}
+          <Link to="/app/documents" className="cockpit-card">
+            <div>
+              <div className="cockpit-card-header">
+                <div className="cockpit-card-title">
+                  <PenTool size={15} color="#8B5CF6" />
+                  <span>Contracts & Retainers</span>
+                </div>
+                <span
+                  className="cockpit-card-badge"
+                  style={{
+                    background:
+                      lifecycle.contracts.total === 0
+                        ? '#F1F5F9'
+                        : lifecycle.contracts.pendingSignature > 0
+                        ? '#FEF3C7'
+                        : '#D1FAE5',
+                    color:
+                      lifecycle.contracts.total === 0
+                        ? '#64748B'
+                        : lifecycle.contracts.pendingSignature > 0
+                        ? '#92400E'
+                        : '#065F46',
+                  }}
+                >
+                  {lifecycle.contracts.total === 0
+                    ? '0 Contracts Active'
+                    : lifecycle.contracts.pendingSignature > 0
+                    ? `${lifecycle.contracts.pendingSignature} Pending Sign`
+                    : '100% Executed'}
+                </span>
+              </div>
+
+              <div className="cockpit-main-value">
+                {lifecycle.contracts.signed} Signed /{' '}
+                <span style={{ color: '#64748B', fontSize: '1rem', fontWeight: 600 }}>
+                  {lifecycle.contracts.total} Contracts
+                </span>
+              </div>
+
+              <div className="cockpit-subtext">
+                <span>
+                  {lifecycle.contracts.total > 0
+                    ? `${lifecycle.contracts.executionRatePct}% legally executed`
+                    : 'No contracts drafted'}
+                </span>
+                <span>{lifecycle.contracts.sent} in review</span>
+              </div>
+            </div>
+
+            <div className="ratio-track" title={`${lifecycle.contracts.executionRatePct}% signed`}>
+              <div
+                className="ratio-seg-purple"
+                style={{
+                  width: `${
+                    lifecycle.contracts.total > 0
+                      ? Math.min(100, lifecycle.contracts.executionRatePct)
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+          </Link>
+
+          {/* Card 3: Invoices Settlement Ratio */}
+          <Link to="/app/documents" className="cockpit-card">
+            <div>
+              <div className="cockpit-card-header">
+                <div className="cockpit-card-title">
+                  <Receipt size={15} color="#10B981" />
+                  <span>Invoice Settlement Ratio</span>
+                </div>
+                <span
+                  className="cockpit-card-badge"
+                  style={{
+                    background:
+                      lifecycle.invoices.totalCount === 0
+                        ? '#F1F5F9'
+                        : lifecycle.invoices.overdueCount > 0
+                        ? '#FEE2E2'
+                        : '#ECFDF5',
+                    color:
+                      lifecycle.invoices.totalCount === 0
+                        ? '#64748B'
+                        : lifecycle.invoices.overdueCount > 0
+                        ? '#991B1B'
+                        : '#065F46',
+                  }}
+                >
+                  {lifecycle.invoices.totalCount === 0
+                    ? '0 Invoices Issued'
+                    : `${lifecycle.invoices.paidCount} Paid • ${lifecycle.invoices.pendingCount} Sent`}
+                </span>
+              </div>
+
+              <div className="cockpit-main-value">
+                ${lifecycle.invoices.paidAmount.toLocaleString()}{' '}
+                <span style={{ color: '#64748B', fontSize: '0.875rem', fontWeight: 600 }}>
+                  / ${(lifecycle.invoices.paidAmount + lifecycle.invoices.pendingAmount + lifecycle.invoices.overdueAmount).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="cockpit-subtext">
+                <span>Paid: ${lifecycle.invoices.paidAmount.toLocaleString()}</span>
+                <span style={{ color: lifecycle.invoices.overdueCount > 0 ? '#DC2626' : undefined }}>
+                  Overdue: ${lifecycle.invoices.overdueAmount.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Tri-color Segmented Settlement Bar */}
+            <div className="ratio-track">
+              <div
+                className="ratio-seg-green"
+                style={{
+                  width: `${
+                    lifecycle.invoices.totalCount > 0
+                      ? (lifecycle.invoices.paidCount / lifecycle.invoices.totalCount) * 100
+                      : 0
+                  }%`,
+                }}
+                title="Paid Invoices"
+              />
+              <div
+                className="ratio-seg-gold"
+                style={{
+                  width: `${
+                    lifecycle.invoices.totalCount > 0
+                      ? (lifecycle.invoices.pendingCount / lifecycle.invoices.totalCount) * 100
+                      : 0
+                  }%`,
+                }}
+                title="Pending / Sent Invoices"
+              />
+              <div
+                className="ratio-seg-coral"
+                style={{
+                  width: `${
+                    lifecycle.invoices.totalCount > 0
+                      ? (lifecycle.invoices.overdueCount / lifecycle.invoices.totalCount) * 100
+                      : 0
+                  }%`,
+                }}
+                title="Overdue Invoices"
+              />
+            </div>
+          </Link>
+
+          {/* Card 4: Retainer MRR & Unbilled Tasks */}
+          <Link to="/app/recurring" className="cockpit-card">
+            <div>
+              <div className="cockpit-card-header">
+                <div className="cockpit-card-title">
+                  <RefreshCw size={15} color="#D97706" />
+                  <span>Retainers & Unbilled Work</span>
+                </div>
+                <span
+                  className="cockpit-card-badge"
+                  style={{
+                    background: lifecycle.retainers.activeCount > 0 ? '#FEF3C7' : '#F1F5F9',
+                    color: lifecycle.retainers.activeCount > 0 ? '#B45309' : '#64748B',
+                  }}
+                >
+                  {lifecycle.retainers.activeCount} Retainers Active
+                </span>
+              </div>
+
+              <div className="cockpit-main-value">
+                ${lifecycle.retainers.mrr.toLocaleString()}{' '}
+                <span style={{ color: '#64748B', fontSize: '0.875rem', fontWeight: 600 }}>MRR</span>
+              </div>
+
+              <div className="cockpit-subtext">
+                <span>{lifecycle.tasks.completedUnbilledCount} unbilled tasks</span>
+                <span>${lifecycle.tasks.unbilledAmount.toLocaleString()} ready to bill</span>
+              </div>
+            </div>
+
+            <div className="ratio-track" title="Retainer & tasks capacity">
+              <div
+                className="ratio-seg-gold"
+                style={{
+                  width: `${lifecycle.retainers.activeCount > 0 ? 65 : 0}%`,
+                }}
+              />
+              <div
+                className="ratio-seg-blue"
+                style={{
+                  width: `${lifecycle.tasks.completedUnbilledCount > 0 ? 35 : 0}%`,
+                }}
+              />
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* =========================================================================
+          LAYER 3: SMART ACTION RADAR (Needs Attention Triage Strip)
+         ========================================================================= */}
+      {lifecycle && lifecycle.attentionItems.length > 0 && (
+        <div className="action-radar-container">
+          <div className="action-radar-header">
+            <div className="action-radar-title">
+              <AlertCircle size={18} color="#D97706" />
+              <span>Smart Action Radar ({lifecycle.attentionItems.length} items requiring attention)</span>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Real-time business triage</span>
+          </div>
+
+          <div className="action-radar-items-grid">
+            {lifecycle.attentionItems.map((item) => (
+              <div key={item.id} className="action-radar-pill">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem' }}>
+                  <div
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '999px',
+                      marginTop: '6px',
+                      flexShrink: 0,
+                      background:
+                        item.badgeColor === 'red'
+                          ? '#EF4444'
+                          : item.badgeColor === 'yellow'
+                          ? '#F59E0B'
+                          : item.badgeColor === 'purple'
+                          ? '#8B5CF6'
+                          : item.badgeColor === 'green'
+                          ? '#10B981'
+                          : '#2563EB',
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0B1F3A' }}>
+                      {item.title}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '1px' }}>
+                      {item.subtitle}
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  to={item.actionLink}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '4px 10px',
+                    whiteSpace: 'nowrap',
+                    marginLeft: '0.75rem',
+                    background: '#ffffff',
+                  }}
+                >
+                  <span>{item.actionLabel}</span>
+                  <ArrowRight size={12} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          LAYER 4: MAIN TWO COLUMN GRID (Recent Invoices, Payments, Debtors & Feed)
+         ========================================================================= */}
       <div className="dashboard-grid-2">
         {/* Left Column: Recent Invoices & Recent Payments */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -509,8 +861,74 @@ export const OverviewPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Quick Actions & Activity Feed */}
+        {/* Right Column: Client Receivables, Quick Tools & Activity Feed */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Top Client Receivables / Debtors Card */}
+          <div className="card">
+            <div className="card-header" style={{ marginBottom: '0.75rem' }}>
+              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9375rem' }}>
+                <Users size={16} color="#0B1F3A" />
+                <span>Client Receivables Summary</span>
+              </h3>
+              <Link to="/app/clients" className="btn btn-ghost btn-sm" style={{ color: 'var(--brand-navy-600)', fontSize: '0.75rem' }}>
+                <span>Directory</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+
+            {clientsList.length === 0 ? (
+              <div style={{ padding: '1.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                No clients added yet.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                {clientsList.slice(0, 4).map((c) => {
+                  const hasBalance = (c.outstandingBalance || 0) > 0;
+                  return (
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.625rem 0.75rem',
+                        background: hasBalance ? '#FEF2F2' : '#F8FAFC',
+                        border: hasBalance ? '1px solid #FECACA' : '1px solid #E2E8F0',
+                        borderRadius: '10px',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>
+                          {c.name}
+                        </div>
+                        {c.company && (
+                          <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{c.company}</div>
+                        )}
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            fontSize: '0.875rem',
+                            color: hasBalance ? '#DC2626' : '#10B981',
+                          }}
+                        >
+                          {hasBalance
+                            ? `${formatCurrency(c.outstandingBalance || 0)} due`
+                            : 'Settled ✓'}
+                        </div>
+                        <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>
+                          Invoiced: {formatCurrency(c.totalInvoiced || 0)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Quick Actions Panel */}
           <div className="card" style={{ background: 'linear-gradient(135deg, var(--brand-black) 0%, #1e293b 100%)', color: '#ffffff', border: '1px solid var(--brand-black-border)' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.5rem' }}>

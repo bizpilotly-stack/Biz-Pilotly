@@ -222,18 +222,33 @@
 }
 
 /* ==========================================================================
-   PRINT MEDIA STYLES
+   PRINT MEDIA STYLES (A4 Compliant & Crisp Letterheads)
    ========================================================================== */
+@page {
+  size: A4 portrait;
+  margin: 10mm 15mm;
+}
+
 @media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
+
   .doc-preview-sheet,
   .doc-preview-sheet *,
   .doc-paper-sheet,
   .doc-paper-sheet * {
     visibility: visible !important;
   }
+
   .doc-preview-sheet,
   .doc-paper-sheet {
     position: absolute !important;
@@ -242,12 +257,21 @@
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 15mm 20mm !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     background: #ffffff !important;
     color: #000000 !important;
   }
+
+  .doc-sheet-table tr,
+  .doc-sheet-totals,
+  .doc-sheet-bank-box,
+  .doc-sheet-footer {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   .public-header,
   .public-footer,
   .app-sidebar,
@@ -256,7 +280,8 @@
   .doc-preview-toolbar,
   .mobile-nav-bar,
   .toast-container,
-  button {
+  button,
+  .btn {
     display: none !important;
   }
 }

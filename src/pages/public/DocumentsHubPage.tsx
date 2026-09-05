@@ -53,12 +53,27 @@ export const DocumentsHubPage: React.FC = () => {
     },
   ];
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'BizPilotly Business Document Generators',
+    description: 'Create professional, printable Invoices, Quotes, Receipts, Proposals, and Contracts.',
+    itemListElement: documentTools.map((d, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: d.title,
+      description: d.description,
+      url: `https://bizpilotly.com${d.path}`,
+    })),
+  };
+
   return (
     <div className="section-py-sm">
       <SEO
         title={`Business Document Builders | ${BRAND_NAME}`}
         description="Create professional, printable Invoices, Quotes, Receipts, and Proposals with real-time side-by-side preview."
         canonical="https://bizpilotly.com/documents"
+        jsonLd={jsonLd}
       />
 
       <div className="container">

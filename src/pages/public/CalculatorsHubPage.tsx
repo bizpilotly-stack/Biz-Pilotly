@@ -43,12 +43,27 @@ export const CalculatorsHubPage: React.FC = () => {
     ? CALCULATORS_DATA
     : CALCULATORS_DATA.filter((c) => c.category === selectedCategory);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'BizPilotly Financial & Business Calculators',
+    description: 'Free interactive business calculators for freelancers, consultants, and agencies.',
+    itemListElement: CALCULATORS_DATA.map((c, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: c.name,
+      description: c.shortDescription,
+      url: `https://bizpilotly.com${c.route}`,
+    })),
+  };
+
   return (
     <div className="section-py-sm">
       <SEO
         title={`Business Calculators Hub | ${BRAND_NAME}`}
         description="Free pricing, profit margin, markup, break-even, and ROI calculators engineered for freelancers and small service businesses."
-        canonical="https://example.com/calculators"
+        canonical="https://bizpilotly.com/calculators"
+        jsonLd={jsonLd}
       />
 
       <div className="container">

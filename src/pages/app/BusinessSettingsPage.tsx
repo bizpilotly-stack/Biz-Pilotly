@@ -13,10 +13,16 @@ import {
   PenTool,
   AlertTriangle,
   ShieldAlert,
+  Download,
+  Database,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { DigitalSignatureCanvas } from '../../components/documents/DigitalSignatureCanvas';
 import { BusinessSettings } from '../../types';
 import { businessService } from '../../services/businessService';
+import { documentService } from '../../services/documentService';
+import { clientService } from '../../services/clientService';
+import { expenseService } from '../../services/expenseService';
 import { authService } from '../../services/authService';
 import { Modal } from '../../components/common/Modal';
 import { CURRENCIES, BRAND_NAME } from '../../constants/brand';
@@ -129,6 +135,117 @@ export const BusinessSettingsPage: React.FC = () => {
     if (settings) {
       setSettings({ ...settings, logo: '' });
       showToast('Logo removed.', 'info');
+    }
+  };
+
+  const downloadCsv = (filename: string, headers: string[], rows: (string | number)[][]) => {
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportDocumentsCSV = async () => {
+    try {
+      const docs = await documentService.getDocuments();
+      const headers = ['Doc_Number', 'Type', 'Title', 'Client_Name', 'Client_Email', 'Date', 'Due_Date', 'Subtotal', 'Tax', 'Discount', 'Total', 'Currency', 'Status'];
+      const rows = docs.map((d) => [
+        d.documentNumber,
+        d.type,
+        `"${(d.title || '').replace(/"/g, '""')}"`,
+        `"${(d.client?.name || '').replace(/"/g, '""')}"`,
+        `"${(d.client?.email || '').replace(/"/g, '""')}"`,
+        d.date,
+        d.dueDate || d.validUntil || '',
+        d.subtotal || 0,
+        d.taxAmount || 0,
+        d.discountAmount || 0,
+        d.total || 0,
+        d.currency || 'USD',
+        d.status,
+      ]);
+      downloadCsv(`bizpilotly-documents-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+      showToast('✓ Exported Documents Ledger CSV!', 'success');
+    } catch {
+      showToast('Error exporting documents CSV.', 'error');
+    }
+  };
+
+  const handleExportClientsCSV = async () => {
+    try {
+      const clients = await clientService.getClients();
+      const headers = ['ID', 'Name', 'Company', 'Email', 'Phone', 'Address', 'Total_Invoiced', 'Total_Paid', 'Balance'];
+      const rows = clients.map((c) => [
+        c.id,
+        `"${(c.name || '').replace(/"/g, '""')}"`,
+        `"${(c.company || '').replace(/"/g, '""')}"`,
+        `"${(c.email || '').replace(/"/g, '""')}"`,
+        `"${(c.phone || '').replace(/"/g, '""')}"`,
+        `"${(c.address || '').replace(/"/g, '""')}"`,
+        c.totalInvoiced || 0,
+        c.totalPaid || 0,
+        c.outstandingBalance || 0,
+      ]);
+      downloadCsv(`bizpilotly-clients-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+      showToast('✓ Exported Client Directory CSV!', 'success');
+    } catch {
+      showToast('Error exporting clients CSV.', 'error');
+    }
+  };
+
+  const handleExportExpensesCSV = async () => {
+    try {
+      const expenses = await expenseService.getExpenses();
+      const headers = ['ID', 'Title', 'Category', 'Vendor', 'Amount', 'Currency', 'Date', 'Payment_Method', 'Status'];
+      const rows = expenses.map((e) => [
+        e.id,
+        `"${(e.title || '').replace(/"/g, '""')}"`,
+        e.category,
+        `"${(e.vendor || '').replace(/"/g, '""')}"`,
+        e.amount,
+        e.currency,
+        e.date,
+        e.paymentMethod || '',
+        e.status,
+      ]);
+      downloadCsv(`bizpilotly-expenses-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+      showToast('✓ Exported Expenses CSV!', 'success');
+    } catch {
+      showToast('Error exporting expenses CSV.', 'error');
+    }
+  };
+
+  const handleExportFullJSON = async () => {
+    try {
+      const [docs, clients, expenses] = await Promise.all([
+        documentService.getDocuments().catch(() => []),
+        clientService.getClients().catch(() => []),
+        expenseService.getExpenses().catch(() => []),
+      ]);
+      const backup = {
+        exportedAt: new Date().toISOString(),
+        version: '1.0',
+        businessSettings: settings,
+        documents: docs,
+        clients,
+        expenses,
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bizpilotly-full-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✓ Full JSON Backup downloaded!', 'success');
+    } catch {
+      showToast('Error exporting JSON backup.', 'error');
     }
   };
 
@@ -310,6 +427,99 @@ export const BusinessSettingsPage: React.FC = () => {
                   <span>Remove</span>
                 </button>
               )}
+            </div>
+          {/* Brand Color Theme Selection */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0B1F3A' }}>
+                  Brand Primary Accent Color
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '2px' }}>
+                  Choose your brand identity color. Applies to document headers, borders, invoice links, and client portal receipts.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="color"
+                  value={settings.primaryColor || '#0B1F3A'}
+                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    border: '2px solid #CBD5E1',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    padding: '2px',
+                    background: '#ffffff',
+                  }}
+                  title="Choose custom color"
+                />
+                <input
+                  type="text"
+                  value={settings.primaryColor || '#0B1F3A'}
+                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  style={{
+                    width: '90px',
+                    fontSize: '0.8125rem',
+                    fontFamily: 'var(--font-mono)',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    textTransform: 'uppercase',
+                  }}
+                  placeholder="#0B1F3A"
+                />
+              </div>
+            </div>
+
+            {/* Quick Preset Color Swatches */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap', paddingTop: '0.5rem' }}>
+              {[
+                { name: 'Navy', hex: '#0B1F3A' },
+                { name: 'Royal Blue', hex: '#2563EB' },
+                { name: 'Emerald', hex: '#059669' },
+                { name: 'Gold', hex: '#C9A227' },
+                { name: 'Imperial Purple', hex: '#7C3AED' },
+                { name: 'Crimson', hex: '#E11D48' },
+                { name: 'Teal', hex: '#0D9488' },
+                { name: 'Slate Black', hex: '#0F172A' },
+              ].map((swatch) => {
+                const isSelected = (settings.primaryColor || '#0B1F3A').toLowerCase() === swatch.hex.toLowerCase();
+                return (
+                  <button
+                    key={swatch.hex}
+                    type="button"
+                    onClick={() => setSettings({ ...settings, primaryColor: swatch.hex })}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: '4px 10px',
+                      background: isSelected ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                      border: isSelected ? `2px solid ${swatch.hex}` : '1px solid #E2E8F0',
+                      borderRadius: '999px',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? swatch.hex : '#475569',
+                      boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        background: swatch.hex,
+                        display: 'inline-block',
+                      }}
+                    />
+                    <span>{swatch.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -687,6 +897,61 @@ export const BusinessSettingsPage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      {/* DATA EXPORT & BACKUP SUITE */}
+      <div style={{ marginTop: '2.5rem' }}>
+        <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.125rem', color: '#0B1F3A', marginBottom: '0.5rem' }}>
+            <Database size={20} color="#0B1F3A" />
+            <span>Data Export & Business Backup Suite</span>
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem', maxWidth: '700px' }}>
+            Download offline copies of your business ledgers for accounting, tax audits, or full account backup.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <button
+              type="button"
+              onClick={handleExportDocumentsCSV}
+              className="btn btn-secondary"
+              style={{ justifyContent: 'center', gap: '6px', padding: '0.75rem 1rem' }}
+            >
+              <FileSpreadsheet size={16} color="#059669" />
+              <span>Export Invoices (CSV)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportClientsCSV}
+              className="btn btn-secondary"
+              style={{ justifyContent: 'center', gap: '6px', padding: '0.75rem 1rem' }}
+            >
+              <FileSpreadsheet size={16} color="#2563EB" />
+              <span>Export Clients (CSV)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportExpensesCSV}
+              className="btn btn-secondary"
+              style={{ justifyContent: 'center', gap: '6px', padding: '0.75rem 1rem' }}
+            >
+              <FileSpreadsheet size={16} color="#D97706" />
+              <span>Export Expenses (CSV)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportFullJSON}
+              className="btn btn-primary"
+              style={{ justifyContent: 'center', gap: '6px', padding: '0.75rem 1rem', background: '#0B1F3A', borderColor: '#0B1F3A' }}
+            >
+              <Download size={16} />
+              <span>Full JSON Backup</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* DANGER ZONE: Account Deletion */}
       <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid #FEE2E2' }}>

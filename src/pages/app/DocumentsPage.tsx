@@ -13,6 +13,8 @@ import {
   Layers,
   MoreVertical,
   User,
+  Copy,
+  CheckCircle2,
 } from 'lucide-react';
 import { BusinessDocument, DocumentType, DocumentStatus } from '../../types';
 import { documentService } from '../../services/documentService';
@@ -132,6 +134,30 @@ export const DocumentsPage: React.FC = () => {
       showToast(err?.message || 'Error generating invoice', 'error');
     } finally {
       setConvertingId(null);
+    }
+  };
+
+  const handleConvertToReceipt = async (doc: BusinessDocument) => {
+    setConvertingId(doc.id);
+    try {
+      const receipt = await documentService.autoGenerateReceiptForInvoice(doc);
+      showToast(`✓ Generated Payment Receipt #${receipt.documentNumber}!`, 'success');
+      loadDocuments();
+      navigate('/app/documents/receipt');
+    } catch (err: any) {
+      showToast(err?.message || 'Error generating receipt', 'error');
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
+  const handleDuplicate = async (doc: BusinessDocument) => {
+    try {
+      const cloned = await documentService.duplicateDocument(doc.id);
+      showToast(`✓ Created duplicate ${cloned.type.toUpperCase()} #${cloned.documentNumber}`, 'success');
+      loadDocuments();
+    } catch (err: any) {
+      showToast(err?.message || 'Error duplicating document', 'error');
     }
   };
 
@@ -424,6 +450,27 @@ export const DocumentsPage: React.FC = () => {
                             </button>
                           )}
 
+                          {d.type === 'invoice' && isPaid && (
+                            <button
+                              onClick={() => handleConvertToReceipt(d)}
+                              disabled={convertingId === d.id}
+                              className="btn btn-ghost btn-sm btn-icon"
+                              style={{ color: '#059669' }}
+                              title="Generate Official Payment Receipt"
+                            >
+                              <CheckCircle2 size={15} />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleDuplicate(d)}
+                            className="btn btn-ghost btn-sm btn-icon"
+                            style={{ color: '#6366F1' }}
+                            title="Duplicate Document (Clone)"
+                          >
+                            <Copy size={15} />
+                          </button>
+
                           {(isRejected || isDeclined) && d.rejectionReason && (
                             <button
                               onClick={() => setReasonModalDoc(d)}
@@ -632,6 +679,57 @@ export const DocumentsPage: React.FC = () => {
                               <span>Generate Invoice</span>
                             </button>
                           )}
+
+                          {d.type === 'invoice' && isPaid && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                handleConvertToReceipt(d);
+                              }}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                background: 'none',
+                                border: 'none',
+                                padding: '8px 12px',
+                                fontSize: '0.8125rem',
+                                color: '#059669',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <CheckCircle2 size={14} />
+                              <span>Generate Receipt</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              handleDuplicate(d);
+                            }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              background: 'none',
+                              border: 'none',
+                              padding: '8px 12px',
+                              fontSize: '0.8125rem',
+                              color: '#6366F1',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
+                          >
+                            <Copy size={14} />
+                            <span>Duplicate (Clone)</span>
+                          </button>
 
                           {(isRejected || isDeclined) && d.rejectionReason && (
                             <button

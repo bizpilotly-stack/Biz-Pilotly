@@ -102,33 +102,42 @@ export const FloatingModule3D: React.FC<FloatingModule3DProps> = ({
 
   const content = getModuleContent();
 
-  const transformStyle = {
+  const positionStyle: React.CSSProperties = {
+    position: 'absolute',
     left: `${x}px`,
     top: `${y}px`,
     transform: `translate3d(-50%, -50%, ${z}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`,
+    transformStyle: 'preserve-3d',
+    zIndex: Math.round(z + 50),
+    willChange: 'transform',
+  };
+
+  const cardFloatStyle: React.CSSProperties = {
     animation: `floatGentleA 6s ease-in-out infinite`,
     animationDelay: floatDelay,
   };
 
   return (
-    <div className="module-card-3d" style={transformStyle}>
-      <div className="module-card-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          {content.icon}
-          <span className="module-card-title">{content.title}</span>
+    <div style={positionStyle}>
+      <div className="module-card-3d" style={cardFloatStyle}>
+        <div className="module-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {content.icon}
+            <span className="module-card-title">{content.title}</span>
+          </div>
+          <span
+            className="module-card-badge"
+            style={{ background: content.badgeBg, color: content.badgeColor }}
+          >
+            {type === 'payment' && <CheckCircle2 size={10} />}
+            {type === 'profit' && <Sparkles size={10} />}
+            <span>{content.badge}</span>
+          </span>
         </div>
-        <span
-          className="module-card-badge"
-          style={{ background: content.badgeBg, color: content.badgeColor }}
-        >
-          {type === 'payment' && <CheckCircle2 size={10} />}
-          {type === 'profit' && <Sparkles size={10} />}
-          <span>{content.badge}</span>
-        </span>
-      </div>
 
-      <div className="module-card-value">{content.value}</div>
-      <div className="module-card-subtext">{content.subtext}</div>
+        <div className="module-card-value">{content.value}</div>
+        <div className="module-card-subtext">{content.subtext}</div>
+      </div>
     </div>
   );
 };

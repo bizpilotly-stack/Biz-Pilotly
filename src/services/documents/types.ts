@@ -27,6 +27,7 @@ export interface BusinessEntity {
   website?: string;
   taxNumber?: string;
   logo?: string;
+  primaryColor?: string;
 }
 
 export interface ClientEntity {
@@ -50,17 +51,18 @@ export interface LineItem {
 export interface SignerInfo {
   name: string;
   email?: string;
+  title?: string;
   ipAddress?: string;
-  timestamp: string;
+  signedAt: string;
   signatureDataUrl?: string;
 }
 
 export interface ContractTerms {
-  parties?: string;
-  effectiveDate?: string;
-  obligations?: string;
-  governingLaw?: string;
-  terminationTerms?: string;
+  paymentTerms: string;
+  jurisdiction: string;
+  effectiveDate: string;
+  terminationClause?: string;
+  confidentialityTerms?: string;
 }
 
 export interface PaymentDetails {
@@ -86,17 +88,16 @@ export interface DocumentTotals {
 }
 
 export interface BusinessDocument {
-  id: string;
-  type: DocumentType;
+  id?: string;
   documentNumber: string;
+  type: DocumentType;
   title: string;
   date: string;
   dueDate?: string;
   validUntil?: string;
-  paymentMethod?: string;
-  paymentReference?: string;
-  projectOverview?: string;
-  scope?: string;
+  paymentTerms?: string;
+  deliveryDate?: string;
+  projectScope?: string;
   deliverables?: string;
   timeline?: string;
   status: DocumentStatus;
@@ -126,6 +127,12 @@ export interface BusinessDocument {
   signature?: {
     image: string;
     signerName: string;
+    signedAt: string;
+  };
+  clientSignature?: {
+    image: string;
+    signerName: string;
+    signerTitle?: string;
     signedAt: string;
   };
   createdAt: string;

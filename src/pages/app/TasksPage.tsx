@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare,
   Plus,
@@ -13,6 +14,8 @@ import {
   DollarSign,
   AlertCircle,
   CheckCircle2,
+  Sparkles,
+  FileText,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/common/Button';
@@ -77,6 +80,7 @@ const DEFAULT_TASKS: TaskItem[] = [
 ];
 
 export const TasksPage: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<TaskItem[]>(() => {
     try {
@@ -87,10 +91,82 @@ export const TasksPage: React.FC = () => {
     }
   });
 
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  const handleToggleSelectTask = (id: string) => {
+    setSelectedTaskIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllVisible = (visibleIds: string[]) => {
+    if (selectedTaskIds.length === visibleIds.length) {
+      setSelectedTaskIds([]);
+    } else {
+      setSelectedTaskIds(visibleIds);
+    }
+  };
+
+  const handleGenerateInvoiceFromTasks = () => {
+    const selectedTasks = tasks.filter((t) => selectedTaskIds.includes(t.id));
+    if (selectedTasks.length === 0) {
+      showToast('Please select at least one task to generate an invoice.', 'error');
+      return;
+    }
+
+    const firstClient = selectedTasks[0].clientName || 'Valued Client';
+    const lineItems = selectedTasks.map((t, idx) => ({
+      id: `item-${idx + 1}`,
+      description: `${t.title}${t.notes ? ` — ${t.notes}` : ''}`,
+      quantity: t.estimatedHours || 1,
+      unitPrice: t.billableRate || 75,
+      amount: (t.estimatedHours || 1) * (t.billableRate || 75),
+    }));
+
+    const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
+
+    // Read current draft or create fresh invoice draft
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+    const invoiceDraft = {
+      id: `doc-${Date.now().toString(36)}`,
+      type: 'invoice',
+      documentNumber: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+      title: `Invoice for ${firstClient} Deliverables`,
+      date: today,
+      dueDate,
+      status: 'draft',
+      business: {
+        name: 'My Business',
+        email: 'billing@bizpilotly.com',
+      },
+      client: {
+        name: firstClient,
+      },
+      items: lineItems,
+      subtotal,
+      taxRate: 0,
+      taxAmount: 0,
+      discountRate: 0,
+      discountAmount: 0,
+      total: subtotal,
+      currency: 'USD',
+      currencySymbol: '$',
+      notes: `Invoice generated from ${selectedTasks.length} billable milestone task deliverables.`,
+      terms: 'Payment is due within 30 days of invoice date.',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem('bizpilotly_draft_invoice_v1', JSON.stringify(invoiceDraft));
+    showToast(`✓ Created draft invoice with ${selectedTasks.length} tasks ($${subtotal.toLocaleString()})!`, 'success');
+    navigate('/app/documents/invoice');
+  };
 
   // Task Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -296,6 +372,19 @@ export const TasksPage: React.FC = () => {
         description="Track billable milestones, project deliverables, and manage 1-click Task CSV imports and exports."
         actions={
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {selectedTaskIds.length > 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleGenerateInvoiceFromTasks}
+                style={{ background: '#10B981', borderColor: '#10B981' }}
+                title="Create a draft invoice with all selected tasks as line items"
+              >
+                <Sparkles size={14} />
+                <span>Invoice Selected ({selectedTaskIds.length})</span>
+              </Button>
+            )}
+
             {/* Import CSV input */}
             <label
               className="btn btn-secondary btn-sm"
@@ -437,6 +526,15 @@ export const TasksPage: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: '36px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={filteredTasks.length > 0 && selectedTaskIds.length === filteredTasks.length}
+                      onChange={() => handleSelectAllVisible(filteredTasks.map((t) => t.id))}
+                      style={{ cursor: 'pointer', width: 16, height: 16 }}
+                      title="Select all for invoicing"
+                    />
+                  </th>
                   <th style={{ width: '40px' }}>Done</th>
                   <th>Task Deliverable</th>
                   <th>Client</th>
@@ -451,8 +549,24 @@ export const TasksPage: React.FC = () => {
               <tbody>
                 {filteredTasks.map((t) => {
                   const isDone = t.status === 'completed';
+                  const isSelected = selectedTaskIds.includes(t.id);
                   return (
-                    <tr key={t.id} style={{ opacity: isDone ? 0.75 : 1 }}>
+                    <tr
+                      key={t.id}
+                      style={{
+                        opacity: isDone ? 0.75 : 1,
+                        background: isSelected ? '#F0FDF4' : undefined,
+                      }}
+                    >
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectTask(t.id)}
+                          style={{ cursor: 'pointer', width: 16, height: 16 }}
+                          title="Select task for invoice generation"
+                        />
+                      </td>
                       <td>
                         <input
                           type="checkbox"

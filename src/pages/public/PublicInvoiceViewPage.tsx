@@ -766,27 +766,104 @@ export const PublicInvoiceViewPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Digital Signature / Execution Seal */}
-          {(doc.signature || doc.signerInfo || isSigned) && (
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 700, color: '#16A34A', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  <ShieldCheck size={16} />
-                  <span>Verified Legal Digital Signature</span>
-                </div>
-                <div style={{ fontSize: '0.8125rem', color: '#64748B' }}>
-                  Digitally executed by <strong>{doc.signature?.signerName || doc.signerInfo?.name || doc.client.name}</strong> on {formatDate(doc.signature?.signedAt || doc.signedAt || new Date().toISOString())}
-                </div>
+          {/* Digital Signature / Execution Seal (Dual Block for Contracts) */}
+          {doc.type === 'contract' ? (
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 800, color: '#16A34A', textTransform: 'uppercase', marginBottom: '1rem' }}>
+                <ShieldCheck size={16} />
+                <span>Bilateral Contract Execution Certificates</span>
               </div>
 
-              {(doc.signature?.image || doc.signerInfo?.signatureDataUrl) && (
-                <img
-                  src={doc.signature?.image || doc.signerInfo?.signatureDataUrl}
-                  alt="Digital Signature"
-                  style={{ maxHeight: '48px', maxWidth: '160px', objectFit: 'contain' }}
-                />
-              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+                {/* 1. Service Provider */}
+                <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '12px', padding: '1.25rem' }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#0B1F3A', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    1. Authorized Provider (Issuer)
+                  </div>
+                  {doc.signature?.image ? (
+                    <div>
+                      <img
+                        src={doc.signature.image}
+                        alt="Provider Signature"
+                        style={{ maxHeight: '44px', maxWidth: '160px', objectFit: 'contain', marginBottom: '4px' }}
+                      />
+                      <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>
+                        {doc.signature.signerName || doc.business.name}
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', color: '#10B981', marginTop: '2px' }}>
+                        Signed on {formatDate(doc.signature.signedAt || doc.date)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.8125rem', color: '#64748B', fontStyle: 'italic' }}>
+                      Authorized Provider Signature on File ({doc.business.name})
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Client / Partner */}
+                <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '12px', padding: '1.25rem' }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#0B1F3A', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    2. Client / Partner (Counterparty)
+                  </div>
+                  {(doc.clientSignature?.image || doc.signerInfo?.signatureDataUrl || isSigned) ? (
+                    <div>
+                      {(doc.clientSignature?.image || doc.signerInfo?.signatureDataUrl) && (
+                        <img
+                          src={doc.clientSignature?.image || doc.signerInfo?.signatureDataUrl}
+                          alt="Client Signature"
+                          style={{ maxHeight: '44px', maxWidth: '160px', objectFit: 'contain', marginBottom: '4px' }}
+                        />
+                      )}
+                      <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>
+                        {doc.clientSignature?.signerName || doc.signerInfo?.name || doc.client.name}
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', color: '#10B981', marginTop: '2px' }}>
+                        Executed on {formatDate(doc.clientSignature?.signedAt || doc.signedAt || new Date().toISOString())}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ fontSize: '0.8125rem', color: '#D97706', fontWeight: 600 }}>
+                        Awaiting Client Digital Signature
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSignModalOpen(true)}
+                        className="btn btn-primary btn-sm"
+                        style={{ alignSelf: 'flex-start' }}
+                      >
+                        <PenTool size={14} />
+                        <span>Sign Contract Now</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+          ) : (
+            /* Single Signature Block for Invoices / Receipts / Quotes */
+            (doc.signature || doc.signerInfo || isSigned) && (
+              <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 700, color: '#16A34A', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    <ShieldCheck size={16} />
+                    <span>Verified Legal Digital Signature</span>
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#64748B' }}>
+                    Digitally executed by <strong>{doc.signature?.signerName || doc.signerInfo?.name || doc.client.name}</strong> on {formatDate(doc.signature?.signedAt || doc.signedAt || new Date().toISOString())}
+                  </div>
+                </div>
+
+                {(doc.signature?.image || doc.signerInfo?.signatureDataUrl) && (
+                  <img
+                    src={doc.signature?.image || doc.signerInfo?.signatureDataUrl}
+                    alt="Digital Signature"
+                    style={{ maxHeight: '48px', maxWidth: '160px', objectFit: 'contain' }}
+                  />
+                )}
+              </div>
+            )
           )}
 
           {/* Receipt Settlement Metadata */}
@@ -878,7 +955,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Building size={18} color="#0B1F3A" />
                     <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
-                      Direct Bank Transfer (0% Platform Fee)
+                      Direct Bank Transfer
                     </span>
                   </div>
                   <span style={{ fontSize: '0.6875rem', fontWeight: 800, background: '#D1FAE5', color: '#065F46', padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>

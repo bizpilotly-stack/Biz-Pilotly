@@ -82,6 +82,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [isReportingPayment, setIsReportingPayment] = useState(false);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [sigModalOpen, setSigModalOpen] = useState(false);
+  const [clientSigModalOpen, setClientSigModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [resendConfirmed, setResendConfirmed] = useState(false);
@@ -1127,99 +1128,101 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   }}
                   style={{ fontWeight: 600, fontSize: '0.8125rem' }}
                 >
-                  <option value="both">Both: Direct Bank Transfer (0% Fee) & Paystack Card Gateway</option>
-                  <option value="manual">Direct Bank Transfer Only (0% Fee, Instant to Bank)</option>
-                  <option value="gateway">Paystack Online Card Gateway Only (Instant Receipt, 1.5% - 2%)</option>
+                  <option value="both">Both: Direct Bank Transfer & Paystack Card Gateway</option>
+                  <option value="manual">Direct Bank Transfer Only (Instant to Bank)</option>
+                  <option value="gateway">Paystack Online Card Gateway Only (Instant Receipt)</option>
                 </select>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.375rem' }}>
-                  {doc.paymentDetails?.paymentPreference === 'manual' && '✓ ₦0 fees. Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
+                  {doc.paymentDetails?.paymentPreference === 'manual' && '✓ Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
                   {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Bank Transfer, or USSD with automated instant receipt.'}
-                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between 0% Bank Transfer and Instant Card Checkout.'}
+                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between Bank Transfer and Instant Card Checkout.'}
                 </div>
               </div>
             )}
 
-            {/* Bank Details on Document */}
-            <div className="form-group" style={{ background: 'var(--bg-surface-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '1rem' }}>
-              <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Building size={16} color="#0B1F3A" />
-                <span>Bank Settlement Details (Appears on Document)</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <div>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Bank Name (Nigeria)</label>
-                  <select
-                    className="form-select"
-                    style={{ fontSize: '0.8125rem' }}
-                    value={doc.paymentDetails?.bankName || ''}
-                    onChange={(e) =>
-                      setDoc({
-                        ...doc,
-                        paymentDetails: {
-                          ...doc.paymentDetails,
-                          bankName: e.target.value,
-                        },
-                      })
-                    }
-                  >
-                    <option value="">-- Select Bank --</option>
-                    {NIGERIAN_BANKS.map((b) => (
-                      <option key={b.code} value={b.name}>
-                        {b.name}
-                      </option>
-                    ))}
-                    <option value="Other Bank">Other / International Bank</option>
-                  </select>
+            {/* Bank Details on Document (Only for Invoices) */}
+            {documentType === 'invoice' && (
+              <div className="form-group" style={{ background: 'var(--bg-surface-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '1rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Building size={16} color="#0B1F3A" />
+                  <span>Bank Settlement Details (Appears on Document)</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Bank Name (Nigeria)</label>
+                    <select
+                      className="form-select"
+                      style={{ fontSize: '0.8125rem' }}
+                      value={doc.paymentDetails?.bankName || ''}
+                      onChange={(e) =>
+                        setDoc({
+                          ...doc,
+                          paymentDetails: {
+                            ...doc.paymentDetails,
+                            bankName: e.target.value,
+                          },
+                        })
+                      }
+                    >
+                      <option value="">-- Select Bank --</option>
+                      {NIGERIAN_BANKS.map((b) => (
+                        <option key={b.code} value={b.name}>
+                          {b.name}
+                        </option>
+                      ))}
+                      <option value="Other Bank">Other / International Bank</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Beneficiary Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ fontSize: '0.8125rem' }}
+                      placeholder="Account Name"
+                      value={doc.paymentDetails?.accountName || ''}
+                      onChange={(e) =>
+                        setDoc({
+                          ...doc,
+                          paymentDetails: {
+                            ...doc.paymentDetails,
+                            accountName: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Beneficiary Name</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>NUBAN Account Number (10 Digits)</span>
+                    {doc.paymentDetails?.accountNumber && (
+                      <span style={{ color: doc.paymentDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b', fontWeight: 600 }}>
+                        {doc.paymentDetails.accountNumber.length}/10 digits
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     className="form-input"
-                    style={{ fontSize: '0.8125rem' }}
-                    placeholder="Account Name"
-                    value={doc.paymentDetails?.accountName || ''}
-                    onChange={(e) =>
+                    style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}
+                    placeholder="e.g. 0123456789"
+                    maxLength={10}
+                    value={doc.paymentDetails?.accountNumber || ''}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setDoc({
                         ...doc,
                         paymentDetails: {
                           ...doc.paymentDetails,
-                          accountName: e.target.value,
+                          accountNumber: clean,
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
               </div>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>NUBAN Account Number (10 Digits)</span>
-                  {doc.paymentDetails?.accountNumber && (
-                    <span style={{ color: doc.paymentDetails.accountNumber.length === 10 ? '#10b981' : '#f59e0b', fontWeight: 600 }}>
-                      {doc.paymentDetails.accountNumber.length}/10 digits
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}
-                  placeholder="e.g. 0123456789"
-                  maxLength={10}
-                  value={doc.paymentDetails?.accountNumber || ''}
-                  onChange={(e) => {
-                    const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
-                    setDoc({
-                      ...doc,
-                      paymentDetails: {
-                        ...doc.paymentDetails,
-                        accountNumber: clean,
-                      },
-                    });
-                  }}
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* RIGHT COLUMN: Interactive Live Printable Document Canvas */}
@@ -1545,47 +1548,96 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 </div>
               )}
 
-              {/* Digital E-Signature Section */}
-              <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '4px' }}>
-                    Authorized E-Signature
-                  </div>
-                  {doc.signature?.image ? (
-                    <div>
-                      <img
-                        src={doc.signature.image}
-                        alt="Digital Signature"
-                        style={{ height: '50px', maxHeight: '50px', objectFit: 'contain', display: 'block', marginBottom: '4px' }}
-                      />
-                      <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>{doc.signature.signerName}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <ShieldCheck size={12} />
-                        <span>Digitally Signed ({new Date(doc.signature.signedAt).toLocaleDateString()})</span>
-                      </div>
+              {/* Digital E-Signature Section (Dual Signature for Contracts & Bilateral execution) */}
+              <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', marginTop: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: documentType === 'contract' ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
+                  {/* Party 1: Service Provider / Issuer */}
+                  <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', marginBottom: '6px' }}>
+                      {documentType === 'contract' ? '1. Service Provider (Issuer)' : 'Authorized E-Signature'}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setSigModalOpen(true)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                    >
-                      <PenTool size={13} />
-                      <span>Apply Digital Signature</span>
-                    </button>
+                    {doc.signature?.image ? (
+                      <div>
+                        <img
+                          src={doc.signature.image}
+                          alt="Provider Digital Signature"
+                          style={{ height: '44px', maxHeight: '44px', objectFit: 'contain', display: 'block', marginBottom: '4px' }}
+                        />
+                        <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>
+                          {doc.signature.signerName || doc.business.name}
+                        </div>
+                        <div style={{ fontSize: '0.6875rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                          <ShieldCheck size={12} />
+                          <span>Digitally Signed ({new Date(doc.signature.signedAt).toLocaleDateString()})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSigModalOpen(true)}
+                          style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.6875rem', cursor: 'pointer', textDecoration: 'underline', marginTop: '4px', padding: 0 }}
+                        >
+                          Change Signature
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSigModalOpen(true)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', width: '100%', justifyContent: 'center' }}
+                      >
+                        <PenTool size={13} />
+                        <span>Sign as Provider</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Party 2: Client / Partner Counterparty (For Contracts) */}
+                  {documentType === 'contract' && (
+                    <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', color: '#0B1F3A', marginBottom: '6px' }}>
+                        2. Client / Partner (Counterparty)
+                      </div>
+                      {doc.clientSignature?.image ? (
+                        <div>
+                          <img
+                            src={doc.clientSignature.image}
+                            alt="Client Digital Signature"
+                            style={{ height: '44px', maxHeight: '44px', objectFit: 'contain', display: 'block', marginBottom: '4px' }}
+                          />
+                          <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>
+                            {doc.clientSignature.signerName || doc.client.name}
+                          </div>
+                          <div style={{ fontSize: '0.6875rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                            <ShieldCheck size={12} />
+                            <span>Executed on {new Date(doc.clientSignature.signedAt).toLocaleDateString()}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setClientSigModalOpen(true)}
+                            style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.6875rem', cursor: 'pointer', textDecoration: 'underline', marginTop: '4px', padding: 0 }}
+                          >
+                            Edit Client Signature
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '8px' }}>
+                            Awaiting client digital execution via public signing link.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setClientSigModalOpen(true)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: '0.75rem', padding: '4px 10px', width: '100%', justifyContent: 'center' }}
+                          >
+                            <PenTool size={13} />
+                            <span>Sign on Behalf of Client</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-
-                {doc.signature?.image && (
-                  <button
-                    type="button"
-                    onClick={() => setSigModalOpen(true)}
-                    style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.6875rem', cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    Change Signature
-                  </button>
-                )}
               </div>
             </div>
 
@@ -1635,7 +1687,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                           transition: 'all 0.2s ease',
                         }}
                       >
-                        🏛️ Direct Bank Transfer (0% Fee)
+                        🏛️ Direct Bank Transfer
                       </button>
                     </div>
                   )}
@@ -1652,7 +1704,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                         </div>
                       </div>
                       <span style={{ fontSize: '0.6875rem', background: 'rgba(0, 192, 243, 0.2)', color: '#38bdf8', padding: '3px 8px', borderRadius: '999px', fontWeight: 600 }}>
-                        Auto-Reconciled • 1.5% - 2%
+                        Auto-Reconciled
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1rem', lineHeight: 1.4 }}>
@@ -2176,7 +2228,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
         </div>
       )}
 
-      {/* Digital Signature Canvas Modal */}
+      {/* Provider Digital Signature Canvas Modal */}
       <DigitalSignatureCanvas
         isOpen={sigModalOpen}
         onClose={() => setSigModalOpen(false)}
@@ -2186,7 +2238,21 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
             ...doc,
             signature: sig,
           });
-          showToast('✓ Digital E-Signature applied to document!', 'success');
+          showToast('✓ Provider E-Signature applied to document!', 'success');
+        }}
+      />
+
+      {/* Client / Partner Digital Signature Canvas Modal */}
+      <DigitalSignatureCanvas
+        isOpen={clientSigModalOpen}
+        onClose={() => setClientSigModalOpen(false)}
+        defaultSignerName={doc.client.name || ''}
+        onSave={(sig) => {
+          setDoc({
+            ...doc,
+            clientSignature: sig,
+          });
+          showToast('✓ Client / Partner E-Signature applied!', 'success');
         }}
       />
     </div>

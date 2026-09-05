@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Layers, Download, CreditCard } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { Layers, Download, CreditCard, ExternalLink } from 'lucide-react';
 import { clientPortalService, ClientPortalStatement } from '../../services/clientPortalService';
 import { formatCurrency } from '../../utils/formatters';
 import { SEO } from '../../components/common/SEO';
@@ -116,47 +116,71 @@ export const ClientPortalPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {statement.documents.map((doc) => (
-                  <tr key={doc.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '1rem', fontWeight: 700, color: '#0B1F3A' }}>
-                      {doc.documentNumber}
-                    </td>
-                    <td style={{ padding: '1rem', color: '#334155', fontSize: '0.875rem' }}>
-                      {doc.title}
-                    </td>
-                    <td style={{ padding: '1rem', color: '#64748B', fontSize: '0.8125rem' }}>
-                      {doc.date}
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: 700, color: '#0B1F3A' }}>
-                      {formatCurrency(doc.total, doc.currency, doc.currencySymbol)}
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span
-                        style={{
-                          fontSize: '0.6875rem',
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: '999px',
-                          textTransform: 'uppercase',
-                          background: doc.status === 'paid' ? '#D1FAE5' : doc.status === 'sent' ? '#EFF6FF' : '#FEF3C7',
-                          color: doc.status === 'paid' ? '#065F46' : doc.status === 'sent' ? '#1E40AF' : '#92400E',
-                        }}
-                      >
-                        {doc.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <button
-                        onClick={() => window.print()}
-                        className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                      >
-                        <Download size={12} />
-                        <span>PDF</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {statement.documents.map((doc) => {
+                  const docUrl = `/invoice/${doc.id}`;
+                  return (
+                    <tr key={doc.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '1rem', fontWeight: 700 }}>
+                        <Link
+                          to={docUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#0B1F3A', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          {doc.documentNumber}
+                          <ExternalLink size={12} color="#64748B" />
+                        </Link>
+                      </td>
+                      <td style={{ padding: '1rem', color: '#334155', fontSize: '0.875rem' }}>
+                        {doc.title}
+                      </td>
+                      <td style={{ padding: '1rem', color: '#64748B', fontSize: '0.8125rem' }}>
+                        {doc.date}
+                      </td>
+                      <td style={{ padding: '1rem', fontWeight: 700, color: '#0B1F3A' }}>
+                        {formatCurrency(doc.total, doc.currency, doc.currencySymbol)}
+                      </td>
+                      <td style={{ padding: '1rem' }}>
+                        <span
+                          style={{
+                            fontSize: '0.6875rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '999px',
+                            textTransform: 'uppercase',
+                            background: doc.status === 'paid' ? '#D1FAE5' : doc.status === 'sent' ? '#EFF6FF' : '#FEF3C7',
+                            color: doc.status === 'paid' ? '#065F46' : doc.status === 'sent' ? '#1E40AF' : '#92400E',
+                          }}
+                        >
+                          {doc.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                          <Link
+                            to={docUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: '0.75rem', padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <ExternalLink size={12} />
+                            <span>View</span>
+                          </Link>
+                          <button
+                            onClick={() => window.open(docUrl, '_blank')}
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                            title="Download PDF"
+                          >
+                            <Download size={12} />
+                            <span>PDF</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

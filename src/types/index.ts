@@ -112,6 +112,12 @@ export interface BusinessDocument {
     signerName: string;
     signedAt: string;
   };
+  clientSignature?: {
+    image: string;
+    signerName: string;
+    signerTitle?: string;
+    signedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -211,6 +217,64 @@ export interface DashboardStats {
   profitMarginPct: number;
 }
 
+export interface LifecycleFunnelStats {
+  proposals: {
+    total: number;
+    sent: number;
+    accepted: number;
+    rejected: number;
+    winRatePct: number;
+    closedValue: number;
+    pendingValue: number;
+  };
+  quotes: {
+    total: number;
+    sent: number;
+    accepted: number;
+    rejected: number;
+    winRatePct: number;
+    closedValue: number;
+    pendingValue: number;
+  };
+  contracts: {
+    total: number;
+    sent: number;
+    signed: number;
+    pendingSignature: number;
+    executionRatePct: number;
+  };
+  invoices: {
+    totalCount: number;
+    paidCount: number;
+    pendingCount: number;
+    overdueCount: number;
+    paidAmount: number;
+    pendingAmount: number;
+    overdueAmount: number;
+    settlementRatePct: number;
+  };
+  retainers: {
+    activeCount: number;
+    mrr: number;
+    upcomingRunsCount: number;
+  };
+  tasks: {
+    completedUnbilledCount: number;
+    unbilledHours: number;
+    unbilledAmount: number;
+  };
+  attentionItems: {
+    id: string;
+    type: 'overdue_invoice' | 'unbilled_tasks' | 'pending_proposal' | 'unsigned_contract' | 'upcoming_retainer';
+    title: string;
+    subtitle: string;
+    amount?: number;
+    actionLabel: string;
+    actionLink: string;
+    badgeColor: 'red' | 'yellow' | 'blue' | 'purple' | 'green';
+  }[];
+}
+
 export interface ActivityItem {
   id: string;
   type: 'invoice_created' | 'invoice_paid' | 'quote_sent' | 'client_added' | 'expense_logged';
@@ -242,6 +306,7 @@ export interface BusinessSettings {
   contractPrefix?: string;
   defaultPaymentTerms: string;
   defaultNotes: string;
+  primaryColor?: string;
   bankDetails: {
     bankName: string;
     accountName: string;
