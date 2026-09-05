@@ -405,6 +405,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
         setDoc(sourceDoc);
       }
 
+      if (!sourceDoc.id) {
+        throw new Error('Unable to convert document without an ID');
+      }
+
       let newInv: BusinessDocument;
       if (sourceDoc.type === 'proposal') {
         newInv = await documentService.generateInvoiceFromProposal(sourceDoc.id);
@@ -417,7 +421,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
       }
 
       showToast(`✓ Invoice #${newInv.documentNumber} generated from ${sourceDoc.type}!`, 'success');
-      navigate(isApp ? '/app/documents/invoice' : `/invoice/${newInv.id}`);
+      navigate(isApp ? '/app/documents/invoice' : `/invoice/${newInv.id || ''}`);
     } catch (err: any) {
       showToast(err?.message || 'Error generating invoice from document.', 'error');
     } finally {
