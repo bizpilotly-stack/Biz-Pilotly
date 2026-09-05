@@ -25,49 +25,37 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
   const title = getDefaultDocumentTitle(type);
   const cached = getCachedSettings();
 
+  // Clean empty line items - no dummy values to confuse the business owner
   const defaultItems = [
     {
       id: 'item-1',
-      description: type === 'receipt' ? 'Full Project Milestone Settlement' : 'Brand Identity & Web Interface Deliverables',
+      description: '',
       quantity: 1,
-      unitPrice: 2850,
-      amount: 2850,
-    },
-    {
-      id: 'item-2',
-      description: type === 'receipt' ? 'Production Asset Transfer Fee' : 'Design System Guidelines & Exported Assets',
-      quantity: 1,
-      unitPrice: 650,
-      amount: 650,
+      unitPrice: 0,
+      amount: 0,
     },
   ];
 
   const totals = calculateDocumentTotals(defaultItems, 0, 0);
 
   const businessEntity = {
-    name: cached?.name || 'Apex Studio Design Co.',
-    tagline: cached?.tagline || 'Digital Product Strategy & Interface Engineering',
+    name: cached?.name || '',
+    tagline: cached?.tagline || '',
     logo: cached?.logo || undefined,
-    email: cached?.email || 'hello@apexstudio.io',
-    phone: cached?.phone || '+1 (555) 349-2810',
-    address: cached?.address || '742 Evergreen Terrace, Suite 400, Austin, TX 78701',
+    email: cached?.email || '',
+    phone: cached?.phone || '',
+    address: cached?.address || '',
     website: cached?.website || undefined,
-    taxNumber: cached?.taxNumber || 'US-TX-9842104',
+    taxNumber: cached?.taxNumber || '',
   };
 
-  const paymentDetails = cached?.bankDetails?.bankName
-    ? {
-        bankName: cached.bankDetails.bankName,
-        accountName: cached.bankDetails.accountName || cached.name || '',
-        accountNumber: cached.bankDetails.accountNumber || '',
-        routingOrIban: cached.bankDetails.routingCode || '',
-      }
-    : {
-        bankName: 'Silicon Valley Commercial Bank',
-        accountName: cached?.name || 'Apex Studio Design Co.',
-        accountNumber: '•••• 8921',
-        routingOrIban: '021000021 / US34 SVBK 0000 8921',
-      };
+  const paymentDetails = {
+    bankName: cached?.bankDetails?.bankName || '',
+    accountName: cached?.bankDetails?.accountName || cached?.name || '',
+    accountNumber: cached?.bankDetails?.accountNumber || '',
+    routingOrIban: cached?.bankDetails?.routingCode || '',
+    paymentPreference: cached?.paymentPreference || 'both',
+  };
 
   const base: any = {
     id: `doc-${Date.now().toString(36)}`,
@@ -78,11 +66,11 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
     status: type === 'receipt' ? 'paid' : 'draft',
     business: businessEntity,
     client: {
-      name: 'Sarah Jenkins',
-      company: 'Horizon Health Dynamics',
-      email: 's.jenkins@horizonhealth.co',
-      phone: '+1 (555) 892-1402',
-      address: '1200 Innovation Parkway, Boston, MA 02110',
+      name: '',
+      company: '',
+      email: '',
+      phone: '',
+      address: '',
     },
     items: defaultItems,
     ...totals,
@@ -91,8 +79,8 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
     currency: cached?.currency || 'USD',
     currencySymbol: cached?.currencySymbol || '$',
     primaryColor: cached?.primaryColor || '#0B1F3A',
-    notes: cached?.defaultNotes || 'Thank you for your business. Please reach out if you have any questions regarding these deliverable line items.',
-    terms: cached?.defaultPaymentTerms || 'Payment is due within 30 days of invoice date. Late remittances subject to a 1.5% monthly finance charge.',
+    notes: cached?.defaultNotes || '',
+    terms: cached?.defaultPaymentTerms || '',
     signature: cached?.signature,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -103,29 +91,25 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
     base.paymentDetails = paymentDetails;
   } else if (type === 'quote') {
     base.validUntil = nextMonth;
-    base.terms = 'This quote is valid for 30 calendar days from issue date. Pricing becomes fixed upon client acceptance.';
   } else if (type === 'estimate') {
     base.validUntil = nextMonth;
-    base.notes = 'PROVISIONAL ESTIMATE: Quantities and costs are approximate based on initial scope and may adjust with final project specifications.';
-    base.terms = 'Estimated fees are valid for 30 days. Formal confirmation and deposit required prior to production commencement.';
   } else if (type === 'proposal') {
     base.validUntil = nextMonth;
-    base.projectOverview = 'Comprehensive brand strategy, user experience overhaul, and responsive design systems delivery tailored for enterprise rollout.';
-    base.scope = 'Phase 1: Discovery & Architecture. Phase 2: Design Systems & Component UI. Phase 3: Interactive Prototypes & Asset Handoff.';
-    base.deliverables = '1. Complete Figma UI Kit & Design Tokens\n2. Responsive Web Component Blueprints\n3. High-Fidelity Clickable Prototype\n4. Brand Style Guidelines Guidebook';
-    base.timeline = 'Weeks 1-2: Discovery & Strategy\nWeeks 3-5: Interface Design & Reviews\nWeeks 6-7: Refinements & Asset Delivery';
+    base.projectOverview = '';
+    base.scope = '';
+    base.deliverables = '';
+    base.timeline = '';
   } else if (type === 'contract') {
     base.contractTerms = {
-      parties: `This Agreement is entered into between ${businessEntity.name} ("Provider") and Horizon Health Dynamics ("Client").`,
+      parties: businessEntity.name ? `This Agreement is entered into between ${businessEntity.name} and Client.` : '',
       effectiveDate: today,
-      obligations: 'Provider agrees to deliver specified design services with reasonable professional care. Client agrees to provide timely feedback and settle agreed invoices according to milestone terms.',
-      governingLaw: 'State of Texas / United States',
-      terminationTerms: 'Either party may terminate this agreement with 14 calendar days written notice.',
+      obligations: '',
+      governingLaw: '',
+      terminationTerms: '',
     };
-    base.terms = 'Confidentiality, intellectual property assignment upon full payment, and mutual indemnification apply as defined in formal agreement terms.';
   } else if (type === 'receipt') {
     base.paymentMethod = 'Bank Transfer';
-    base.paymentReference = `TXN-${Date.now().toString(36).toUpperCase()}`;
+    base.paymentReference = '';
   }
 
   return base;
@@ -149,7 +133,7 @@ export function loadDocumentDraft(type: DocumentType): BusinessDocument {
         if (cached) {
           parsed.business = {
             ...parsed.business,
-            name: cached.name || parsed.business?.name || 'My Business Studio',
+            name: cached.name || parsed.business?.name || '',
             tagline: cached.tagline !== undefined ? cached.tagline : parsed.business?.tagline,
             logo: cached.logo !== undefined ? cached.logo : parsed.business?.logo,
             email: cached.email !== undefined ? cached.email : parsed.business?.email,

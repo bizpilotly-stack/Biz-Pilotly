@@ -190,8 +190,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     if (user || isApp) {
       documentService.getNextDocumentNumber(documentType).then((nextNum) => {
         setDoc((prev) => {
-          // Only replace if document is a fresh unsaved draft
-          if (!prev.id && prev.documentNumber.endsWith('-0001')) {
+          // Automatically set to next sequential document number for new/draft documents
+          if (!prev.id || prev.id.startsWith('doc-') || prev.documentNumber.endsWith('-0001')) {
             return { ...prev, documentNumber: nextNum };
           }
           return prev;
@@ -303,10 +303,10 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const handleAddItem = () => {
     const newItem: LineItem = {
       id: `item-${Date.now().toString(36)}`,
-      description: 'Additional Deliverable / Scope item',
+      description: '',
       quantity: 1,
-      unitPrice: 500,
-      amount: 500,
+      unitPrice: 0,
+      amount: 0,
     };
     const updatedItems = [...doc.items, newItem];
     const totals = documentService.calculateTotals(updatedItems, doc.taxRate, doc.discountRate);
@@ -1231,13 +1231,13 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   style={{ fontWeight: 600, fontSize: '0.8125rem' }}
                 >
                   <option value="both">Both: Direct Bank Transfer & Paystack Card Gateway</option>
-                  <option value="manual">Direct Bank Transfer Only (Instant to Bank)</option>
-                  <option value="gateway">Paystack Online Card Gateway Only (Instant Receipt)</option>
+                  <option value="manual">Direct Bank Transfer Only</option>
+                  <option value="gateway">Paystack Online Card Gateway Only</option>
                 </select>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.375rem' }}>
                   {doc.paymentDetails?.paymentPreference === 'manual' && '✓ Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
-                  {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Bank Transfer, or USSD with automated instant receipt.'}
-                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between Bank Transfer and Instant Card Checkout.'}
+                  {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Bank Transfer, or USSD with automated receipt.'}
+                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between Bank Transfer and Online Card Checkout.'}
                 </div>
               </div>
             )}
@@ -1779,7 +1779,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                           transition: 'all 0.2s ease',
                         }}
                       >
-                        ⚡ Paystack Instant Card
+                        Paystack Card & USSD
                       </button>
                       <button
                         type="button"
@@ -1807,21 +1807,21 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   <div style={{ background: 'linear-gradient(135deg, #091e3a 0%, #0d284f 100%)', color: '#ffffff', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#93c5fd' }}>Instant Online Checkout (Paystack)</div>
+                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#93c5fd' }}>Online Checkout (Paystack)</div>
                         <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '2px' }}>
                           {formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}
                         </div>
                       </div>
                       <span style={{ fontSize: '0.6875rem', background: 'rgba(0, 192, 243, 0.2)', color: '#38bdf8', padding: '3px 8px', borderRadius: '999px', fontWeight: 600 }}>
-                        Auto-Reconciled
+                        Online Gateway
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1rem', lineHeight: 1.4 }}>
-                      Clients can pay this invoice instantly using Nigerian & International Debit Cards (Visa, Mastercard, Verve), Bank Transfer, or USSD codes.
+                      Clients can pay this invoice using Nigerian & International Debit Cards (Visa, Mastercard, Verve), Bank Transfer, or USSD codes.
                     </p>
                     <button
                       type="button"
-                      onClick={() => showToast('Opening Paystack instant checkout simulation for ' + formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol), 'info')}
+                      onClick={() => showToast('Opening Paystack checkout simulation for ' + formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol), 'info')}
                       style={{
                         width: '100%',
                         padding: '0.625rem 1rem',
@@ -1850,8 +1850,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>
                         Direct Bank Transfer
                       </div>
-                      <span style={{ fontSize: '0.6875rem', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
-                        Instant Settlement
+                      <span style={{ fontSize: '0.6875rem', background: '#E2E8F0', color: '#334155', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
+                        Bank Settlement
                       </span>
                     </div>
 

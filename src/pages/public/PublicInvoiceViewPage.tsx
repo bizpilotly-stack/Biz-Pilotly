@@ -935,7 +935,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
           )}
         </div>
 
-        {/* Invoice Direct Bank Settlement Section (For Buyer) */}
+        {/* Invoice Direct Settlement & Payment Methods (For Buyer) */}
         {doc.type === 'invoice' && !isPaid && (
           <div
             style={{
@@ -948,66 +948,86 @@ export const PublicInvoiceViewPage: React.FC = () => {
           >
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0B1F3A', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <CreditCard size={20} color="#1D4ED8" />
-              <span>How to Settle This Invoice</span>
+              <span>Payment & Settlement</span>
             </h3>
 
-            {doc.paymentDetails?.bankName && doc.paymentDetails?.accountNumber ? (
-              <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Building size={18} color="#0B1F3A" />
-                    <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
-                      Direct Bank Transfer
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 800, background: '#D1FAE5', color: '#065F46', padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>
-                    Instant Settlement
-                  </span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Bank Name</div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0B1F3A', marginTop: '2px' }}>
-                      {doc.paymentDetails.bankName}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px' }}>
-                      <span style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0B1F3A', letterSpacing: '0.05em' }}>
-                        {doc.paymentDetails.accountNumber}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(doc.paymentDetails?.accountNumber || '', 'Account Number')}
-                        style={{ border: 'none', background: 'none', color: '#2563EB', cursor: 'pointer', padding: '2px' }}
-                        title="Copy Account Number"
-                      >
-                        {copiedField === 'Account Number' ? <Check size={16} color="#10B981" /> : <Copy size={16} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Beneficiary Name</div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0B1F3A', marginTop: '2px' }}>
-                      {doc.paymentDetails.accountName || doc.business.name}
-                    </div>
-                  </div>
-                </div>
+            {/* Payment Preference Tab Switching (If Both Card Gateway & Bank Transfer Enabled) */}
+            {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && doc.paymentDetails?.bankName && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setPaymentTab('card')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid',
+                    borderColor: paymentTab === 'card' ? '#0B1F3A' : '#E2E8F0',
+                    background: paymentTab === 'card' ? '#0B1F3A' : '#F8FAFC',
+                    color: paymentTab === 'card' ? '#ffffff' : '#475569',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                  }}
+                >
+                  <CreditCard size={14} />
+                  <span>Pay Online (Card / USSD)</span>
+                </button>
 
                 <button
                   type="button"
-                  onClick={() => setReportModalOpen(true)}
+                  onClick={() => setPaymentTab('bank')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid',
+                    borderColor: paymentTab === 'bank' ? '#0B1F3A' : '#E2E8F0',
+                    background: paymentTab === 'bank' ? '#0B1F3A' : '#F8FAFC',
+                    color: paymentTab === 'bank' ? '#ffffff' : '#475569',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                  }}
+                >
+                  <Building size={14} />
+                  <span>Direct Bank Transfer</span>
+                </button>
+              </div>
+            )}
+
+            {/* Online Card / USSD Payment Option */}
+            {(doc.paymentDetails?.paymentPreference === 'gateway' ||
+              ((!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && paymentTab === 'card')) && (
+              <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem', marginBottom: doc.paymentDetails?.paymentPreference === 'both' ? '0' : '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CreditCard size={18} color="#0B1F3A" />
+                    <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
+                      Online Card & Bank Gateway
+                    </span>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: '0.8125rem', color: '#64748B', marginBottom: '1.25rem', lineHeight: 1.4 }}>
+                  Pay securely with Debit/Credit Card (Mastercard, Visa, Verve), Bank Transfer, or USSD for automated receipt confirmation.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handlePayWithPaystack}
+                  disabled={isProcessingOnlinePay}
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
-                    background: '#10B981',
+                    padding: '0.875rem',
+                    background: '#0B1F3A',
                     color: '#ffffff',
                     fontWeight: 800,
-                    fontSize: '0.875rem',
+                    fontSize: '0.9375rem',
                     border: 'none',
                     borderRadius: '10px',
                     cursor: 'pointer',
@@ -1015,14 +1035,87 @@ export const PublicInvoiceViewPage: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.5rem',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+                    boxShadow: '0 4px 12px rgba(11, 31, 58, 0.25)',
                   }}
                 >
-                  <CheckCircle2 size={18} />
-                  <span>I Have Transferred This Payment</span>
+                  <CreditCard size={18} color="#F59E0B" />
+                  <span>{isProcessingOnlinePay ? 'Initializing Gateway...' : `Pay ${formatCurrency(doc.total, doc.currency)} Now`}</span>
                 </button>
               </div>
-            ) : null}
+            )}
+
+            {/* Direct Bank Transfer Option */}
+            {(doc.paymentDetails?.paymentPreference === 'manual' ||
+              ((!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && paymentTab === 'bank')) &&
+              doc.paymentDetails?.bankName && doc.paymentDetails?.accountNumber && (
+                <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Building size={18} color="#0B1F3A" />
+                      <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
+                        Direct Bank Transfer
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Bank Name</div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0B1F3A', marginTop: '2px' }}>
+                        {doc.paymentDetails.bankName}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2px' }}>
+                        <span style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0B1F3A', letterSpacing: '0.05em' }}>
+                          {doc.paymentDetails.accountNumber}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(doc.paymentDetails?.accountNumber || '', 'Account Number')}
+                          style={{ border: 'none', background: 'none', color: '#2563EB', cursor: 'pointer', padding: '2px' }}
+                          title="Copy Account Number"
+                        >
+                          {copiedField === 'Account Number' ? <Check size={16} color="#10B981" /> : <Copy size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Beneficiary Name</div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0B1F3A', marginTop: '2px' }}>
+                        {doc.paymentDetails.accountName || doc.business.name}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setReportModalOpen(true)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: '#10B981',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '0.875rem',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+                    }}
+                  >
+                    <CheckCircle2 size={18} />
+                    <span>I Have Transferred This Payment</span>
+                  </button>
+                </div>
+              )}
           </div>
         )}
 

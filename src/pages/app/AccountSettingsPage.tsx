@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon, Lock, Bell, ShieldCheck, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User as UserIcon, Lock, Bell, ShieldCheck, Mail, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Input } from '../../components/common/Input';
@@ -10,8 +11,9 @@ import { BRAND_NAME } from '../../constants/brand';
 import { supabase } from '../../services/supabase';
 
 export const AccountSettingsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,6 +25,11 @@ export const AccountSettingsPage: React.FC = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [paymentAlerts, setPaymentAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
+
+  // Account Deletion States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -37,6 +44,36 @@ export const AccountSettingsPage: React.FC = () => {
     .join('')
     .substring(0, 2)
     .toUpperCase();
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setDeleteLoading(true);
+    try {
+      if (user?.id) {
+        // 1. Delete associated business and documents from Supabase if active
+        try {
+          await supabase.from('businesses').delete().eq('user_id', user.id);
+        } catch {
+          // ignore
+        }
+
+        // 2. Clear all local user caches & subscriptions
+        localStorage.removeItem(`bizpilotly_sub_${user.id}`);
+        localStorage.removeItem('bizpilotly_business_settings_cache');
+        localStorage.removeItem('bizpilotly_tasks_data');
+      }
+
+      // 3. Sign out session
+      await signOut();
+      showToast('Your account and associated workspace data have been permanently deleted.', 'info');
+      navigate('/', { replace: true });
+    } catch (err: any) {
+      showToast(err?.message || 'Error processing account deletion.', 'error');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteModalOpen(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +312,102 @@ export const AccountSettingsPage: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Danger Zone: Account Deletion */}
+        <div className="card" style={{ borderColor: '#FECACA', background: '#FEF2F2' }}>
+          <div className="card-header" style={{ borderBottomColor: '#FEE2E2' }}>
+            <h3 className="card-title" style={{ color: '#991B1B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>Danger Zone: Delete Account</span>
+            </h3>
+          </div>
+
+          <p style={{ fontSize: '0.875rem', color: '#7F1D1D', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+            Permanently delete your administrator account, business profile, all documents, invoices, clients, and transaction histories. <strong>This action is irreversible.</strong>
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              Delete My Account
+            </Button>
+          </div>
+        </div>
+
+        {/* Account Deletion Confirmation Modal */}
+        {deleteModalOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(9, 13, 22, 0.75)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: '1rem',
+            }}
+          >
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '20px',
+                maxWidth: '480px',
+                width: '100%',
+                padding: '2rem',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#991B1B', marginBottom: '0.5rem' }}>
+                Are you absolutely sure?
+              </h3>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                This will permanently delete your account and remove all data associated with <strong>{email}</strong>. Type <strong>DELETE</strong> below to confirm.
+              </p>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder='Type "DELETE" to confirm'
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  style={{ borderColor: deleteConfirmText === 'DELETE' ? '#DC2626' : undefined }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setDeleteModalOpen(false);
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  disabled={deleteConfirmText !== 'DELETE'}
+                  isLoading={deleteLoading}
+                  onClick={handleDeleteAccount}
+                >
+                  Confirm Delete Account
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

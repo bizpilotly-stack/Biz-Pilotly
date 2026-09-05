@@ -21,8 +21,34 @@ export function formatDocumentNumber(prefix: string, year: number, sequence: num
 }
 
 /**
- * Generates an initial draft document number for anonymous or offline preview sessions.
- * Production authenticated documents retrieve authoritative sequential numbers from the database.
+ * Calculates the next sequential document reference in ascending order based on existing documents.
+ */
+export function getNextSequentialDocumentNumber(
+  type: DocumentType,
+  existingDocs: { documentNumber?: string; type?: string }[] = [],
+  customPrefix?: string
+): string {
+  const year = new Date().getFullYear();
+  const prefix = customPrefix || DEFAULT_PREFIXES[type] || 'DOC';
+
+  let maxSeq = 0;
+  for (const doc of existingDocs) {
+    if (doc.documentNumber) {
+      const match = doc.documentNumber.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+  }
+
+  return formatDocumentNumber(prefix, year, maxSeq + 1);
+}
+
+/**
+ * Generates an initial draft document number.
  */
 export function generateDocumentNumber(type: DocumentType, customPrefix?: string): string {
   const year = new Date().getFullYear();

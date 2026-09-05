@@ -39,44 +39,7 @@ export interface TaskItem {
 
 const STORAGE_KEY = 'bizpilotly_tasks_data';
 
-const DEFAULT_TASKS: TaskItem[] = [
-  {
-    id: 'tsk-101',
-    title: 'Finalize Brand Guidelines & Export Color Palette',
-    clientName: 'Apex Digital Studio',
-    status: 'in_progress',
-    priority: 'high',
-    dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-    estimatedHours: 8,
-    billableRate: 95,
-    notes: 'Include vector SVG logos and typography specifications.',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'tsk-102',
-    title: 'Build Interactive Dashboard UI & Dark Mode Theme',
-    clientName: 'Vanguard Global Corp',
-    status: 'review',
-    priority: 'urgent',
-    dueDate: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-    estimatedHours: 16,
-    billableRate: 110,
-    notes: 'Deliver mobile responsive views and QA across iOS Safari.',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'tsk-103',
-    title: 'Deploy Supabase Database Schemas & Row Level Security',
-    clientName: 'Kona Coffee Roasters',
-    status: 'completed',
-    priority: 'medium',
-    dueDate: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
-    estimatedHours: 6,
-    billableRate: 85,
-    notes: 'Configured automated backup triggers and email log policies.',
-    createdAt: new Date().toISOString(),
-  },
-];
+const DEFAULT_TASKS: TaskItem[] = [];
 
 export const TasksPage: React.FC = () => {
   const navigate = useNavigate();
