@@ -432,96 +432,131 @@ export const BusinessSettingsPage: React.FC = () => {
 
           {/* Brand Color Theme Selection */}
           <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0B1F3A' }}>
-                  Brand Primary Accent Color
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0B1F3A', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>Brand Primary Accent Color</span>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: settings.primaryColor || '#0B1F3A',
+                      boxShadow: '0 0 0 2px rgba(0,0,0,0.1)',
+                    }}
+                  />
                 </div>
                 <div style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: '2px' }}>
-                  Choose your brand identity color. Applies to document headers, borders, invoice links, and client portal receipts.
+                  Use any custom color code or pick from the spectrum. Syncs to document headers, borders, PDFs, and client receipts.
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input
-                  type="color"
-                  value={settings.primaryColor || '#0B1F3A'}
-                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    border: '2px solid #CBD5E1',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    padding: '2px',
-                    background: '#ffffff',
-                  }}
-                  title="Choose custom color"
-                />
-                <input
-                  type="text"
-                  value={settings.primaryColor || '#0B1F3A'}
-                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                  style={{
-                    width: '90px',
-                    fontSize: '0.8125rem',
-                    fontFamily: 'var(--font-mono)',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
-                    textTransform: 'uppercase',
-                  }}
-                  placeholder="#0B1F3A"
-                />
+              {/* Interactive Color Picker & Hex Code Input */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: '#ffffff', padding: '6px 10px', borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <label style={{ position: 'relative', width: '38px', height: '38px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'block', border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} title="Click to open color spectrum picker">
+                  <input
+                    type="color"
+                    value={settings.primaryColor || '#0B1F3A'}
+                    onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                    style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      left: '-8px',
+                      width: '56px',
+                      height: '56px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: 'none',
+                    }}
+                  />
+                </label>
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Hex Color Code</span>
+                  <input
+                    type="text"
+                    value={settings.primaryColor || '#0B1F3A'}
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                      setSettings({ ...settings, primaryColor: val });
+                    }}
+                    style={{
+                      width: '95px',
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      padding: '2px 0',
+                      border: 'none',
+                      outline: 'none',
+                      color: settings.primaryColor || '#0B1F3A',
+                      textTransform: 'uppercase',
+                    }}
+                    placeholder="#0B1F3A"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Quick Preset Color Swatches */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap', paddingTop: '0.5rem' }}>
-              {[
-                { name: 'Navy', hex: '#0B1F3A' },
-                { name: 'Royal Blue', hex: '#2563EB' },
-                { name: 'Emerald', hex: '#059669' },
-                { name: 'Gold', hex: '#C9A227' },
-                { name: 'Imperial Purple', hex: '#7C3AED' },
-                { name: 'Crimson', hex: '#E11D48' },
-                { name: 'Teal', hex: '#0D9488' },
-                { name: 'Slate Black', hex: '#0F172A' },
-              ].map((swatch) => {
-                const isSelected = (settings.primaryColor || '#0B1F3A').toLowerCase() === swatch.hex.toLowerCase();
-                return (
-                  <button
-                    key={swatch.hex}
-                    type="button"
-                    onClick={() => setSettings({ ...settings, primaryColor: swatch.hex })}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.375rem',
-                      padding: '4px 10px',
-                      background: isSelected ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                      border: isSelected ? `2px solid ${swatch.hex}` : '1px solid #E2E8F0',
-                      borderRadius: '999px',
-                      cursor: 'pointer',
-                      fontSize: '0.75rem',
-                      fontWeight: isSelected ? 700 : 500,
-                      color: isSelected ? swatch.hex : '#475569',
-                      boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
-                    }}
-                  >
-                    <span
+            {/* Quick Palette Recommendations */}
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '0.75rem' }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
+                Curated Brand Palettes
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {[
+                  { name: 'Navy', hex: '#0B1F3A' },
+                  { name: 'Royal Blue', hex: '#2563EB' },
+                  { name: 'Sapphire', hex: '#1D4ED8' },
+                  { name: 'Emerald', hex: '#059669' },
+                  { name: 'Forest', hex: '#065F46' },
+                  { name: 'Gold', hex: '#C9A227' },
+                  { name: 'Amber', hex: '#D97706' },
+                  { name: 'Imperial Purple', hex: '#7C3AED' },
+                  { name: 'Crimson', hex: '#E11D48' },
+                  { name: 'Rose', hex: '#BE123C' },
+                  { name: 'Teal', hex: '#0D9488' },
+                  { name: 'Cyan', hex: '#0891B2' },
+                  { name: 'Slate Black', hex: '#0F172A' },
+                  { name: 'Charcoal', hex: '#334155' },
+                ].map((swatch) => {
+                  const isSelected = (settings.primaryColor || '#0B1F3A').toLowerCase() === swatch.hex.toLowerCase();
+                  return (
+                    <button
+                      key={swatch.hex}
+                      type="button"
+                      onClick={() => setSettings({ ...settings, primaryColor: swatch.hex })}
                       style={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        background: swatch.hex,
-                        display: 'inline-block',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        padding: '4px 10px',
+                        background: isSelected ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                        border: isSelected ? `2px solid ${swatch.hex}` : '1px solid #E2E8F0',
+                        borderRadius: '999px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? swatch.hex : '#475569',
+                        boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.15s ease',
                       }}
-                    />
-                    <span>{swatch.name}</span>
-                  </button>
-                );
-              })}
+                    >
+                      <span
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '50%',
+                          background: swatch.hex,
+                          display: 'inline-block',
+                        }}
+                      />
+                      <span>{swatch.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

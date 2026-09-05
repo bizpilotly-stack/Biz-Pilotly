@@ -739,6 +739,47 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   ))}
                 </select>
               </div>
+
+              <div className="form-group">
+                <label className="form-label">Brand Theme Color</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <input
+                    type="color"
+                    value={doc.primaryColor || '#0B1F3A'}
+                    onChange={(e) => setDoc({ ...doc, primaryColor: e.target.value })}
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      padding: '2px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      cursor: 'pointer',
+                      background: '#ffffff',
+                    }}
+                    title="Pick Brand Color"
+                  />
+                  <input
+                    type="text"
+                    value={doc.primaryColor || '#0B1F3A'}
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                      setDoc({ ...doc, primaryColor: val });
+                    }}
+                    style={{
+                      flex: 1,
+                      height: '38px',
+                      padding: '0 8px',
+                      fontSize: '0.8125rem',
+                      fontFamily: 'var(--font-mono)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      textTransform: 'uppercase',
+                    }}
+                    placeholder="#0B1F3A"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Proposal Specific Sections: Overview, Scope, Deliverables, Timeline */}
@@ -2064,209 +2105,217 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               Send an interactive payment link or dispatch via your client's favorite channel.
             </p>
 
-            {/* Duplicate Resend Safeguard Warning */}
-            {doc.status === 'sent' && !resendConfirmed && (
-              <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#92400E' }}>
-                    This Invoice Has Already Been Sent
+            {/* Resend Confirmation screen only if previously marked Sent/Paid and not yet confirmed */}
+            {(doc.status === 'sent' || doc.status === 'paid') && !resendConfirmed ? (
+              <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: '14px', padding: '1.25rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <AlertTriangle size={22} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#92400E' }}>
+                      Document Already Dispatched
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: '#78350F', marginTop: '3px', lineHeight: 1.4 }}>
+                      #{doc.documentNumber} is already marked as <strong>{(doc.status || 'sent').toUpperCase()}</strong> on your dashboard. Would you like to resend this document link or send an additional notification to <strong>{doc.client.name || 'this client'}</strong>?
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.8125rem', color: '#78350F', marginTop: '2px', lineHeight: 1.4 }}>
-                    Invoice #{doc.documentNumber} is already marked as Sent on your dashboard. Are you sure you want to resend this invoice link to <strong>{doc.client.name || 'this client'}</strong>?
+                </div>
+
+                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareModalOpen(false);
+                      setResendConfirmed(false);
+                    }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.75rem' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResendConfirmed(true)}
+                    className="btn btn-sm"
+                    style={{ background: '#D97706', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '0.8125rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Yes, Resend Document
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Dedicated Buyer Link Box */}
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '0.375rem', letterSpacing: '0.05em' }}>
+                    Dedicated Buyer Payment Link (Shows Document Alone)
                   </div>
-                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${window.location.origin}/invoice/${doc.id}`}
+                      style={{ flex: 1, padding: '6px 10px', fontSize: '0.8125rem', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#ffffff', color: '#0B1F3A', fontWeight: 600 }}
+                    />
                     <button
                       type="button"
-                      onClick={() => setResendConfirmed(true)}
-                      className="btn btn-sm"
-                      style={{ background: '#D97706', color: '#ffffff', border: 'none', padding: '5px 12px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
+                      onClick={handleCopyInvoiceLink}
+                      className="btn btn-primary btn-sm"
+                      style={{ gap: '0.25rem', whiteSpace: 'nowrap' }}
                     >
-                      Yes, Resend Invoice
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShareModalOpen(false)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-                    >
-                      Cancel
+                      <Copy size={13} />
+                      <span>Copy Link</span>
                     </button>
                   </div>
                 </div>
-              </div>
+
+                {/* Direct In-App Email Dispatch */}
+                <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <Mail size={13} color="#0B1F3A" />
+                    <span>Send Official {doc.type.toUpperCase()} to Client Email</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="email"
+                      className="form-input"
+                      placeholder="client@company.com"
+                      value={doc.client.email || ''}
+                      onChange={(e) => setDoc({ ...doc, client: { ...doc.client, email: e.target.value } })}
+                      style={{ fontSize: '0.8125rem', padding: '6px 10px', flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendClientEmail}
+                      disabled={emailSending}
+                      className="btn btn-secondary btn-sm"
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      <Send size={13} />
+                      <span>{emailSending ? 'Sending...' : 'Send Email'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Freelance Share Shortcuts: WhatsApp, Discord, Telegram, Copy Link */}
+                <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
+                  Instant Share Channels:
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleWhatsAppShare}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '10px',
+                      border: '1px solid #BBF7D0',
+                      background: '#F0FDF4',
+                      color: '#166534',
+                      fontWeight: 700,
+                      fontSize: '0.8125rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <MessageCircle size={16} color="#16A34A" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDiscordShare}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '10px',
+                      border: '1px solid #C7D2FE',
+                      background: '#EEF2FF',
+                      color: '#3730A3',
+                      fontWeight: 700,
+                      fontSize: '0.8125rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <HelpCircle size={16} color="#5865F2" />
+                    <span>Discord</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleTelegramShare}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '10px',
+                      border: '1px solid #BAE6FD',
+                      background: '#F0F9FF',
+                      color: '#0369A1',
+                      fontWeight: 700,
+                      fontSize: '0.8125rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Send size={16} color="#0284C7" />
+                    <span>Telegram</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyInvoiceLink}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '10px',
+                      border: '1px solid #E2E8F0',
+                      background: '#F8FAFC',
+                      color: '#334155',
+                      fontWeight: 700,
+                      fontSize: '0.8125rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Copy size={16} color="#475569" />
+                    <span>Copy Link</span>
+                  </button>
+                </div>
+
+                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareModalOpen(false);
+                      setResendConfirmed(false);
+                    }}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Close
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await markAsSentAndSave();
+                      showToast(`✓ ${doc.type.toUpperCase()} marked as Sent and saved to dashboard!`, 'success');
+                      setShareModalOpen(false);
+                      if (isApp) {
+                        setTimeout(() => navigate('/app/documents'), 1500);
+                      }
+                    }}
+                    className="btn btn-primary btn-sm"
+                  >
+                    <Check size={14} />
+                    <span>Mark as Sent</span>
+                  </button>
+                </div>
+              </>
             )}
-
-            {/* Dedicated Buyer Link Box */}
-            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '0.375rem', letterSpacing: '0.05em' }}>
-                Dedicated Buyer Payment Link (Shows Invoice Alone)
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  readOnly
-                  value={`${window.location.origin}/invoice/${doc.id}`}
-                  style={{ flex: 1, padding: '6px 10px', fontSize: '0.8125rem', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#ffffff', color: '#0B1F3A', fontWeight: 600 }}
-                />
-                <button
-                  type="button"
-                  onClick={handleCopyInvoiceLink}
-                  className="btn btn-primary btn-sm"
-                  style={{ gap: '0.25rem', whiteSpace: 'nowrap' }}
-                >
-                  <Copy size={13} />
-                  <span>Copy Link</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Direct In-App Email Dispatch */}
-            <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                <Mail size={13} color="#0B1F3A" />
-                <span>Send Official Invoice to Client Email</span>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="email"
-                  className="form-input"
-                  placeholder="client@company.com"
-                  value={doc.client.email || ''}
-                  onChange={(e) => setDoc({ ...doc, client: { ...doc.client, email: e.target.value } })}
-                  style={{ fontSize: '0.8125rem', padding: '6px 10px', flex: 1 }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSendClientEmail}
-                  disabled={emailSending}
-                  className="btn btn-secondary btn-sm"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  <Send size={13} />
-                  <span>{emailSending ? 'Sending...' : 'Send Email'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Freelance Share Shortcuts: WhatsApp, Discord, Telegram, Copy Link */}
-            <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
-              Instant Share Channels:
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <button
-                type="button"
-                onClick={handleWhatsAppShare}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #BBF7D0',
-                  background: '#F0FDF4',
-                  color: '#166534',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
-              >
-                <MessageCircle size={16} color="#16A34A" />
-                <span>WhatsApp</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDiscordShare}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #C7D2FE',
-                  background: '#EEF2FF',
-                  color: '#3730A3',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
-              >
-                <HelpCircle size={16} color="#5865F2" />
-                <span>Discord</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleTelegramShare}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #BAE6FD',
-                  background: '#F0F9FF',
-                  color: '#0369A1',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
-              >
-                <Send size={16} color="#0284C7" />
-                <span>Telegram</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyInvoiceLink}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
-                  background: '#F8FAFC',
-                  color: '#334155',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
-              >
-                <Copy size={16} color="#475569" />
-                <span>Copy Link</span>
-              </button>
-            </div>
-
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setShareModalOpen(false);
-                  setResendConfirmed(false);
-                }}
-                className="btn btn-ghost btn-sm"
-              >
-                Close
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  await markAsSentAndSave();
-                  showToast('✓ Invoice marked as Sent and saved to dashboard!', 'success');
-                  setShareModalOpen(false);
-                  if (isApp) {
-                    navigate('/app/documents');
-                  }
-                }}
-                className="btn btn-primary btn-sm"
-              >
-                <span>Done & View in Invoices</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
           </div>
         </div>
       )}
