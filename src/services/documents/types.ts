@@ -58,11 +58,15 @@ export interface SignerInfo {
 }
 
 export interface ContractTerms {
-  paymentTerms: string;
-  jurisdiction: string;
-  effectiveDate: string;
+  paymentTerms?: string;
+  jurisdiction?: string;
+  effectiveDate?: string;
   terminationClause?: string;
   confidentialityTerms?: string;
+  parties?: string;
+  obligations?: string;
+  governingLaw?: string;
+  terminationTerms?: string;
 }
 
 export interface PaymentDetails {

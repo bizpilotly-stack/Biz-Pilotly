@@ -164,7 +164,7 @@ class DocumentService {
     let existingId: string | null = null;
     if (doc.id && doc.id.includes('-') && doc.id.length >= 32) {
       const existing = await this.getDocumentById(doc.id);
-      if (existing) existingId = existing.id;
+      if (existing?.id) existingId = existing.id;
     }
 
     // Pack extended metadata (rejectionReason, sourceDocument, contractTerms, etc.) into client/business/payment snapshots

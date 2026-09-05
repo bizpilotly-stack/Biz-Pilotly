@@ -108,7 +108,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
   // 1. Accept Proposal / Quote
   const handleAcceptDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!doc) return;
+    if (!doc || !doc.id) return;
     if (!acceptName.trim()) {
       showToast('Please provide your full legal name.', 'error');
       return;
@@ -133,7 +133,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
   // 2. Reject Proposal / Quote / Contract
   const handleRejectDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!doc) return;
+    if (!doc || !doc.id) return;
     if (!rejectReason.trim()) {
       showToast('Please provide a reason or note.', 'error');
       return;
@@ -164,7 +164,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
 
   // 3. Sign Contract
   const handleContractSigned = async (signatureData: { image: string; signerName: string; signedAt: string }) => {
-    if (!doc) return;
+    if (!doc || !doc.id) return;
     try {
       const updated = await documentService.publicSignContract(
         doc.id,
@@ -182,7 +182,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
 
   // 4. Generate Invoice from Accepted Proposal / Quote / Estimate
   const handleGenerateInvoice = async () => {
-    if (!doc) return;
+    if (!doc || !doc.id) return;
     setIsConverting(true);
     try {
       let newInv: BusinessDocument;

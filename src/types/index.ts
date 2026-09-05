@@ -52,8 +52,12 @@ export interface SignerInfo {
 }
 
 export interface ContractTerms {
-  parties?: string;
+  paymentTerms?: string;
+  jurisdiction?: string;
   effectiveDate?: string;
+  terminationClause?: string;
+  confidentialityTerms?: string;
+  parties?: string;
   obligations?: string;
   governingLaw?: string;
   terminationTerms?: string;

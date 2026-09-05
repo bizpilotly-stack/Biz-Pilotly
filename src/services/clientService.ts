@@ -157,6 +157,7 @@ class ClientService {
 
   async createClient(clientData: Omit<Client, 'id' | 'createdAt' | 'totalBilled' | 'amountPaid' | 'balance'>): Promise<Client> {
     const business = await businessService.getOrCreateDefaultBusiness();
+    if (!business) throw new Error('No active business found');
 
     const { data, error } = await supabase
       .from('customers')

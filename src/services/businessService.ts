@@ -211,7 +211,7 @@ class BusinessService {
 
         const { data, error } = await supabase
           .from('businesses')
-          .update(updatePayload)
+          .update(updatePayload as any)
           .eq('id', business.id)
           .select('*')
           .maybeSingle();
