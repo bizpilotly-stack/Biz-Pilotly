@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import {
   PlanTier,
   PricingCurrency,
+  BillingInterval,
   getStoredCurrency,
   setStoredCurrency,
 } from '../config/pricing';
