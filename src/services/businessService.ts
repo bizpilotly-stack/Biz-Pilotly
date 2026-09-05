@@ -23,6 +23,59 @@ function setLocalCache(settings: BusinessSettings): void {
   }
 }
 
+function syncAllDraftsWithSettings(settings: BusinessSettings): void {
+  const docTypes = ['invoice', 'quote', 'estimate', 'proposal', 'contract', 'receipt'];
+  const today = new Date().toISOString().split('T')[0];
+
+  docTypes.forEach((type) => {
+    const key = `bizpilotly_draft_${type}_v1`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft && typeof draft === 'object') {
+          draft.date = today;
+          draft.business = {
+            ...draft.business,
+            name: settings.name || draft.business?.name || 'My Business Studio',
+            tagline: settings.tagline !== undefined ? settings.tagline : draft.business?.tagline,
+            logo: settings.logo !== undefined ? settings.logo : draft.business?.logo,
+            email: settings.email !== undefined ? settings.email : draft.business?.email,
+            phone: settings.phone !== undefined ? settings.phone : draft.business?.phone,
+            address: settings.address !== undefined ? settings.address : draft.business?.address,
+            website: settings.website !== undefined ? settings.website : draft.business?.website,
+            taxNumber: settings.taxNumber !== undefined ? settings.taxNumber : draft.business?.taxNumber,
+          };
+          draft.primaryColor = settings.primaryColor || draft.primaryColor || '#0B1F3A';
+          draft.currency = settings.currency || draft.currency || 'NGN';
+          draft.currencySymbol = settings.currencySymbol || draft.currencySymbol || '₦';
+          if (settings.signature) {
+            draft.signature = settings.signature;
+          }
+          if (settings.bankDetails?.bankName) {
+            draft.paymentDetails = {
+              ...(draft.paymentDetails || {}),
+              bankName: settings.bankDetails.bankName,
+              accountName: settings.bankDetails.accountName || settings.name,
+              accountNumber: settings.bankDetails.accountNumber,
+              routingOrIban: settings.bankDetails.routingCode,
+            };
+          }
+          if (settings.defaultNotes) {
+            draft.notes = settings.defaultNotes;
+          }
+          if (settings.defaultPaymentTerms) {
+            draft.terms = settings.defaultPaymentTerms;
+          }
+          localStorage.setItem(key, JSON.stringify(draft));
+        }
+      }
+    } catch {
+      // ignore
+    }
+  });
+}
+
 function rowToSettings(row: BusinessRow): BusinessSettings {
   const cached = getLocalCache();
   return {
@@ -172,59 +225,6 @@ class BusinessService {
       signature: cached.signature,
     };
   }
-
-function syncAllDraftsWithSettings(settings: BusinessSettings): void {
-  const docTypes = ['invoice', 'quote', 'estimate', 'proposal', 'contract', 'receipt'];
-  const today = new Date().toISOString().split('T')[0];
-
-  docTypes.forEach((type) => {
-    const key = `bizpilotly_draft_${type}_v1`;
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft && typeof draft === 'object') {
-          draft.date = today;
-          draft.business = {
-            ...draft.business,
-            name: settings.name || draft.business?.name || 'My Business Studio',
-            tagline: settings.tagline !== undefined ? settings.tagline : draft.business?.tagline,
-            logo: settings.logo !== undefined ? settings.logo : draft.business?.logo,
-            email: settings.email !== undefined ? settings.email : draft.business?.email,
-            phone: settings.phone !== undefined ? settings.phone : draft.business?.phone,
-            address: settings.address !== undefined ? settings.address : draft.business?.address,
-            website: settings.website !== undefined ? settings.website : draft.business?.website,
-            taxNumber: settings.taxNumber !== undefined ? settings.taxNumber : draft.business?.taxNumber,
-          };
-          draft.primaryColor = settings.primaryColor || draft.primaryColor || '#0B1F3A';
-          draft.currency = settings.currency || draft.currency || 'NGN';
-          draft.currencySymbol = settings.currencySymbol || draft.currencySymbol || '₦';
-          if (settings.signature) {
-            draft.signature = settings.signature;
-          }
-          if (settings.bankDetails?.bankName) {
-            draft.paymentDetails = {
-              ...(draft.paymentDetails || {}),
-              bankName: settings.bankDetails.bankName,
-              accountName: settings.bankDetails.accountName || settings.name,
-              accountNumber: settings.bankDetails.accountNumber,
-              routingOrIban: settings.bankDetails.routingCode,
-            };
-          }
-          if (settings.defaultNotes) {
-            draft.notes = settings.defaultNotes;
-          }
-          if (settings.defaultPaymentTerms) {
-            draft.terms = settings.defaultPaymentTerms;
-          }
-          localStorage.setItem(key, JSON.stringify(draft));
-        }
-      }
-    } catch {
-      // ignore
-    }
-  });
-}
 
   /**
    * Update current business settings in Supabase with resilient local cache fallback.
