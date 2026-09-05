@@ -13,14 +13,9 @@ import {
   Users,
   X,
   Sparkles,
-  Layers,
-  FileSpreadsheet,
   PenTool,
   RefreshCw,
   AlertCircle,
-  ExternalLink,
-  CheckSquare,
-  AlertTriangle,
 } from 'lucide-react';
 import {
   DashboardStats,
@@ -883,7 +878,7 @@ export const OverviewPage: React.FC = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                 {clientsList.slice(0, 4).map((c) => {
-                  const hasBalance = (c.outstandingBalance || 0) > 0;
+                  const hasBalance = (c.balance ?? c.outstandingBalance ?? 0) > 0;
                   return (
                     <div
                       key={c.id}
@@ -902,7 +897,7 @@ export const OverviewPage: React.FC = () => {
                           {c.name}
                         </div>
                         {c.company && (
-                          <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{c.company}</div>
+                           <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{c.company}</div>
                         )}
                       </div>
 
@@ -915,11 +910,11 @@ export const OverviewPage: React.FC = () => {
                           }}
                         >
                           {hasBalance
-                            ? `${formatCurrency(c.outstandingBalance || 0)} due`
+                            ? `${formatCurrency(c.balance ?? c.outstandingBalance ?? 0)} due`
                             : 'Settled ✓'}
                         </div>
                         <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>
-                          Invoiced: {formatCurrency(c.totalInvoiced || 0)}
+                          Invoiced: {formatCurrency(c.totalBilled ?? c.totalInvoiced ?? 0)}
                         </div>
                       </div>
                     </div>

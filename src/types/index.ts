@@ -46,8 +46,10 @@ export interface ClientEntity {
 export interface SignerInfo {
   name: string;
   email?: string;
+  title?: string;
   ipAddress?: string;
-  timestamp: string;
+  timestamp?: string;
+  signedAt?: string;
   signatureDataUrl?: string;
 }
 
@@ -143,6 +145,8 @@ export interface Client {
   totalBilled: number;
   amountPaid: number;
   balance: number;
+  outstandingBalance?: number;
+  totalInvoiced?: number;
   status: 'active' | 'inactive' | 'lead';
   notes?: string;
   createdAt: string;

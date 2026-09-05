@@ -53,7 +53,8 @@ export interface SignerInfo {
   email?: string;
   title?: string;
   ipAddress?: string;
-  signedAt: string;
+  timestamp?: string;
+  signedAt?: string;
   signatureDataUrl?: string;
 }
 

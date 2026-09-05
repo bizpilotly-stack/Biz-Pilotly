@@ -15,7 +15,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
-  FileText,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/common/Button';

@@ -72,8 +72,10 @@ export const PublicInvoiceViewPage: React.FC = () => {
 
         // Fetch related documents if available
         try {
-          const rels = await documentService.getRelatedDocuments(found.id);
-          setRelatedDocs(rels);
+          if (found.id) {
+            const rels = await documentService.getRelatedDocuments(found.id);
+            setRelatedDocs(rels);
+          }
         } catch {
           // ignore
         }

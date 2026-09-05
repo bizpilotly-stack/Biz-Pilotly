@@ -51,9 +51,9 @@ export const CalculatorsHubPage: React.FC = () => {
     itemListElement: CALCULATORS_DATA.map((c, idx) => ({
       '@type': 'ListItem',
       position: idx + 1,
-      name: c.name,
+      name: c.title,
       description: c.shortDescription,
-      url: `https://bizpilotly.com${c.route}`,
+      url: `https://bizpilotly.com/calculators/${c.slug}`,
     })),
   };
 
