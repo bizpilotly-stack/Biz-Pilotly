@@ -9,11 +9,21 @@ export function getDraftStorageKey(type: DocumentType): string {
   return `${DRAFT_PREFIX}${type}_${SCHEMA_VERSION}`;
 }
 
+function getCachedSettings(): any {
+  try {
+    const raw = localStorage.getItem('bizpilotly_business_settings_cache');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function getDefaultDocument(type: DocumentType): BusinessDocument {
   const today = new Date().toISOString().split('T')[0];
   const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
   const docNumber = generateDocumentNumber(type);
   const title = getDefaultDocumentTitle(type);
+  const cached = getCachedSettings();
 
   const defaultItems = [
     {
@@ -34,6 +44,31 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
 
   const totals = calculateDocumentTotals(defaultItems, 0, 0);
 
+  const businessEntity = {
+    name: cached?.name || 'Apex Studio Design Co.',
+    tagline: cached?.tagline || 'Digital Product Strategy & Interface Engineering',
+    logo: cached?.logo || undefined,
+    email: cached?.email || 'hello@apexstudio.io',
+    phone: cached?.phone || '+1 (555) 349-2810',
+    address: cached?.address || '742 Evergreen Terrace, Suite 400, Austin, TX 78701',
+    website: cached?.website || undefined,
+    taxNumber: cached?.taxNumber || 'US-TX-9842104',
+  };
+
+  const paymentDetails = cached?.bankDetails?.bankName
+    ? {
+        bankName: cached.bankDetails.bankName,
+        accountName: cached.bankDetails.accountName || cached.name || '',
+        accountNumber: cached.bankDetails.accountNumber || '',
+        routingOrIban: cached.bankDetails.routingCode || '',
+      }
+    : {
+        bankName: 'Silicon Valley Commercial Bank',
+        accountName: cached?.name || 'Apex Studio Design Co.',
+        accountNumber: '•••• 8921',
+        routingOrIban: '021000021 / US34 SVBK 0000 8921',
+      };
+
   const base: any = {
     id: `doc-${Date.now().toString(36)}`,
     type,
@@ -41,14 +76,7 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
     title,
     date: today,
     status: type === 'receipt' ? 'paid' : 'draft',
-    business: {
-      name: 'Apex Studio Design Co.',
-      tagline: 'Digital Product Strategy & Interface Engineering',
-      email: 'hello@apexstudio.io',
-      phone: '+1 (555) 349-2810',
-      address: '742 Evergreen Terrace, Suite 400, Austin, TX 78701',
-      taxNumber: 'US-TX-9842104',
-    },
+    business: businessEntity,
     client: {
       name: 'Sarah Jenkins',
       company: 'Horizon Health Dynamics',
@@ -58,24 +86,21 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
     },
     items: defaultItems,
     ...totals,
-    taxRate: 0,
+    taxRate: cached?.defaultTaxRate ?? 0,
     discountRate: 0,
-    currency: 'USD',
-    currencySymbol: '$',
-    notes: 'Thank you for your business. Please reach out if you have any questions regarding these deliverable line items.',
-    terms: 'Payment is due within 30 days of invoice date. Late remittances subject to a 1.5% monthly finance charge.',
+    currency: cached?.currency || 'USD',
+    currencySymbol: cached?.currencySymbol || '$',
+    primaryColor: cached?.primaryColor || '#0B1F3A',
+    notes: cached?.defaultNotes || 'Thank you for your business. Please reach out if you have any questions regarding these deliverable line items.',
+    terms: cached?.defaultPaymentTerms || 'Payment is due within 30 days of invoice date. Late remittances subject to a 1.5% monthly finance charge.',
+    signature: cached?.signature,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
   if (type === 'invoice') {
     base.dueDate = nextMonth;
-    base.paymentDetails = {
-      bankName: 'Silicon Valley Commercial Bank',
-      accountName: 'Apex Studio Design Co.',
-      accountNumber: '•••• 8921',
-      routingOrIban: '021000021 / US34 SVBK 0000 8921',
-    };
+    base.paymentDetails = paymentDetails;
   } else if (type === 'quote') {
     base.validUntil = nextMonth;
     base.terms = 'This quote is valid for 30 calendar days from issue date. Pricing becomes fixed upon client acceptance.';
@@ -91,7 +116,7 @@ export function getDefaultDocument(type: DocumentType): BusinessDocument {
     base.timeline = 'Weeks 1-2: Discovery & Strategy\nWeeks 3-5: Interface Design & Reviews\nWeeks 6-7: Refinements & Asset Delivery';
   } else if (type === 'contract') {
     base.contractTerms = {
-      parties: 'This Agreement is entered into between Apex Studio Design Co. ("Provider") and Horizon Health Dynamics ("Client").',
+      parties: `This Agreement is entered into between ${businessEntity.name} ("Provider") and Horizon Health Dynamics ("Client").`,
       effectiveDate: today,
       obligations: 'Provider agrees to deliver specified design services with reasonable professional care. Client agrees to provide timely feedback and settle agreed invoices according to milestone terms.',
       governingLaw: 'State of Texas / United States',
@@ -115,6 +140,42 @@ export function loadDocumentDraft(type: DocumentType): BusinessDocument {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.type === type && Array.isArray(parsed.items)) {
+        // Automatically update issue date to today if draft
+        const today = new Date().toISOString().split('T')[0];
+        parsed.date = today;
+
+        // Overlay cached business settings if user has saved them
+        const cached = getCachedSettings();
+        if (cached) {
+          parsed.business = {
+            ...parsed.business,
+            name: cached.name || parsed.business?.name || 'My Business Studio',
+            tagline: cached.tagline !== undefined ? cached.tagline : parsed.business?.tagline,
+            logo: cached.logo !== undefined ? cached.logo : parsed.business?.logo,
+            email: cached.email !== undefined ? cached.email : parsed.business?.email,
+            phone: cached.phone !== undefined ? cached.phone : parsed.business?.phone,
+            address: cached.address !== undefined ? cached.address : parsed.business?.address,
+            website: cached.website !== undefined ? cached.website : parsed.business?.website,
+            taxNumber: cached.taxNumber !== undefined ? cached.taxNumber : parsed.business?.taxNumber,
+          };
+          if (cached.primaryColor) parsed.primaryColor = cached.primaryColor;
+          if (cached.currency) {
+            parsed.currency = cached.currency;
+            parsed.currencySymbol = cached.currencySymbol || '$';
+          }
+          if (cached.bankDetails?.bankName) {
+            parsed.paymentDetails = {
+              ...(parsed.paymentDetails || {}),
+              bankName: cached.bankDetails.bankName,
+              accountName: cached.bankDetails.accountName || cached.name,
+              accountNumber: cached.bankDetails.accountNumber,
+              routingOrIban: cached.bankDetails.routingCode,
+            };
+          }
+          if (cached.signature && !parsed.signature) {
+            parsed.signature = cached.signature;
+          }
+        }
         return parsed;
       }
     }

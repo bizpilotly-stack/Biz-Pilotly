@@ -200,29 +200,61 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
     }
   }, [documentType, user, isApp]);
 
-  // Load clients & business settings asynchronously (auto-apply signature & logo)
+  // Load clients & business settings asynchronously (auto-apply configuration, branding, logo, signature & bank details)
   useEffect(() => {
     clientService.getClients().then(setClients).catch(console.error);
     businessService.getSettings().then((settings: BusinessSettings | null) => {
       if (settings) {
-        setDoc((prev) => ({
-          ...prev,
-          business: {
-            ...prev.business,
-            name: prev.business.name || settings.name,
-            logo: settings.logo || prev.business.logo,
-            email: prev.business.email || settings.email,
-            phone: prev.business.phone || settings.phone,
-            address: prev.business.address || settings.address,
-          },
-          signature: prev.signature || settings.signature,
-          paymentDetails: documentType === 'invoice' ? {
-            ...prev.paymentDetails,
-            bankName: prev.paymentDetails?.bankName || settings.bankDetails?.bankName,
-            accountName: prev.paymentDetails?.accountName || settings.bankDetails?.accountName,
-            accountNumber: prev.paymentDetails?.accountNumber || settings.bankDetails?.accountNumber,
-          } : undefined,
-        }));
+        const today = new Date().toISOString().split('T')[0];
+        setDoc((prev) => {
+          const isConfigured = Boolean(
+            settings.name &&
+            settings.name.trim() !== '' &&
+            settings.name !== 'My Business Studio' &&
+            !settings.name.endsWith("'s Business")
+          );
+
+          const businessName = isConfigured ? settings.name : (prev.business.name || settings.name);
+          const businessTagline = settings.tagline || prev.business.tagline;
+          const businessLogo = settings.logo !== undefined && settings.logo !== '' ? settings.logo : prev.business.logo;
+          const businessEmail = isConfigured ? (settings.email || prev.business.email) : (prev.business.email || settings.email);
+          const businessPhone = isConfigured ? (settings.phone || prev.business.phone) : (prev.business.phone || settings.phone);
+          const businessAddress = isConfigured ? (settings.address || prev.business.address) : (prev.business.address || settings.address);
+          const businessWebsite = settings.website || prev.business.website;
+          const businessTaxNumber = settings.taxNumber || prev.business.taxNumber;
+
+          return {
+            ...prev,
+            date: (!prev.id || prev.id.startsWith('doc-')) ? today : prev.date,
+            business: {
+              ...prev.business,
+              name: businessName,
+              tagline: businessTagline,
+              logo: businessLogo,
+              email: businessEmail,
+              phone: businessPhone,
+              address: businessAddress,
+              website: businessWebsite,
+              taxNumber: businessTaxNumber,
+            },
+            primaryColor: settings.primaryColor || prev.primaryColor || '#0B1F3A',
+            currency: settings.currency || prev.currency,
+            currencySymbol: settings.currencySymbol || prev.currencySymbol,
+            taxRate: (prev.taxRate === 0 && settings.defaultTaxRate) ? settings.defaultTaxRate : prev.taxRate,
+            signature: prev.signature || settings.signature,
+            notes: (prev.notes?.includes('Apex Studio') || prev.notes?.includes('Thank you for your business.')) && settings.defaultNotes ? settings.defaultNotes : (prev.notes || settings.defaultNotes),
+            terms: (prev.terms?.includes('30 days') && settings.defaultPaymentTerms) ? settings.defaultPaymentTerms : (prev.terms || settings.defaultPaymentTerms),
+            paymentDetails: settings.bankDetails?.bankName
+              ? {
+                  ...prev.paymentDetails,
+                  bankName: settings.bankDetails.bankName,
+                  accountName: settings.bankDetails.accountName || settings.name,
+                  accountNumber: settings.bankDetails.accountNumber,
+                  routingOrIban: settings.bankDetails.routingCode,
+                }
+              : prev.paymentDetails,
+          };
+        });
       }
     }).catch(console.error);
   }, [documentType]);
@@ -1244,9 +1276,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
               }}
             >
               {/* Document Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0B1F3A', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2px solid ${doc.primaryColor || '#0B1F3A'}`, paddingBottom: '1.5rem', marginBottom: '2rem' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0B1F3A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: doc.primaryColor || '#0B1F3A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                     {meta.title}
                   </h2>
                   <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
@@ -1264,8 +1296,15 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   )}
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0B1F3A' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  {doc.business.logo && (
+                    <img
+                      src={doc.business.logo}
+                      alt={doc.business.name || 'Business Logo'}
+                      style={{ maxHeight: '48px', maxWidth: '160px', objectFit: 'contain', marginBottom: '8px' }}
+                    />
+                  )}
+                  <div style={{ fontWeight: 800, fontSize: '1.25rem', color: doc.primaryColor || '#0B1F3A' }}>
                     {doc.business.name || 'Your Company'}
                   </div>
                   {doc.business.tagline && (
@@ -1527,7 +1566,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                       <span>+{formatCurrencyAmount(doc.taxAmount, doc.currency, doc.currencySymbol)}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, color: '#0B1F3A', borderTop: '2px solid #0B1F3A', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, color: doc.primaryColor || '#0B1F3A', borderTop: `2px solid ${doc.primaryColor || '#0B1F3A'}`, paddingTop: '0.5rem', marginTop: '0.25rem' }}>
                     <span>Total Amount</span>
                     <span>{formatCurrencyAmount(doc.total, doc.currency, doc.currencySymbol)}</span>
                   </div>

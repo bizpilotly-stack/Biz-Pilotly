@@ -19,6 +19,24 @@ export function generateDocumentPdfFilename(doc: BusinessDocument): string {
   return `${prefix}-${clientName}.pdf`;
 }
 
+function hexToRgb(hex?: string): [number, number, number] {
+  if (!hex) return [11, 31, 58];
+  const cleaned = hex.replace('#', '');
+  if (cleaned.length === 3) {
+    const r = parseInt(cleaned[0] + cleaned[0], 16);
+    const g = parseInt(cleaned[1] + cleaned[1], 16);
+    const b = parseInt(cleaned[2] + cleaned[2], 16);
+    return [r, g, b];
+  }
+  if (cleaned.length === 6) {
+    const r = parseInt(cleaned.substring(0, 2), 16);
+    const g = parseInt(cleaned.substring(2, 4), 16);
+    const b = parseInt(cleaned.substring(4, 6), 16);
+    return [r, g, b];
+  }
+  return [11, 31, 58];
+}
+
 /**
  * Pure document PDF rendering engine consuming the shared BusinessDocument model.
  */
@@ -26,8 +44,10 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
   const docTypeLabels: Record<string, string> = {
     invoice: 'TAX INVOICE',
     quote: 'PRICE QUOTATION',
+    estimate: 'PRICE ESTIMATE',
     receipt: 'PAYMENT RECEIPT',
     proposal: 'BUSINESS PROPOSAL',
+    contract: 'LEGAL AGREEMENT',
   };
 
   const pdf = new jsPDF({
@@ -42,7 +62,7 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
   const contentWidth = pageWidth - margin * 2;
 
   // Colors
-  const brandNavy = [11, 31, 58] as const; // #0B1F3A
+  const brandNavy = hexToRgb(doc.primaryColor); // Custom Brand Color or fallback #0B1F3A
   const textDark = [30, 41, 59] as const; // #1E293B
   const textMuted = [100, 116, 139] as const; // #64748B
   const borderLight = [226, 232, 240] as const; // #E2E8F0
@@ -216,7 +236,7 @@ export function renderDocumentPdf(doc: BusinessDocument): jsPDF {
     body: tableData.length > 0 ? tableData : [['1', 'General Service', '1', '$0.00', '$0.00']],
     theme: 'grid',
     headStyles: {
-      fillColor: [11, 31, 58],
+      fillColor: brandNavy,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 8.5,

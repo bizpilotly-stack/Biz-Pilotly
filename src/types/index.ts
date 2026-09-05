@@ -87,6 +87,7 @@ export interface BusinessDocument {
   total: number;
   currency: string;
   currencySymbol: string;
+  primaryColor?: string;
   notes?: string;
   terms?: string;
   sourceDocumentId?: string;
