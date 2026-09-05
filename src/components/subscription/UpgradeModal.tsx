@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { Sparkles, Check, ArrowRight, X, ShieldCheck, Zap, Crown } from 'lucide-react';
-import { PlanTier, PricingCurrency, PRICING_PLANS, getPlanConfig, getStoredCurrency } from '../../config/pricing';
+import { Sparkles, Check, ArrowRight, X, ShieldCheck, Zap, Crown, Percent } from 'lucide-react';
+import {
+  PlanTier,
+  PricingCurrency,
+  BillingInterval,
+  PRICING_PLANS,
+  getPlanConfig,
+  getStoredCurrency,
+} from '../../config/pricing';
 import { CurrencySelector } from '../common/CurrencySelector';
 import { subscriptionService } from '../../services/subscriptionService';
 import { useToast } from '../common/Toast';
@@ -21,11 +28,13 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const { showToast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<PlanTier>(initialPlan === 'free' ? 'pro' : initialPlan);
   const [currency, setCurrency] = useState<PricingCurrency>(getStoredCurrency());
+  const [interval, setInterval] = useState<BillingInterval>('monthly');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const currentPlanConfig = getPlanConfig(selectedPlan);
+  const currentPrice = currentPlanConfig.prices[currency];
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -35,8 +44,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
     setLoading(true);
     try {
-      await subscriptionService.activateSubscription(user.id, selectedPlan as 'pro' | 'business', currency);
-      showToast(`🎉 Upgraded to ${currentPlanConfig.name}! All features unlocked.`, 'success');
+      await subscriptionService.activateSubscription(user.id, selectedPlan as 'pro' | 'business', currency, interval);
+      showToast(`🎉 Upgraded to ${currentPlanConfig.name} (${interval === 'yearly' ? 'Annual - 20% OFF' : 'Monthly'})! All features unlocked.`, 'success');
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -65,7 +74,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         style={{
           background: '#ffffff',
           borderRadius: 'var(--radius-2xl, 20px)',
-          maxWidth: '780px',
+          maxWidth: '820px',
           width: '100%',
           maxHeight: '90vh',
           overflowY: 'auto',
@@ -93,7 +102,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         </button>
 
         {/* Modal Header */}
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div
             style={{
               display: 'inline-flex',
@@ -105,7 +114,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               borderRadius: '999px',
               fontSize: '0.75rem',
               fontWeight: 700,
-              marginBottom: '0.75rem',
+              marginBottom: '0.5rem',
             }}
           >
             <Sparkles size={14} />
@@ -116,20 +125,88 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             Choose Your Plan
           </h2>
           <p style={{ fontSize: '0.875rem', color: '#64748B', marginTop: '0.375rem' }}>
-            Unlock unlimited invoicing, white-label branding, automated payment reminders, and team seats.
+            Unlock unlimited invoicing, white-label branding, legal execution certificates, and team collaboration.
           </p>
 
+          {/* Billing Interval Toggle (Monthly vs Yearly - 20% OFF) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                background: '#F1F5F9',
+                padding: '3px',
+                borderRadius: '999px',
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setInterval('monthly')}
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  fontSize: '0.8125rem',
+                  fontWeight: interval === 'monthly' ? 700 : 500,
+                  background: interval === 'monthly' ? '#0B1F3A' : 'transparent',
+                  color: interval === 'monthly' ? '#ffffff' : '#64748B',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setInterval('yearly')}
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  fontSize: '0.8125rem',
+                  fontWeight: interval === 'yearly' ? 700 : 500,
+                  background: interval === 'yearly' ? '#0B1F3A' : 'transparent',
+                  color: interval === 'yearly' ? '#ffffff' : '#64748B',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>Yearly</span>
+                <span
+                  style={{
+                    background: '#10B981',
+                    color: '#ffffff',
+                    fontSize: '0.625rem',
+                    fontWeight: 800,
+                    padding: '1px 5px',
+                    borderRadius: '999px',
+                  }}
+                >
+                  SAVE 20%
+                </span>
+              </button>
+            </div>
+          </div>
+
           {/* Currency Toggle */}
-          <div style={{ marginTop: '1rem' }}>
+          <div style={{ marginTop: '0.75rem' }}>
             <CurrencySelector value={currency} onChange={setCurrency} />
           </div>
         </div>
 
         {/* Plan Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
           {PRICING_PLANS.filter((p) => p.id !== 'free').map((p) => {
             const isSelected = selectedPlan === p.id;
             const price = p.prices[currency];
+            const isYearly = interval === 'yearly';
+
+            const displayAmount = isYearly
+              ? price.monthlyEquivalentFormatted
+              : price.formatted;
 
             return (
               <div
@@ -174,17 +251,24 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                     {p.id === 'pro' ? <Zap size={16} color="#F59E0B" /> : <Crown size={16} color="#6366F1" />}
                   </div>
 
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0B1F3A' }}>{price.formatted}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#64748B' }}> / month</span>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0B1F3A' }}>{displayAmount}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748B' }}> {isYearly ? '/ mo (billed yearly)' : '/ month'}</span>
                   </div>
+
+                  {isYearly && (
+                    <div style={{ fontSize: '0.6875rem', color: '#047857', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Percent size={11} />
+                      <span>{price.yearlyFormatted} (20% OFF)</span>
+                    </div>
+                  )}
 
                   <p style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '1rem', lineHeight: 1.4, minHeight: '34px' }}>
                     {p.description}
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.6875rem' }}>
-                    {p.features.slice(0, 5).map((f, i) => (
+                    {p.features.slice(0, 6).map((f, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#334155' }}>
                         <Check size={12} color="#10B981" strokeWidth={3} />
                         <span>{f.text}</span>
@@ -234,7 +318,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <span>Instant Activation • Cancel Anytime</span>
             </div>
             <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '2px 0 0 0' }}>
-              Selected: <strong>{currentPlanConfig.name} ({currentPlanConfig.prices[currency].formatted}/month)</strong>
+              Selected: <strong>{currentPlanConfig.name} ({interval === 'yearly' ? `${currentPrice.yearlyFormatted} (20% OFF)` : `${currentPrice.formatted}/month`})</strong>
             </p>
           </div>
 
@@ -252,3 +336,4 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     </div>
   );
 };
+

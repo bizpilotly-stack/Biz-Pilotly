@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ArrowRight, Sparkles, Shield, Zap, Crown } from 'lucide-react';
+import { Check, ArrowRight, Sparkles, Shield, Zap, Crown, Percent } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
-import { PRICING_PLANS, PricingCurrency, getStoredCurrency, setStoredCurrency } from '../../config/pricing';
+import {
+  PRICING_PLANS,
+  PricingCurrency,
+  BillingInterval,
+  getStoredCurrency,
+  setStoredCurrency,
+} from '../../config/pricing';
 import { CurrencySelector } from '../../components/common/CurrencySelector';
 import { SEO } from '../../components/common/SEO';
 
 export const PricingPage: React.FC = () => {
   const [currency, setCurrency] = useState<PricingCurrency>(getStoredCurrency());
+  const [interval, setInterval] = useState<BillingInterval>('monthly');
 
   const handleCurrencyChange = (newCurrency: PricingCurrency) => {
     setCurrency(newCurrency);
@@ -18,7 +25,7 @@ export const PricingPage: React.FC = () => {
     <div className="section-py-sm">
       <SEO
         title={`Pricing & Plans | ${BRAND_NAME}`}
-        description="Simple, transparent pricing for independent professionals, freelancers, and agencies. 15-day free trial on Professional and Business Suite. No credit card required."
+        description="Simple, transparent pricing for independent professionals, freelancers, and agencies. 15-day free trial on Professional and Business Suite. Save 20% on yearly plans."
         canonical="https://bizpilotly.com/pricing"
       />
 
@@ -36,8 +43,71 @@ export const PricingPage: React.FC = () => {
             Use BizPilotly for free, or unlock advanced business tools with a 15-day free trial. No credit card required.
           </p>
 
+          {/* Billing Interval Toggle (Monthly vs Yearly - 20% OFF) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginTop: '1.75rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                background: 'var(--bg-surface-muted, #F1F5F9)',
+                padding: '4px',
+                borderRadius: '999px',
+                border: '1px solid var(--border-color, #E2E8F0)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setInterval('monthly')}
+                style={{
+                  padding: '6px 18px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: interval === 'monthly' ? 700 : 500,
+                  background: interval === 'monthly' ? '#0B1F3A' : 'transparent',
+                  color: interval === 'monthly' ? '#ffffff' : '#64748B',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Monthly Billing
+              </button>
+              <button
+                type="button"
+                onClick={() => setInterval('yearly')}
+                style={{
+                  padding: '6px 18px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: interval === 'yearly' ? 700 : 500,
+                  background: interval === 'yearly' ? '#0B1F3A' : 'transparent',
+                  color: interval === 'yearly' ? '#ffffff' : '#64748B',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>Annual Billing</span>
+                <span
+                  style={{
+                    background: '#10B981',
+                    color: '#ffffff',
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: '999px',
+                  }}
+                >
+                  SAVE 20%
+                </span>
+              </button>
+            </div>
+          </div>
+
           {/* Currency Switcher Toggle */}
-          <div style={{ marginTop: '1.5rem' }}>
+          <div style={{ marginTop: '1.25rem' }}>
             <CurrencySelector value={currency} onChange={handleCurrencyChange} />
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
               More currencies coming soon.
@@ -49,6 +119,15 @@ export const PricingPage: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1100px', margin: '0 auto 4rem', alignItems: 'stretch' }}>
           {PRICING_PLANS.map((plan) => {
             const price = plan.prices[currency];
+            const isYearly = interval === 'yearly' && plan.id !== 'free';
+
+            const displayAmount = isYearly
+              ? price.monthlyEquivalentFormatted
+              : price.formatted;
+
+            const displayPeriod = isYearly
+              ? '/ month (billed annually)'
+              : `/ ${plan.billingPeriod}`;
 
             return (
               <div
@@ -102,14 +181,22 @@ export const PricingPage: React.FC = () => {
 
                   {/* Price Display */}
                   <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.375rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.375rem', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--brand-black)', letterSpacing: '-0.03em' }}>
-                        {price.formatted}
+                        {displayAmount}
                       </span>
                       <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                        / {plan.billingPeriod}
+                        {displayPeriod}
                       </span>
                     </div>
+
+                    {isYearly && (
+                      <div style={{ fontSize: '0.8125rem', color: '#047857', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Percent size={13} />
+                        <span>{price.yearlyFormatted} • 20% Annual Discount Applied</span>
+                      </div>
+                    )}
+
                     {plan.trialDays > 0 && (
                       <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, marginTop: '4px' }}>
                         ✓ {plan.trialText}
@@ -165,7 +252,7 @@ export const PricingPage: React.FC = () => {
                 </div>
 
                 <Link
-                  to={`/signup?plan=${plan.id}`}
+                  to={`/signup?plan=${plan.id}&interval=${interval}`}
                   className={plan.isRecommended ? 'btn btn-gold btn-lg' : 'btn btn-primary btn-lg'}
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
@@ -188,12 +275,12 @@ export const PricingPage: React.FC = () => {
                 15-Day Free Trial Guarantee
               </h4>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-                Test any plan risk-free for 15 days. After 15 days, choose to subscribe or remain on the Free Starter plan.
+                Test any plan risk-free for 15 days. After 15 days, choose to subscribe or automatically return to Free Starter with 100% of your data intact.
               </p>
             </div>
           </div>
-          <Link to="/signup" className="btn btn-primary btn-sm">
-            <span>Get Started</span>
+          <Link to={`/signup?plan=pro&interval=${interval}`} className="btn btn-primary btn-sm">
+            <span>Start Free Trial</span>
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -201,3 +288,4 @@ export const PricingPage: React.FC = () => {
     </div>
   );
 };
+

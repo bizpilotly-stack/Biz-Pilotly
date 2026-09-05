@@ -2,20 +2,28 @@
  * BizPilotly Centralized Pricing & Subscription Configuration
  *
  * Localized static pricing matrix:
- * - Free Starter: ₦0 / $0 / €0
- * - Professional: ₦10,000 / $10 / €9 (15-Day Free Trial)
- * - Business Suite: ₦25,000 / $20 / €19 (15-Day Free Trial)
- *
- * Designed to be easily extensible for future currencies (GHS, KES, ZAR, GBP, CAD, AUD, etc.)
+ * - Free Starter: ₦0 / $0 / €0 (Forever Free)
+ * - Professional: ₦10,000 / $10 / €9 monthly | ₦96,000 / $96 / €86.40 yearly (20% OFF) (15-Day Free Trial)
+ * - Business Suite: ₦25,000 / $20 / €19 monthly | ₦240,000 / $192 / €182.40 yearly (20% OFF) (15-Day Free Trial)
  */
 
 export type PricingCurrency = 'NGN' | 'USD' | 'EUR';
 export type PlanTier = 'free' | 'pro' | 'business';
+export type BillingInterval = 'monthly' | 'yearly';
 
 export interface PlanFeatureItem {
   text: string;
   included: boolean;
   isNew?: boolean;
+}
+
+export interface PricingPriceDetail {
+  amount: number;
+  formatted: string;
+  symbol: string;
+  yearlyAmount?: number;
+  yearlyFormatted?: string;
+  monthlyEquivalentFormatted?: string;
 }
 
 export interface PricingPlanConfig {
@@ -28,7 +36,7 @@ export interface PricingPlanConfig {
   trialText: string;
   description: string;
   ctaText: string;
-  prices: Record<PricingCurrency, { amount: number; formatted: string; symbol: string }>;
+  prices: Record<PricingCurrency, PricingPriceDetail>;
   features: PlanFeatureItem[];
 }
 
@@ -49,9 +57,30 @@ export const PRICING_PLANS: PricingPlanConfig[] = [
     ctaText: 'Start Free',
     isRecommended: false,
     prices: {
-      NGN: { amount: 0, formatted: '₦0', symbol: '₦' },
-      USD: { amount: 0, formatted: '$0', symbol: '$' },
-      EUR: { amount: 0, formatted: '€0', symbol: '€' },
+      NGN: {
+        amount: 0,
+        formatted: '₦0',
+        symbol: '₦',
+        yearlyAmount: 0,
+        yearlyFormatted: '₦0/year',
+        monthlyEquivalentFormatted: '₦0',
+      },
+      USD: {
+        amount: 0,
+        formatted: '$0',
+        symbol: '$',
+        yearlyAmount: 0,
+        yearlyFormatted: '$0/year',
+        monthlyEquivalentFormatted: '$0',
+      },
+      EUR: {
+        amount: 0,
+        formatted: '€0',
+        symbol: '€',
+        yearlyAmount: 0,
+        yearlyFormatted: '€0/year',
+        monthlyEquivalentFormatted: '€0',
+      },
     },
     features: [
       { text: 'All 8 Financial & Pricing Calculators', included: true },
@@ -60,9 +89,10 @@ export const PRICING_PLANS: PricingPlanConfig[] = [
       { text: 'Up to 5 Saved Client Contacts', included: true },
       { text: 'Live Instant Document Preview & PDF Download', included: true },
       { text: 'Basic Profit & Revenue Overview', included: true },
-      { text: '100% White-Label (Remove BizPilotly Badge)', included: false },
+      { text: '100% White-Label (Remove BizPilotly Watermark)', included: false },
       { text: 'Paystack Online Card, USSD & Bank Gateway', included: false },
       { text: 'Automated Client Payment Email Reminders', included: false },
+      { text: 'Legal Certificate of Execution & Bilateral Audit Trail', included: false },
       { text: 'Multi-Business Workspaces & Team Seats', included: false },
     ],
   },
@@ -77,9 +107,30 @@ export const PRICING_PLANS: PricingPlanConfig[] = [
     description: 'Complete invoicing automation, custom branding, and online card payment acceptance for solo pros.',
     ctaText: 'Start 15-Day Free Trial',
     prices: {
-      NGN: { amount: 10000, formatted: '₦10,000', symbol: '₦' },
-      USD: { amount: 10, formatted: '$10', symbol: '$' },
-      EUR: { amount: 9, formatted: '€9', symbol: '€' },
+      NGN: {
+        amount: 10000,
+        formatted: '₦10,000',
+        symbol: '₦',
+        yearlyAmount: 96000,
+        yearlyFormatted: '₦96,000/year',
+        monthlyEquivalentFormatted: '₦8,000',
+      },
+      USD: {
+        amount: 10,
+        formatted: '$10',
+        symbol: '$',
+        yearlyAmount: 96,
+        yearlyFormatted: '$96/year',
+        monthlyEquivalentFormatted: '$8',
+      },
+      EUR: {
+        amount: 9,
+        formatted: '€9',
+        symbol: '€',
+        yearlyAmount: 86.4,
+        yearlyFormatted: '€86.40/year',
+        monthlyEquivalentFormatted: '€7.20',
+      },
     },
     features: [
       { text: 'Everything in Free Starter', included: true },
@@ -90,6 +141,7 @@ export const PRICING_PLANS: PricingPlanConfig[] = [
       { text: 'Automated Invoice & Overdue Email Reminders', included: true, isNew: true },
       { text: 'Multi-Currency Global Invoicing (USD, GBP, EUR, NGN)', included: true, isNew: true },
       { text: 'Financial Profit & Loss Analytics & Cloud Sync', included: true, isNew: true },
+      { text: 'Legal Certificate of Execution & Bilateral Audit Trail', included: false },
       { text: 'Team Member Logins & Multi-Seats', included: false },
       { text: 'Multi-Business Workspace Switching', included: false },
     ],
@@ -105,12 +157,34 @@ export const PRICING_PLANS: PricingPlanConfig[] = [
     description: 'Multi-entity business management, team member collaboration seats, and recurring retainer automation.',
     ctaText: 'Start 15-Day Free Trial',
     prices: {
-      NGN: { amount: 25000, formatted: '₦25,000', symbol: '₦' },
-      USD: { amount: 20, formatted: '$20', symbol: '$' },
-      EUR: { amount: 19, formatted: '€19', symbol: '€' },
+      NGN: {
+        amount: 25000,
+        formatted: '₦25,000',
+        symbol: '₦',
+        yearlyAmount: 240000,
+        yearlyFormatted: '₦240,000/year',
+        monthlyEquivalentFormatted: '₦20,000',
+      },
+      USD: {
+        amount: 20,
+        formatted: '$20',
+        symbol: '$',
+        yearlyAmount: 192,
+        yearlyFormatted: '$192/year',
+        monthlyEquivalentFormatted: '$16',
+      },
+      EUR: {
+        amount: 19,
+        formatted: '€19',
+        symbol: '€',
+        yearlyAmount: 182.4,
+        yearlyFormatted: '€182.40/year',
+        monthlyEquivalentFormatted: '€15.20',
+      },
     },
     features: [
       { text: 'Everything in Professional Tier', included: true },
+      { text: 'Legal Certificate of Execution & Bilateral Audit Trail', included: true, isNew: true },
       { text: 'Up to 5 Separate Business Entities / Brands', included: true, isNew: true },
       { text: 'Up to 5 Team Member Seats & Role Permissions', included: true, isNew: true },
       { text: 'Automated Recurring Monthly Retainer Invoices', included: true, isNew: true },

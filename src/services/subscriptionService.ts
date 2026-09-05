@@ -20,6 +20,7 @@ export interface UserSubscription {
   userId: string;
   plan: PlanTier;
   status: SubscriptionStatus;
+  billingInterval?: BillingInterval;
   trialStartedAt?: string;
   trialEndsAt?: string;
   subscriptionStartedAt?: string;
@@ -45,6 +46,7 @@ class SubscriptionService {
         userId: 'anonymous',
         plan: 'free',
         status: 'FREE',
+        billingInterval: 'monthly',
         currency: defaultCurrency,
         trialUsed: false,
         daysRemaining: 0,
@@ -87,6 +89,7 @@ class SubscriptionService {
     let status: SubscriptionStatus = subData.status || 'FREE';
     let plan: PlanTier = subData.plan || 'free';
     const currency = subData.currency || defaultCurrency;
+    const billingInterval: BillingInterval = subData.billingInterval || 'monthly';
 
     let daysRemaining = 0;
     let formattedCountdown = 'Free Starter';
@@ -97,11 +100,11 @@ class SubscriptionService {
       daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
       if (now >= trialEndsAt) {
-        // Trial expired authoritatively
+        // Trial expired authoritatively -> Immediately return to Free Plan
         status = 'TRIAL_EXPIRED';
         plan = 'free';
         daysRemaining = 0;
-        formattedCountdown = 'Your trial has ended';
+        formattedCountdown = 'Your trial has ended (Free Starter)';
 
         // Auto-save expired status
         this.persistSubscription(user.id, {
@@ -131,13 +134,14 @@ class SubscriptionService {
         this.handleTrialMilestoneReminders(user, plan, daysRemaining);
       }
     } else if (status === 'ACTIVE') {
-      formattedCountdown = `${plan.toUpperCase()} Active`;
+      formattedCountdown = `${plan.toUpperCase()} Active (${billingInterval === 'yearly' ? 'Annual - 20% OFF' : 'Monthly'})`;
     }
 
     return {
       userId: user.id,
       plan,
       status,
+      billingInterval,
       trialStartedAt,
       trialEndsAt: subData.trialEndsAt,
       subscriptionStartedAt: subData.subscriptionStartedAt,
@@ -174,6 +178,7 @@ class SubscriptionService {
       userId: user.id,
       plan,
       status: 'TRIAL_ACTIVE',
+      billingInterval: 'monthly',
       trialStartedAt,
       trialEndsAt,
       currency,
@@ -190,7 +195,7 @@ class SubscriptionService {
     const planName = plan === 'business' ? 'Business Suite' : 'Professional';
     notificationService.createNotification(user.id, {
       title: `Your ${planName} 15-day free trial has started!`,
-      message: `Enjoy full access to unlimited invoicing, white-label branding, and client ledgers until ${new Date(trialEndsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`,
+      message: `Enjoy full access to ${plan === 'business' ? 'Business Suite features (Legal execution certificates, multi-business, team seats)' : 'Professional features (Unlimited invoicing, white-label branding, Paystack)'} until ${new Date(trialEndsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`,
       category: 'Trial',
       actionUrl: '/app/documents/invoice',
       actionLabel: 'Create First Invoice',
@@ -220,22 +225,25 @@ class SubscriptionService {
   async activateSubscription(
     userId: string,
     plan: 'pro' | 'business',
-    currency: PricingCurrency = getStoredCurrency()
+    currency: PricingCurrency = getStoredCurrency(),
+    billingInterval: BillingInterval = 'monthly'
   ): Promise<void> {
     const now = new Date();
     const subscriptionStartedAt = now.toISOString();
-    const subscriptionEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const durationDays = billingInterval === 'yearly' ? 365 : 30;
+    const subscriptionEndsAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
     const updated = {
       userId,
       plan,
       status: 'ACTIVE' as const,
+      billingInterval,
       subscriptionStartedAt,
       subscriptionEndsAt,
       currency,
       trialUsed: true,
-      daysRemaining: 30,
-      formattedCountdown: `${plan.toUpperCase()} Active`,
+      daysRemaining: durationDays,
+      formattedCountdown: `${plan.toUpperCase()} Active (${billingInterval === 'yearly' ? 'Annual' : 'Monthly'})`,
       isTrialEndingSoon: false,
     };
 
@@ -243,7 +251,7 @@ class SubscriptionService {
 
     notificationService.createNotification(userId, {
       title: `Subscribed to ${plan === 'business' ? 'Business Suite' : 'Professional'}!`,
-      message: 'Thank you for your subscription. Your workspace is fully unlocked with priority features.',
+      message: `Thank you for your ${billingInterval === 'yearly' ? 'Annual (20% OFF)' : 'Monthly'} subscription. Your workspace is fully unlocked with priority features.`,
       category: 'Trial',
       actionUrl: '/app',
       actionLabel: 'Open Dashboard',
@@ -302,7 +310,7 @@ class SubscriptionService {
   }
 
   /**
-   * Handles trial expiration: Downgrades to Free Starter with 100% data preservation.
+   * Handles trial expiration: Downgrades to Free Starter immediately with 100% data preservation.
    */
   private async handleTrialExpiration(
     user: { id: string; email?: string | null; name?: string },
@@ -317,7 +325,7 @@ class SubscriptionService {
     // In-App Notification
     notificationService.createNotification(user.id, {
       title: 'Your free trial has ended',
-      message: `Your account is now on Free Starter. All your created invoices, clients, and records are 100% safe. Would you like to continue using ${planName} features?`,
+      message: `Your account has returned to Free Starter. All your created invoices, clients, and records are 100% safe. Upgrade anytime to restore ${planName} features.`,
       category: 'Trial',
       actionUrl: '/pricing',
       actionLabel: 'Subscribe to ' + planName,
@@ -356,7 +364,7 @@ class SubscriptionService {
 
   /**
    * Strict plan-based feature entitlement checker.
-   * During trial, users receive ONLY the features of their selected plan.
+   * During trial or subscription, users receive ONLY the features of their selected plan.
    */
   canAccessPlanFeature(
     sub: UserSubscription,
@@ -371,10 +379,12 @@ class SubscriptionService {
       | 'team_seats'
       | 'multi_workspace'
       | 'audit_logs'
+      | 'legal_execution_certificate'
   ): boolean {
     const effectivePlan = this.getEffectivePlan(sub);
 
     switch (feature) {
+      case 'legal_execution_certificate':
       case 'team_seats':
       case 'multi_workspace':
       case 'audit_logs':

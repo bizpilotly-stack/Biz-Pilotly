@@ -25,7 +25,11 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     subscriptionService.getSubscription(user || undefined).then(setSub);
   }, [user]);
 
-  const hasAccess = sub && (sub.status === 'ACTIVE' || sub.status === 'TRIAL_ACTIVE');
+  const effectivePlan = sub ? subscriptionService.getEffectivePlan(sub) : 'free';
+  const hasAccess =
+    requiredPlan === 'business'
+      ? effectivePlan === 'business'
+      : effectivePlan === 'pro' || effectivePlan === 'business';
 
   if (hasAccess) {
     return <>{children}</>;
