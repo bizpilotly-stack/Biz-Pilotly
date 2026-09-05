@@ -144,8 +144,8 @@ export interface BusinessDocument {
     signerTitle?: string;
     signedAt: string;
   };
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DocumentValidationResult {

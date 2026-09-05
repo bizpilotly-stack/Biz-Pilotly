@@ -359,7 +359,7 @@ export const DocumentsPage: React.FC = () => {
                       <td>
                         <select
                           value={d.status}
-                          onChange={(e) => handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
+                          onChange={(e) => d.id && handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
                           className="form-select"
                           style={{
                             padding: '0.2rem 0.5rem',
@@ -515,7 +515,7 @@ export const DocumentsPage: React.FC = () => {
                           </button>
 
                           <button
-                            onClick={() => handleDelete(d.id, d.documentNumber)}
+                            onClick={() => d.id && handleDelete(d.id, d.documentNumber)}
                             className="btn btn-ghost btn-sm btn-icon"
                             style={{ color: '#ef4444' }}
                             title="Delete document"
@@ -595,7 +595,7 @@ export const DocumentsPage: React.FC = () => {
                     <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
-                        onClick={() => setActiveMenuId(isMenuOpen ? null : d.id)}
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : (d.id || null))}
                         style={{
                           background: 'none',
                           border: 'none',
@@ -814,7 +814,7 @@ export const DocumentsPage: React.FC = () => {
                             type="button"
                             onClick={() => {
                               setActiveMenuId(null);
-                              handleDelete(d.id, d.documentNumber);
+                              if (d.id) handleDelete(d.id, d.documentNumber);
                             }}
                             style={{
                               width: '100%',
@@ -854,7 +854,7 @@ export const DocumentsPage: React.FC = () => {
 
                     <select
                       value={d.status}
-                      onChange={(e) => handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
+                      onChange={(e) => d.id && handleUpdateStatus(d.id, e.target.value as DocumentStatus)}
                       className="form-select"
                       style={{
                         padding: '0.15rem 0.4rem',

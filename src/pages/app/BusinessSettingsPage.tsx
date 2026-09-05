@@ -186,9 +186,9 @@ export const BusinessSettingsPage: React.FC = () => {
         `"${(c.email || '').replace(/"/g, '""')}"`,
         `"${(c.phone || '').replace(/"/g, '""')}"`,
         `"${(c.address || '').replace(/"/g, '""')}"`,
-        c.totalInvoiced || 0,
-        c.totalPaid || 0,
-        c.outstandingBalance || 0,
+        c.totalBilled ?? c.totalInvoiced ?? 0,
+        c.amountPaid ?? c.totalPaid ?? 0,
+        c.balance ?? c.outstandingBalance ?? 0,
       ]);
       downloadCsv(`bizpilotly-clients-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
       showToast('✓ Exported Client Directory CSV!', 'success');

@@ -7,7 +7,6 @@ import {
   Receipt,
   Percent,
   Printer,
-  Calendar,
   ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';

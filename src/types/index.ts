@@ -147,6 +147,7 @@ export interface Client {
   balance: number;
   outstandingBalance?: number;
   totalInvoiced?: number;
+  totalPaid?: number;
   status: 'active' | 'inactive' | 'lead';
   notes?: string;
   createdAt: string;
