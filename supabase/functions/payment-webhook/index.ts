@@ -30,8 +30,12 @@ serve(async (req: Request) => {
     let bizpilotlyFee = 0;
 
     // 1. Detect Provider & Verify Cryptographic Signature
-    const flwSignature = req.headers.get("verif-hash");
+    const flwSignature =
+      req.headers.get("verif-hash") ||
+      req.headers.get("x-flutterwave-signature") ||
+      req.headers.get("flutterwave-signature");
     const squadSignature = req.headers.get("x-squad-encrypted-body");
+
 
     if (flwSignature || req.headers.get("x-payment-provider") === "flutterwave") {
       provider = "flutterwave";
