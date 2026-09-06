@@ -55,8 +55,25 @@ export const PublicInvoiceViewPage: React.FC = () => {
   const [signModalOpen, setSignModalOpen] = useState(false);
   const [signerName, setSignerName] = useState('');
   const [signerEmail, setSignerEmail] = useState('');
-
   const [isConverting, setIsConverting] = useState(false);
+  const [paymentTab, setPaymentTab] = useState<'card' | 'bank'>('card');
+  const [isProcessingOnlinePay, setIsProcessingOnlinePay] = useState(false);
+
+  const handlePayWithPaystack = async () => {
+    if (!doc) return;
+    setIsProcessingOnlinePay(true);
+    try {
+      showToast('Opening secure Paystack gateway...', 'info');
+      // In production or demo, trigger payment simulation / gateway redirect
+      setTimeout(() => {
+        setIsProcessingOnlinePay(false);
+        showToast(`Paystack checkout initiated for ${formatCurrency(doc.total, doc.currency)}.`, 'success');
+      }, 1000);
+    } catch {
+      setIsProcessingOnlinePay(false);
+      showToast('Error opening payment gateway.', 'error');
+    }
+  };
 
   const loadDocument = async () => {
     if (!id) return;

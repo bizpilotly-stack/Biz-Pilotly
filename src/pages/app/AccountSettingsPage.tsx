@@ -317,6 +317,7 @@ export const AccountSettingsPage: React.FC = () => {
         <div className="card" style={{ borderColor: '#FECACA', background: '#FEF2F2' }}>
           <div className="card-header" style={{ borderBottomColor: '#FEE2E2' }}>
             <h3 className="card-title" style={{ color: '#991B1B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertTriangle size={18} color="#DC2626" />
               <span>Danger Zone: Delete Account</span>
             </h3>
           </div>
