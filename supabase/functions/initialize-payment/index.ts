@@ -31,8 +31,12 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY") ?? "";
+    const flutterwaveSecretKey =
+      Deno.env.get("FLUTTERWAVE_CLIENT_SECRET") ??
+      Deno.env.get("FLUTTERWAVE_SECRET_KEY") ??
+      "";
     const squadSecretKey = Deno.env.get("SQUAD_SECRET_KEY") ?? "";
+
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const body = await req.json();
