@@ -1215,9 +1215,9 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                 </label>
                 <select
                   className="form-select"
-                  value={doc.paymentDetails?.paymentPreference || 'both'}
+                  value={doc.paymentDetails?.paymentPreference || 'manual'}
                   onChange={(e) => {
-                    const pref = e.target.value as 'both' | 'manual' | 'gateway';
+                    const pref = e.target.value as 'manual' | 'gateway';
                     setDoc({
                       ...doc,
                       paymentDetails: {
@@ -1225,19 +1225,17 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                         paymentPreference: pref,
                       },
                     });
-                    if (pref === 'manual') setSelectedPaymentMode('manual');
-                    if (pref === 'gateway') setSelectedPaymentMode('gateway');
+                    setSelectedPaymentMode(pref);
                   }}
                   style={{ fontWeight: 600, fontSize: '0.8125rem' }}
                 >
-                  <option value="both">Both: Direct Bank Transfer & Paystack Card Gateway</option>
-                  <option value="manual">Direct Bank Transfer Only</option>
-                  <option value="gateway">Paystack Online Card Gateway Only</option>
+                  <option value="manual">Direct Bank Transfer</option>
+                  <option value="gateway">Online Payment Gateway (Card, USSD, Bank)</option>
                 </select>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.375rem' }}>
-                  {doc.paymentDetails?.paymentPreference === 'manual' && '✓ Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
-                  {doc.paymentDetails?.paymentPreference === 'gateway' && '✓ Client pays with Debit/Credit Card, Bank Transfer, or USSD with automated receipt.'}
-                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && '✓ Gives clients full freedom to choose between Bank Transfer and Online Card Checkout.'}
+                  {doc.paymentDetails?.paymentPreference === 'gateway'
+                    ? '✓ Client pays with Debit/Credit Card, Bank Transfer, or USSD via secure online gateway.'
+                    : '✓ Client transfers directly to your bank account and reports payment for 1-click confirmation.'}
                 </div>
               </div>
             )}
@@ -1761,49 +1759,8 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                     </span>
                   </div>
 
-                  {/* Payment Mode Toggle Tabs if preference is 'both' */}
-                  {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && (
-                    <div style={{ display: 'flex', background: 'var(--bg-surface-muted)', borderRadius: 'var(--radius-md)', padding: '3px', border: '1px solid var(--border-color)' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPaymentMode('gateway')}
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          borderRadius: 'var(--radius-sm)',
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: selectedPaymentMode === 'gateway' ? '#00C0F3' : 'transparent',
-                          color: selectedPaymentMode === 'gateway' ? '#090d16' : 'var(--text-secondary)',
-                          transition: 'all 0.2s ease',
-                        }}
-                      >
-                        Paystack Card & USSD
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPaymentMode('manual')}
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          borderRadius: 'var(--radius-sm)',
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: selectedPaymentMode === 'manual' ? '#0B1F3A' : 'transparent',
-                          color: selectedPaymentMode === 'manual' ? '#ffffff' : 'var(--text-secondary)',
-                          transition: 'all 0.2s ease',
-                        }}
-                      >
-                        🏛️ Direct Bank Transfer
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Render Paystack Gateway View */}
-                {(doc.paymentDetails?.paymentPreference === 'gateway' || ((!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && selectedPaymentMode === 'gateway')) ? (
+                {/* Render Gateway or Direct Bank Transfer based on selection */}
+                {doc.paymentDetails?.paymentPreference === 'gateway' ? (
                   <div style={{ background: 'linear-gradient(135deg, #091e3a 0%, #0d284f 100%)', color: '#ffffff', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                       <div>

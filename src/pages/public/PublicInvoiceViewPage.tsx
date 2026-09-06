@@ -26,6 +26,7 @@ import { SEO } from '../../components/common/SEO';
 import { emailService } from '../../services/emailService';
 import { DigitalSignatureCanvas } from '../../components/documents/DigitalSignatureCanvas';
 import { useAuth } from '../../contexts/AuthContext';
+import { calculateProcessingFee } from '../../utils/paymentFees';
 
 export const PublicInvoiceViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,7 +57,6 @@ export const PublicInvoiceViewPage: React.FC = () => {
   const [signerName, setSignerName] = useState('');
   const [signerEmail, setSignerEmail] = useState('');
   const [isConverting, setIsConverting] = useState(false);
-  const [paymentTab, setPaymentTab] = useState<'card' | 'bank'>('card');
   const [isProcessingOnlinePay, setIsProcessingOnlinePay] = useState(false);
 
   const handlePayWithPaystack = async () => {
@@ -968,102 +968,71 @@ export const PublicInvoiceViewPage: React.FC = () => {
               <span>Payment & Settlement</span>
             </h3>
 
-            {/* Payment Preference Tab Switching (If Both Card Gateway & Bank Transfer Enabled) */}
-            {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && doc.paymentDetails?.bankName && (
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setPaymentTab('card')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    border: '1px solid',
-                    borderColor: paymentTab === 'card' ? '#0B1F3A' : '#E2E8F0',
-                    background: paymentTab === 'card' ? '#0B1F3A' : '#F8FAFC',
-                    color: paymentTab === 'card' ? '#ffffff' : '#475569',
-                    fontSize: '0.8125rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                  }}
-                >
-                  <CreditCard size={14} />
-                  <span>Pay Online (Card / USSD)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentTab('bank')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    border: '1px solid',
-                    borderColor: paymentTab === 'bank' ? '#0B1F3A' : '#E2E8F0',
-                    background: paymentTab === 'bank' ? '#0B1F3A' : '#F8FAFC',
-                    color: paymentTab === 'bank' ? '#ffffff' : '#475569',
-                    fontSize: '0.8125rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                  }}
-                >
-                  <Building size={14} />
-                  <span>Direct Bank Transfer</span>
-                </button>
-              </div>
-            )}
-
-            {/* Online Card / USSD Payment Option */}
-            {(doc.paymentDetails?.paymentPreference === 'gateway' ||
-              ((!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && paymentTab === 'card')) && (
-              <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem', marginBottom: doc.paymentDetails?.paymentPreference === 'both' ? '0' : '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CreditCard size={18} color="#0B1F3A" />
-                    <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
-                      Online Card & Bank Gateway
-                    </span>
+            {/* Online Payment Gateway Option */}
+            {doc.paymentDetails?.paymentPreference === 'gateway' && (() => {
+              const feeCalc = calculateProcessingFee(doc.total, doc.currency);
+              return (
+                <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <CreditCard size={18} color="#0B1F3A" />
+                      <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
+                        Online Payment Gateway
+                      </span>
+                    </div>
                   </div>
+
+                  <p style={{ fontSize: '0.8125rem', color: '#64748B', marginBottom: '1rem', lineHeight: 1.4 }}>
+                    Pay securely with Debit/Credit Card (Mastercard, Visa, Verve), Bank Transfer, or USSD for automated receipt confirmation.
+                  </p>
+
+                  {/* Transparent Itemized Fee Breakdown */}
+                  <div style={{ background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem' }}>
+                      <span>Invoice Amount</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrency(doc.total, doc.currency)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem' }}>
+                      <span>Digital Payment Processing</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrency(feeCalc.totalFee, doc.currency)}</span>
+                    </div>
+                    <div style={{ height: '1px', background: '#E2E8F0', margin: '0.5rem 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 800, color: '#0B1F3A' }}>
+                      <span>Total Amount Payable</span>
+                      <span>{formatCurrency(feeCalc.totalPayable, doc.currency)}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePayWithPaystack}
+                    disabled={isProcessingOnlinePay}
+                    style={{
+                      width: '100%',
+                      padding: '0.875rem',
+                      background: '#0B1F3A',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '0.9375rem',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 12px rgba(11, 31, 58, 0.25)',
+                    }}
+                  >
+                    <CreditCard size={18} color="#F59E0B" />
+                    <span>{isProcessingOnlinePay ? 'Initializing Gateway...' : `Pay ${formatCurrency(feeCalc.totalPayable, doc.currency)} with Card / USSD`}</span>
+                  </button>
                 </div>
-
-                <p style={{ fontSize: '0.8125rem', color: '#64748B', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-                  Pay securely with Debit/Credit Card (Mastercard, Visa, Verve), Bank Transfer, or USSD for automated receipt confirmation.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handlePayWithPaystack}
-                  disabled={isProcessingOnlinePay}
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    background: '#0B1F3A',
-                    color: '#ffffff',
-                    fontWeight: 800,
-                    fontSize: '0.9375rem',
-                    border: 'none',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 12px rgba(11, 31, 58, 0.25)',
-                  }}
-                >
-                  <CreditCard size={18} color="#F59E0B" />
-                  <span>{isProcessingOnlinePay ? 'Initializing Gateway...' : `Pay ${formatCurrency(doc.total, doc.currency)} Now`}</span>
-                </button>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Direct Bank Transfer Option */}
-            {(doc.paymentDetails?.paymentPreference === 'manual' ||
-              ((!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'both') && paymentTab === 'bank')) &&
+            {(!doc.paymentDetails?.paymentPreference || doc.paymentDetails?.paymentPreference === 'manual') &&
               doc.paymentDetails?.bankName && doc.paymentDetails?.accountNumber && (
                 <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -1073,6 +1042,9 @@ export const PublicInvoiceViewPage: React.FC = () => {
                         Direct Bank Transfer
                       </span>
                     </div>
+                    <span style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 700, background: '#DCFCE7', padding: '3px 8px', borderRadius: '999px' }}>
+                      0% Processing Fee
+                    </span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
