@@ -26,7 +26,8 @@ import { SEO } from '../../components/common/SEO';
 import { emailService } from '../../services/emailService';
 import { DigitalSignatureCanvas } from '../../components/documents/DigitalSignatureCanvas';
 import { useAuth } from '../../contexts/AuthContext';
-import { calculateProcessingFee } from '../../utils/paymentFees';
+import { paymentEngineService } from '../../services/payment/paymentEngineService';
+import { calculateBizPilotlyServiceFee, estimateProviderProcessingFee } from '../../services/payment/feeEngine';
 
 export const PublicInvoiceViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,19 +60,36 @@ export const PublicInvoiceViewPage: React.FC = () => {
   const [isConverting, setIsConverting] = useState(false);
   const [isProcessingOnlinePay, setIsProcessingOnlinePay] = useState(false);
 
-  const handlePayWithPaystack = async () => {
-    if (!doc) return;
+  const handlePayNow = async () => {
+    if (!doc || !doc.id) return;
     setIsProcessingOnlinePay(true);
     try {
-      showToast('Opening secure Paystack gateway...', 'info');
-      // In production or demo, trigger payment simulation / gateway redirect
-      setTimeout(() => {
-        setIsProcessingOnlinePay(false);
-        showToast(`Paystack checkout initiated for ${formatCurrency(doc.total, doc.currency)}.`, 'success');
-      }, 1000);
-    } catch {
+      showToast('Connecting to secure global payment engine...', 'info');
+      const session = await paymentEngineService.initializeInvoicePayment({
+        invoiceId: doc.id,
+        invoiceNumber: doc.documentNumber,
+        businessId: (doc as any).business_id || doc.id,
+        amount: Number(doc.total),
+        currency: doc.currency,
+        customerEmail: doc.client?.email || 'customer@bizpilotly.com',
+        customerName: doc.client?.name || 'Valued Client',
+        customerCountry: 'NG',
+        merchantCountry: (doc as any).business?.country || 'NG',
+        successUrl: window.location.href + '?status=success',
+        cancelUrl: window.location.href + '?status=cancelled',
+      });
+
+      if (session?.checkoutUrl) {
+        if (session.checkoutUrl.startsWith('http')) {
+          window.location.href = session.checkoutUrl;
+        } else {
+          showToast('Payment session created. Redirecting...', 'success');
+        }
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Payment is currently unavailable for this invoice.', 'error');
+    } finally {
       setIsProcessingOnlinePay(false);
-      showToast('Error opening payment gateway.', 'error');
     }
   };
 
@@ -970,20 +988,23 @@ export const PublicInvoiceViewPage: React.FC = () => {
 
             {/* Online Payment Gateway Option */}
             {doc.paymentDetails?.paymentPreference === 'gateway' && (() => {
-              const feeCalc = calculateProcessingFee(doc.total, doc.currency);
+              const platformFeeRes = calculateBizPilotlyServiceFee(Number(doc.total), doc.currency);
+              const providerFee = estimateProviderProcessingFee(Number(doc.total), doc.currency, 'flutterwave');
+              const totalPayable = Math.round((Number(doc.total) + platformFeeRes.effectivePlatformFee + providerFee + Number.EPSILON) * 100) / 100;
+
               return (
                 <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '16px', padding: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <CreditCard size={18} color="#0B1F3A" />
                       <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0B1F3A' }}>
-                        Online Payment Gateway
+                        Online Card & Bank Payment
                       </span>
                     </div>
                   </div>
 
                   <p style={{ fontSize: '0.8125rem', color: '#64748B', marginBottom: '1rem', lineHeight: 1.4 }}>
-                    Pay securely with Debit/Credit Card (Mastercard, Visa, Verve), Bank Transfer, or USSD for automated receipt confirmation.
+                    Pay securely with Debit/Credit Card (Visa, Mastercard, Verve), Bank Transfer, or USSD for instant automated receipt confirmation.
                   </p>
 
                   {/* Transparent Itemized Fee Breakdown */}
@@ -993,19 +1014,23 @@ export const PublicInvoiceViewPage: React.FC = () => {
                       <span style={{ fontWeight: 600 }}>{formatCurrency(doc.total, doc.currency)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem' }}>
-                      <span>Digital Payment Processing</span>
-                      <span style={{ fontWeight: 600 }}>{formatCurrency(feeCalc.totalFee, doc.currency)}</span>
+                      <span>BizPilotly Service Fee</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrency(platformFeeRes.effectivePlatformFee, doc.currency)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#475569', marginBottom: '0.5rem' }}>
+                      <span>Payment Processing Fee</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrency(providerFee, doc.currency)}</span>
                     </div>
                     <div style={{ height: '1px', background: '#E2E8F0', margin: '0.5rem 0' }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 800, color: '#0B1F3A' }}>
                       <span>Total Amount Payable</span>
-                      <span>{formatCurrency(feeCalc.totalPayable, doc.currency)}</span>
+                      <span>{formatCurrency(totalPayable, doc.currency)}</span>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={handlePayWithPaystack}
+                    onClick={handlePayNow}
                     disabled={isProcessingOnlinePay}
                     style={{
                       width: '100%',
@@ -1025,7 +1050,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
                     }}
                   >
                     <CreditCard size={18} color="#F59E0B" />
-                    <span>{isProcessingOnlinePay ? 'Initializing Gateway...' : `Pay ${formatCurrency(feeCalc.totalPayable, doc.currency)} with Card / USSD`}</span>
+                    <span>{isProcessingOnlinePay ? 'Connecting to Gateway...' : `PAY ${formatCurrency(totalPayable, doc.currency)} NOW`}</span>
                   </button>
                 </div>
               );

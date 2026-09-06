@@ -927,6 +927,42 @@ export const BusinessSettingsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Global Online Payment Gateway & Routing Settings */}
+        <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--border-color)' }}>
+          <div className="card-header">
+            <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CreditCard size={18} color="#1d4ed8" />
+              <span>Online Payment Gateway & Global Routing</span>
+            </h3>
+          </div>
+
+          <div style={{ padding: '0 0.5rem' }}>
+            <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              BizPilotly automatically routes your clients to the optimal payment provider (Flutterwave or Squad) based on their location and currency. You can optionally set a preferred provider below:
+            </p>
+
+            <div style={{ maxWidth: '480px', marginBottom: '1rem' }}>
+              <label className="form-label" style={{ fontWeight: 600 }}>
+                Preferred Payment Provider
+              </label>
+              <select
+                className="form-select"
+                value={(settings as any).preferredPaymentProvider || 'auto'}
+                onChange={(e) => setSettings({ ...settings, preferredPaymentProvider: e.target.value } as any)}
+                style={{ fontWeight: 600, fontSize: '0.875rem' }}
+              >
+                <option value="auto">⚡ Automatic / Recommended (Smart Multi-Provider Routing)</option>
+                <option value="flutterwave">Flutterwave (Pan-African & Global Multi-Currency)</option>
+                <option value="squad">Squad by GTCO (Nigeria Direct Settlement)</option>
+              </select>
+            </div>
+
+            <div style={{ background: '#F8FAFC', borderRadius: '8px', padding: '0.875rem 1rem', border: '1px solid #E2E8F0', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.4 }}>
+              💡 <strong>Smart Routing Protection:</strong> Even if a specific provider is preferred, BizPilotly's routing engine continuously validates provider capability against the client's currency and card issuing bank, falling back automatically if needed to prevent broken checkout errors.
+            </div>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
           <Button type="submit" variant="primary" size="lg" isLoading={saving}>
             <Save size={16} />
