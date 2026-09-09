@@ -17,10 +17,14 @@ export const SignupPage: React.FC = () => {
   const { signUp, signInWithGoogle } = useAuth();
   const { showToast } = useToast();
 
-  const planFromUrl = (searchParams.get('plan') || '').toLowerCase();
-  const initialPlan: PlanTier = planFromUrl === 'free' || planFromUrl === 'pro' || planFromUrl === 'business'
-    ? planFromUrl
-    : 'pro';
+  const savedPlan = (localStorage.getItem('bizpilotly_selected_plan_id') || '').toLowerCase() as PlanTier;
+  const planFromUrl = (searchParams.get('plan') || '').toLowerCase() as PlanTier;
+  const initialPlan: PlanTier =
+    planFromUrl === 'free' || planFromUrl === 'pro' || planFromUrl === 'business'
+      ? planFromUrl
+      : savedPlan === 'free' || savedPlan === 'pro' || savedPlan === 'business'
+      ? savedPlan
+      : 'pro';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,12 +40,18 @@ export const SignupPage: React.FC = () => {
   // Live password validation
   const pwdValidation = useMemo(() => validatePasswordStrength(password), [password]);
 
-  // Sync plan if URL param changes
+  // Sync plan if URL param changes and store in localStorage
   useEffect(() => {
     if (planFromUrl === 'free' || planFromUrl === 'pro' || planFromUrl === 'business') {
       setSelectedPlanId(planFromUrl);
+      localStorage.setItem('bizpilotly_selected_plan_id', planFromUrl);
     }
   }, [planFromUrl]);
+
+  const handleSelectPlan = (tier: PlanTier) => {
+    setSelectedPlanId(tier);
+    localStorage.setItem('bizpilotly_selected_plan_id', tier);
+  };
 
   // Detect OAuth error parameters in URL
   useEffect(() => {
@@ -105,20 +115,17 @@ export const SignupPage: React.FC = () => {
 
       const userId = user?.id || `user_${Date.now()}`;
 
-      // 2. Automatically start 15-Day Free Trial if Pro or Business Suite selected
+      // 2. Initialize subscription plan
+      await subscriptionService.initializePlanForUser(
+        { id: userId, email: cleanEmail, name: name.trim() },
+        selectedPlanId,
+        currency
+      );
+
       if (selectedPlanId !== 'free') {
-        try {
-          await subscriptionService.start15DayTrial(
-            { id: userId, email: cleanEmail, name: name.trim() },
-            selectedPlanId,
-            currency
-          );
-        } catch {
-          // Graceful fallback
-        }
         showToast(`🎉 Account created! 15-Day ${selectedPlanId === 'business' ? 'Business Suite' : 'Professional'} Trial activated.`, 'success');
       } else {
-        showToast('🎉 Welcome to BizPilotly! Your account is ready.', 'success');
+        showToast('🎉 Welcome to BizPilotly! Your Free Starter account is ready.', 'success');
       }
 
       // 3. Smooth transition to dashboard
@@ -136,6 +143,7 @@ export const SignupPage: React.FC = () => {
   };
 
   const handleGoogleSignup = async () => {
+    localStorage.setItem('bizpilotly_selected_plan_id', selectedPlanId);
     sessionStorage.setItem('bizpilotly_auth_intent', 'signup');
     setGoogleLoading(true);
     try {
@@ -186,7 +194,7 @@ export const SignupPage: React.FC = () => {
               return (
                 <div
                   key={p.id}
-                  onClick={() => setSelectedPlanId(p.id)}
+                  onClick={() => handleSelectPlan(p.id)}
                   style={{
                     border: isSelected ? '2px solid #0B1F3A' : '1px solid #E2E8F0',
                     background: isSelected ? 'var(--bg-surface-muted, #F8FAFC)' : '#ffffff',

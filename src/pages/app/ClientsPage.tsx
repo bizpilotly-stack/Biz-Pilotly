@@ -28,9 +28,15 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { useToast } from '../../components/common/Toast';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
+import { useAuth } from '../../contexts/AuthContext';
+import { subscriptionService, UserSubscription } from '../../services/subscriptionService';
+import { UpgradeModal } from '../../components/subscription/UpgradeModal';
 
 export const ClientsPage: React.FC = () => {
+  const { user } = useAuth();
   const { showToast } = useToast();
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorState, setErrorState] = useState<boolean>(false);
@@ -39,6 +45,15 @@ export const ClientsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      subscriptionService.getSubscription({
+        id: user.id,
+        email: user.email,
+      }).then(setSubscription).catch(console.warn);
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleOutside = () => setActiveMenuId(null);
@@ -76,11 +91,39 @@ export const ClientsPage: React.FC = () => {
     loadClients();
   }, [search, statusFilter]);
 
+  const handleOpenAddModal = () => {
+    if (subscription) {
+      const limit = subscriptionService.getClientLimit(subscription);
+      if (clients.length >= limit) {
+        showToast(
+          `Free Starter plan is limited to 5 client contacts (${clients.length}/5 used). Upgrade to Professional for unlimited clients.`,
+          'warning'
+        );
+        setUpgradeModalOpen(true);
+        return;
+      }
+    }
+    setAddModalOpen(true);
+  };
+
   const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newEmail) {
       showToast('Name and Email are required.', 'error');
       return;
+    }
+
+    if (subscription) {
+      const limit = subscriptionService.getClientLimit(subscription);
+      if (clients.length >= limit) {
+        showToast(
+          `Client limit reached (${limit}). Upgrade to Professional for unlimited contacts.`,
+          'warning'
+        );
+        setAddModalOpen(false);
+        setUpgradeModalOpen(true);
+        return;
+      }
     }
 
     if (isSubmitting) return;
@@ -131,10 +174,17 @@ export const ClientsPage: React.FC = () => {
         title="Clients"
         description="Organize your customer directory, ongoing scopes, lifetime value, and payment history."
         actions={
-          <Button variant="primary" size="sm" onClick={() => setAddModalOpen(true)}>
-            <Plus size={14} />
-            <span>Add Client</span>
-          </Button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {subscription?.plan === 'free' && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {clients.length}/5 Clients Used
+              </span>
+            )}
+            <Button variant="primary" size="sm" onClick={handleOpenAddModal}>
+              <Plus size={14} />
+              <span>Add Client</span>
+            </Button>
+          </div>
         }
       />
 
@@ -661,6 +711,12 @@ export const ClientsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <UpgradeModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        initialPlan="pro"
+      />
     </div>
   );
 };

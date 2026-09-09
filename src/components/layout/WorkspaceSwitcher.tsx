@@ -5,6 +5,9 @@ import { useToast } from '../common/Toast';
 import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
+import { useAuth } from '../../contexts/AuthContext';
+import { subscriptionService, UserSubscription } from '../../services/subscriptionService';
+import { UpgradeModal } from '../subscription/UpgradeModal';
 
 interface BusinessBrand {
   id: string;
@@ -16,7 +19,10 @@ interface BusinessBrand {
 const BRANDS_STORAGE_KEY = 'bizpilotly_multi_brands';
 
 export const WorkspaceSwitcher: React.FC = () => {
+  const { user } = useAuth();
   const { showToast } = useToast();
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [brands, setBrands] = useState<BusinessBrand[]>([]);
   const [activeBrandId, setActiveBrandId] = useState<string>('');
@@ -24,6 +30,12 @@ export const WorkspaceSwitcher: React.FC = () => {
   const [newBrandName, setNewBrandName] = useState('');
   const [newBrandCurrency, setNewBrandCurrency] = useState('NGN');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      subscriptionService.getSubscription({ id: user.id, email: user.email }).then(setSubscription).catch(console.warn);
+    }
+  }, [user]);
 
   const loadBrands = async () => {
     try {
@@ -185,6 +197,12 @@ export const WorkspaceSwitcher: React.FC = () => {
             <button
               type="button"
               onClick={() => {
+                if (subscription && !subscriptionService.canAccessPlanFeature(subscription, 'multi_workspace')) {
+                  showToast('Multi-Business Workspace switching is an exclusive Business Suite feature. Upgrade to unlock.', 'warning');
+                  setIsOpen(false);
+                  setUpgradeModalOpen(true);
+                  return;
+                }
                 setIsOpen(false);
                 setIsNewModalOpen(true);
               }}
@@ -206,7 +224,7 @@ export const WorkspaceSwitcher: React.FC = () => {
               }}
             >
               <Plus size={14} />
-              <span>Add Business Brand</span>
+              <span>Add Business Brand {subscription && !subscriptionService.canAccessPlanFeature(subscription, 'multi_workspace') ? '🔒 (BUSINESS)' : ''}</span>
             </button>
           </div>
         </div>
@@ -247,6 +265,12 @@ export const WorkspaceSwitcher: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <UpgradeModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        initialPlan="business"
+      />
     </div>
   );
 };

@@ -21,10 +21,9 @@ import { BRAND_NAME, BRAND_TAGLINE, BRAND_SUBTITLE, FAQ_ITEMS } from '../../cons
 import { SEO } from '../../components/common/SEO';
 import { PRICING_PLANS, PricingCurrency, getStoredCurrency, setStoredCurrency } from '../../config/pricing';
 import { CurrencySelector } from '../../components/common/CurrencySelector';
-import { Ecosystem3DHero } from '../../components/landing/Ecosystem3DHero';
+import { LiveBusinessCockpit } from '../../components/landing/LiveBusinessCockpit';
 import { ProductBentoGrid } from '../../components/landing/ProductBentoGrid';
 import { KineticText } from '../../components/landing/KineticText';
-import '../../styles/ecosystem-3d.css';
 
 export const HomePage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -167,20 +166,19 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Right 3D Spatial Interactive Hero Scene */}
+            {/* Right Live Business Cockpit Command Center */}
             <div
-              className="hero-3d-container"
+              className="hero-cockpit-container"
               style={{
                 position: 'relative',
                 width: '100%',
-                height: '460px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto',
               }}
             >
-              <Ecosystem3DHero />
+              <LiveBusinessCockpit />
             </div>
           </div>
         </div>

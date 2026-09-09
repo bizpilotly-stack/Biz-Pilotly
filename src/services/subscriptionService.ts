@@ -364,6 +364,46 @@ class SubscriptionService {
   }
 
   /**
+   * Initializes or updates subscription for a newly signed-up user (Email or Google OAuth).
+   */
+  async initializePlanForUser(
+    user: { id: string; email?: string | null; name?: string },
+    selectedPlan: PlanTier,
+    currency: PricingCurrency = getStoredCurrency()
+  ): Promise<UserSubscription> {
+    if (selectedPlan === 'free') {
+      const freeSub: UserSubscription = {
+        userId: user.id,
+        plan: 'free',
+        status: 'FREE',
+        billingInterval: 'monthly',
+        currency,
+        trialUsed: false,
+        daysRemaining: 0,
+        formattedCountdown: 'Free Starter',
+        isTrialEndingSoon: false,
+      };
+      this.persistSubscription(user.id, freeSub);
+      return freeSub;
+    }
+
+    try {
+      return await this.start15DayTrial(user, selectedPlan, currency);
+    } catch {
+      return await this.getSubscription(user);
+    }
+  }
+
+  /**
+   * Returns maximum allowed clients for the subscription tier.
+   */
+  getClientLimit(sub: UserSubscription): number {
+    const effective = this.getEffectivePlan(sub);
+    if (effective === 'free') return 5;
+    return Infinity;
+  }
+
+  /**
    * Strict plan-based feature entitlement checker.
    * During trial or subscription, users receive ONLY the features of their selected plan.
    */
@@ -381,6 +421,7 @@ class SubscriptionService {
       | 'multi_workspace'
       | 'audit_logs'
       | 'legal_execution_certificate'
+      | 'payment_gateways'
   ): boolean {
     const effectivePlan = this.getEffectivePlan(sub);
 
@@ -399,6 +440,7 @@ class SubscriptionService {
       case 'recurring_invoices':
       case 'task_csv':
       case 'accounting_csv':
+      case 'payment_gateways':
         // Professional or Business Suite
         return effectivePlan === 'pro' || effectivePlan === 'business';
 

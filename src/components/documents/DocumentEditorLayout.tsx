@@ -47,6 +47,8 @@ import { Button } from '../common/Button';
 import { useToast } from '../common/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { SEO } from '../common/SEO';
+import { subscriptionService, UserSubscription } from '../../services/subscriptionService';
+import { UpgradeModal } from '../subscription/UpgradeModal';
 
 interface DocumentEditorProps {
   documentType: DocumentType;
@@ -56,12 +58,22 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   documentType,
 }) => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const location = useLocation();
   const isApp = location.pathname.startsWith('/app');
   const docsBase = isApp ? '/app/documents' : '/documents';
   const navigate = useNavigate();
 
-  const { showToast } = useToast();
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeTargetPlan, setUpgradeTargetPlan] = useState<'pro' | 'business'>('pro');
+
+  useEffect(() => {
+    if (user) {
+      subscriptionService.getSubscription({ id: user.id, email: user.email }).then(setSubscription).catch(console.warn);
+    }
+  }, [user]);
+
   const meta = documentService.getMeta(documentType);
   const jsonLd = documentService.getJsonLd(documentType);
 
@@ -1217,6 +1229,12 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   value={doc.paymentDetails?.paymentPreference || 'manual'}
                   onChange={(e) => {
                     const pref = e.target.value as 'manual' | 'gateway';
+                    if (pref === 'gateway' && subscription?.plan === 'free') {
+                      showToast('Online Payment Gateways require a Professional or Business Suite plan. Upgrade to unlock.', 'warning');
+                      setUpgradeTargetPlan('pro');
+                      setUpgradeModalOpen(true);
+                      return;
+                    }
                     setDoc({
                       ...doc,
                       paymentDetails: {
@@ -1228,7 +1246,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                   style={{ fontWeight: 600, fontSize: '0.8125rem' }}
                 >
                   <option value="manual">Direct Bank Transfer</option>
-                  <option value="gateway">Online Payment Gateway (Card, USSD, Bank)</option>
+                  <option value="gateway">Online Payment Gateway (Card, USSD, Bank) {subscription?.plan === 'free' ? '🔒 (PRO)' : ''}</option>
                 </select>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.375rem' }}>
                   {doc.paymentDetails?.paymentPreference === 'gateway'
@@ -1731,12 +1749,20 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                           </div>
                           <button
                             type="button"
-                            onClick={() => setClientSigModalOpen(true)}
+                            onClick={() => {
+                              if (subscription && !subscriptionService.canAccessPlanFeature(subscription, 'legal_execution_certificate')) {
+                                showToast('Bilateral Legal Execution Certificates & Counter-signatures are exclusive to Business Suite.', 'warning');
+                                setUpgradeTargetPlan('business');
+                                setUpgradeModalOpen(true);
+                                return;
+                              }
+                              setClientSigModalOpen(true);
+                            }}
                             className="btn btn-secondary btn-sm"
                             style={{ fontSize: '0.75rem', padding: '4px 10px', width: '100%', justifyContent: 'center' }}
                           >
                             <PenTool size={13} />
-                            <span>Sign on Behalf of Client</span>
+                            <span>Sign on Behalf of Client {subscription && !subscriptionService.canAccessPlanFeature(subscription, 'legal_execution_certificate') ? '🔒 (BUSINESS)' : ''}</span>
                           </button>
                         </div>
                       )}
@@ -2337,6 +2363,13 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
           });
           showToast('✓ Client / Partner E-Signature applied!', 'success');
         }}
+      />
+
+      {/* Upgrade Plan Modal */}
+      <UpgradeModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        initialPlan={upgradeTargetPlan}
       />
     </div>
   );
