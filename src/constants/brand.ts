@@ -4,7 +4,7 @@ export const BRAND_NAME = 'BizPilotly';
 export const BRAND_TAGLINE = 'Calculate. Create. Manage.';
 export const BRAND_SUBTITLE = 'Simple tools for freelancers and small businesses to price work, create professional documents, and keep business operations organized.';
 
-export const SUPPORT_EMAIL = 'support@bizpilotly.com';
+export const SUPPORT_EMAIL = 'bizpilotly@gmail.com';
 
 export const CURRENCIES = [
   { code: 'AED', symbol: 'AED', name: 'AED - UAE Dirham (AED)' },

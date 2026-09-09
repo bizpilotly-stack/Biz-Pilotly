@@ -61,10 +61,11 @@ export const PublicFooter: React.FC = () => {
           <div>
             © {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-            <span>Security</span>
+          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <Link to="/privacy" className="footer-link" style={{ fontSize: '0.8125rem' }}>Privacy Policy</Link>
+            <Link to="/terms" className="footer-link" style={{ fontSize: '0.8125rem' }}>Terms of Service</Link>
+            <Link to="/refund-policy" className="footer-link" style={{ fontSize: '0.8125rem' }}>Refund & Cancellation</Link>
+            <Link to="/contact" className="footer-link" style={{ fontSize: '0.8125rem' }}>Support</Link>
           </div>
         </div>
       </div>

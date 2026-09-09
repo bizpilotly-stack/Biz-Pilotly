@@ -27,6 +27,9 @@ import { AboutPage } from './pages/public/AboutPage';
 import { ContactPage } from './pages/public/ContactPage';
 import { LoginPage } from './pages/public/LoginPage';
 import { SignupPage } from './pages/public/SignupPage';
+import { TermsPage } from './pages/public/TermsPage';
+import { PrivacyPage } from './pages/public/PrivacyPage';
+import { RefundPolicyPage } from './pages/public/RefundPolicyPage';
 import { ClientPortalPage } from './pages/public/ClientPortalPage';
 import { PublicInvoiceViewPage } from './pages/public/PublicInvoiceViewPage';
 
@@ -93,11 +96,17 @@ export const App: React.FC = () => {
               <Route path="/documents/contract" element={<ContractBuilderPage />} />
               <Route path="/documents/receipt" element={<ReceiptBuilderPage />} />
 
-              {/* Company & Auth Routes */}
+              {/* Company, Legal & Auth Routes */}
               <Route path="/business" element={<BusinessPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/terms-of-service" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/refunds" element={<RefundPolicyPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
             </Route>
