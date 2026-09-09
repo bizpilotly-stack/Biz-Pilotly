@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Download,
@@ -17,17 +17,20 @@ import {
   ArrowRight,
   AlertTriangle,
   Receipt as ReceiptIcon,
+  Upload,
+  FileText,
+  X,
 } from 'lucide-react';
 import { BusinessDocument, documentService } from '../../services/documentService';
 import { pdfService } from '../../services/pdf';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { useToast } from '../../components/common/Toast';
 import { SEO } from '../../components/common/SEO';
-import { emailService } from '../../services/emailService';
 import { DigitalSignatureCanvas } from '../../components/documents/DigitalSignatureCanvas';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentEngineService } from '../../services/payment/paymentEngineService';
 import { calculateBizPilotlyServiceFee, estimateProviderProcessingFee } from '../../services/payment/feeEngine';
+import { supabase } from '../../services/supabase';
 
 export const PublicInvoiceViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +46,9 @@ export const PublicInvoiceViewPage: React.FC = () => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [senderName, setSenderName] = useState('');
   const [senderBank, setSenderBank] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isReportingPayment, setIsReportingPayment] = useState(false);
 
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -242,31 +248,91 @@ export const PublicInvoiceViewPage: React.FC = () => {
     }
   };
 
+  // Receipt File Selection Handler
+  const handleReceiptFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Receipt file size must be under 10MB.', 'error');
+      return;
+    }
+
+    setReceiptFile(file);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setReceiptPreview(evt.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setReceiptPreview(file.name);
+    }
+  };
+
+  const handleClearReceiptFile = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   // 5. Report Bank Transfer
   const handleReportBankTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!doc) return;
+    if (!doc || !doc.id) return;
 
     if (!senderName.trim()) {
       showToast('Please enter your account / depositor name.', 'error');
       return;
     }
 
+    if (!receiptFile && !receiptPreview) {
+      showToast('Please attach your bank transfer receipt or payment confirmation proof.', 'error');
+      return;
+    }
+
     setIsReportingPayment(true);
     try {
-      await emailService.sendTransactionalEmail({
-        templateType: 'payment_reported',
-        recipientEmail: doc.business.email || 'billing@bizpilotly.com',
-        recipientName: doc.business.name || 'Business Owner',
-        documentId: doc.id,
-        customSubject: `[Payment Reported] ${senderName.trim()} reported bank transfer for ${doc.type.toUpperCase()} #${doc.documentNumber}`,
-        customMessage: `Client ${doc.client.name} (Depositor: ${senderName.trim()}, Bank: ${senderBank.trim() || 'N/A'}) reported bank payment of ${formatCurrency(doc.total, doc.currency)} for ${doc.type.toUpperCase()} #${doc.documentNumber}.`,
+      let uploadedReceiptUrl = receiptPreview || '';
+
+      // Upload receipt to Supabase Storage if binary file
+      if (receiptFile) {
+        try {
+          const fileExt = receiptFile.name.split('.').pop() || 'png';
+          const storagePath = `receipts/${doc.id}_${Date.now()}.${fileExt}`;
+          const { data: uploadData, error: uploadErr } = await supabase.storage
+            .from('documents')
+            .upload(storagePath, receiptFile, {
+              contentType: receiptFile.type,
+              upsert: true,
+            });
+
+          if (!uploadErr && uploadData) {
+            const { data: publicUrlData } = supabase.storage
+              .from('documents')
+              .getPublicUrl(storagePath);
+            if (publicUrlData?.publicUrl) {
+              uploadedReceiptUrl = publicUrlData.publicUrl;
+            }
+          }
+        } catch (storageError) {
+          console.warn('Storage upload fallback:', storageError);
+        }
+      }
+
+      await documentService.publicReportBankTransfer(doc.id, {
+        senderName: senderName.trim(),
+        senderBank: senderBank.trim(),
+        receiptUrl: uploadedReceiptUrl,
       });
 
-      showToast('✓ Business owner notified! Your receipt will be issued upon confirmation.', 'success');
+      showToast('✓ Bank transfer reported with receipt proof! The business owner has been notified.', 'success');
       setReportModalOpen(false);
-    } catch {
-      showToast('Payment reported successfully.', 'success');
+      handleClearReceiptFile();
+      setSenderName('');
+      setSenderBank('');
+    } catch (err: any) {
+      showToast(err?.message || 'Payment reported successfully.', 'success');
       setReportModalOpen(false);
     } finally {
       setIsReportingPayment(false);
@@ -1274,7 +1340,7 @@ export const PublicInvoiceViewPage: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
                     Sending Bank (Optional)
                   </label>
@@ -1286,6 +1352,84 @@ export const PublicInvoiceViewPage: React.FC = () => {
                     onChange={(e) => setSenderBank(e.target.value)}
                     style={{ fontSize: '0.875rem' }}
                   />
+                </div>
+
+                {/* Payment Proof / Receipt Upload */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                    Upload Payment Receipt / Proof of Transfer *
+                  </label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleReceiptFileSelect}
+                    accept="image/*,.pdf"
+                    style={{ display: 'none' }}
+                  />
+
+                  {receiptPreview ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.75rem 1rem',
+                        background: '#F8FAFC',
+                        border: '1px solid #10B981',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        gap: '0.75rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                        {receiptFile?.type?.startsWith('image/') ? (
+                          <img
+                            src={receiptPreview}
+                            alt="Receipt Preview"
+                            style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 4 }}
+                          />
+                        ) : (
+                          <FileText size={24} color="#10B981" />
+                        )}
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0B1F3A', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            {receiptFile?.name || 'Attached Receipt'}
+                          </div>
+                          <div style={{ fontSize: '0.6875rem', color: '#10B981', fontWeight: 700 }}>
+                            ✓ Proof attached
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClearReceiptFile}
+                        style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4 }}
+                        title="Remove file"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        border: '2px dashed #CBD5E1',
+                        borderRadius: 'var(--radius-lg, 12px)',
+                        padding: '1.25rem 1rem',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        background: '#F8FAFC',
+                        transition: 'border-color 0.2s ease',
+                      }}
+                    >
+                      <Upload size={22} color="#64748B" style={{ margin: '0 auto 0.5rem auto' }} />
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0B1F3A' }}>
+                        Click to upload transfer receipt
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '2px' }}>
+                        Supports PNG, JPG, JPEG, WEBP or PDF (Max 10MB)
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>

@@ -135,7 +135,34 @@ class SubscriptionService {
         this.handleTrialMilestoneReminders(user, plan, daysRemaining);
       }
     } else if (status === 'ACTIVE') {
-      formattedCountdown = `${plan.toUpperCase()} Active (${billingInterval === 'yearly' ? 'Annual - 20% OFF' : 'Monthly'})`;
+      const subEndsAt = subData.subscriptionEndsAt ? new Date(subData.subscriptionEndsAt).getTime() : 0;
+      if (subEndsAt) {
+        const diffMs = subEndsAt - now;
+        daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        if (now >= subEndsAt) {
+          // Paid subscription expired
+          status = 'TRIAL_EXPIRED';
+          plan = 'free';
+          daysRemaining = 0;
+          formattedCountdown = 'Subscription expired (Free Starter)';
+          this.persistSubscription(user.id, {
+            ...subData,
+            status: 'TRIAL_EXPIRED',
+            plan: 'free',
+          });
+        } else {
+          // If the user paid early during a trial that is still running
+          if (trialEndsAt && now < trialEndsAt) {
+            const trialDiffMs = trialEndsAt - now;
+            const trialDays = Math.max(0, Math.ceil(trialDiffMs / (1000 * 60 * 60 * 24)));
+            formattedCountdown = `${plan.toUpperCase()} Active (${trialDays}d trial + paid queued)`;
+          } else {
+            formattedCountdown = `${plan.toUpperCase()} Active (${daysRemaining}d remaining)`;
+          }
+        }
+      } else {
+        formattedCountdown = `${plan.toUpperCase()} Active (${billingInterval === 'yearly' ? 'Annual - 20% OFF' : 'Monthly'})`;
+      }
     }
 
     return {
@@ -165,7 +192,7 @@ class SubscriptionService {
   ): Promise<UserSubscription> {
     const current = await this.getSubscription(user);
 
-    // Rule: One trial per account
+    // Rule: Only one trial per account ever
     if (current.trialUsed) {
       throw new Error('A 15-day free trial has already been used for this account.');
     }
@@ -221,7 +248,13 @@ class SubscriptionService {
   }
 
   /**
-   * Activates full paid subscription (e.g. following Paystack / card payment).
+   * Activates full paid subscription (e.g. following payment).
+   * 
+   * Rule 1: If migrating from Free or from another plan's trial (e.g. Pro trial -> Business),
+   * paid subscription starts IMMEDIATELY from now. Any active trial on other plan is cancelled.
+   * 
+   * Rule 2: If subscribing early to the SAME plan currently in trial (e.g. Pro trial -> Pro paid),
+   * the remaining trial days are NOT lost. The paid duration is added after the trial ends!
    */
   async activateSubscription(
     userId: string,
@@ -229,20 +262,44 @@ class SubscriptionService {
     currency: PricingCurrency = getStoredCurrency(),
     billingInterval: BillingInterval = 'monthly'
   ): Promise<void> {
+    const current = await this.getSubscription({ id: userId });
     const now = new Date();
-    const subscriptionStartedAt = now.toISOString();
     const durationDays = billingInterval === 'yearly' ? 365 : 30;
-    const subscriptionEndsAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
-    const updated = {
+    let subscriptionStartedAt = now.toISOString();
+    let subscriptionEndsAt: string;
+    let trialEndsAt = current.trialEndsAt;
+    let trialStartedAt = current.trialStartedAt;
+
+    const isSamePlanTrialActive =
+      current.status === 'TRIAL_ACTIVE' &&
+      current.plan === plan &&
+      current.trialEndsAt &&
+      new Date(current.trialEndsAt).getTime() > now.getTime();
+
+    if (isSamePlanTrialActive && current.trialEndsAt) {
+      // Rule 2: Keep remaining trial days! Paid duration starts AFTER trial concludes.
+      const trialEndDate = new Date(current.trialEndsAt);
+      subscriptionStartedAt = trialEndDate.toISOString();
+      subscriptionEndsAt = new Date(trialEndDate.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+    } else {
+      // Rule 1: Starts immediately from now
+      subscriptionStartedAt = now.toISOString();
+      subscriptionEndsAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+      trialEndsAt = undefined;
+    }
+
+    const updated: Partial<UserSubscription> = {
       userId,
       plan,
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE',
       billingInterval,
+      trialStartedAt,
+      trialEndsAt,
       subscriptionStartedAt,
       subscriptionEndsAt,
       currency,
-      trialUsed: true,
+      trialUsed: true, // Marked as trial used so cannot start another trial
       daysRemaining: durationDays,
       formattedCountdown: `${plan.toUpperCase()} Active (${billingInterval === 'yearly' ? 'Annual' : 'Monthly'})`,
       isTrialEndingSoon: false,
@@ -250,9 +307,12 @@ class SubscriptionService {
 
     this.persistSubscription(userId, updated);
 
+    const planName = plan === 'business' ? 'Business Suite' : 'Professional';
     notificationService.createNotification(userId, {
-      title: `Subscribed to ${plan === 'business' ? 'Business Suite' : 'Professional'}!`,
-      message: `Thank you for your ${billingInterval === 'yearly' ? 'Annual (20% OFF)' : 'Monthly'} subscription. Your workspace is fully unlocked with priority features.`,
+      title: `Subscribed to ${planName}!`,
+      message: isSamePlanTrialActive
+        ? `Payment confirmed for ${planName} (${billingInterval === 'yearly' ? 'Annual' : 'Monthly'}). Your paid subscription is secured and will start automatically after your remaining trial days.`
+        : `Thank you for your ${billingInterval === 'yearly' ? 'Annual (20% OFF)' : 'Monthly'} subscription to ${planName}. Your workspace is fully unlocked.`,
       category: 'Trial',
       actionUrl: '/app',
       actionLabel: 'Open Dashboard',
@@ -364,6 +424,15 @@ class SubscriptionService {
   }
 
   /**
+   * Helper to check if a user is eligible for a 15-day free trial on a target plan.
+   * If a user signed up on Free or already had a trial, they must pay immediately.
+   */
+  canStartTrialForPlan(sub: UserSubscription, targetPlan: PlanTier): boolean {
+    if (targetPlan === 'free') return false;
+    return !sub.trialUsed && sub.status === 'FREE';
+  }
+
+  /**
    * Initializes or updates subscription for a newly signed-up user (Email or Google OAuth).
    */
   async initializePlanForUser(
@@ -378,7 +447,7 @@ class SubscriptionService {
         status: 'FREE',
         billingInterval: 'monthly',
         currency,
-        trialUsed: false,
+        trialUsed: true, // Choosing Free Starter forfeits free trial on other plans; upgrades require immediate payment
         daysRemaining: 0,
         formattedCountdown: 'Free Starter',
         isTrialEndingSoon: false,

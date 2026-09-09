@@ -19,6 +19,7 @@ import {
 } from './documents';
 import { businessService } from './businessService';
 import { emailService } from './emailService';
+import { formatCurrency } from '../utils/formatters';
 
 class DocumentService {
   /**
@@ -884,6 +885,46 @@ class DocumentService {
       });
     } catch (err) {
       console.warn('Owner notification fallback:', err);
+    }
+
+    return updatedDoc;
+  }
+
+  /**
+   * Public Client Action: Report Manual Bank Wire Transfer with Receipt Proof
+   */
+  async publicReportBankTransfer(
+    docId: string,
+    data: {
+      senderName: string;
+      senderBank?: string;
+      reference?: string;
+      receiptUrl?: string;
+    }
+  ): Promise<BusinessDocument> {
+    const doc = await this.getPublicDocumentById(docId);
+    if (!doc || !doc.id) throw new Error('Document not found');
+
+    const updatedDoc: BusinessDocument = {
+      ...doc,
+      notes: `${doc.notes ? doc.notes + '\n\n' : ''}[Bank Transfer Reported on ${new Date().toLocaleDateString()} by ${data.senderName}${data.senderBank ? ` via ${data.senderBank}` : ''}]`,
+    };
+
+    localStorage.setItem(`bizpilotly_public_doc_${doc.id}`, JSON.stringify(updatedDoc));
+
+    // Send transactional email to business owner with attached receipt URL
+    try {
+      await emailService.sendTransactionalEmail({
+        templateType: 'payment_reported',
+        recipientEmail: doc.business.email || 'billing@bizpilotly.com',
+        recipientName: doc.business.name || 'Business Owner',
+        documentId: doc.id,
+        receiptUrl: data.receiptUrl,
+        customSubject: `[Payment Reported] ${data.senderName} reported bank transfer for ${doc.type.toUpperCase()} #${doc.documentNumber}`,
+        customMessage: `Client ${doc.client.name} (Depositor: ${data.senderName}, Bank: ${data.senderBank || 'N/A'}) reported bank payment of ${formatCurrency(doc.total, doc.currency)} for ${doc.type.toUpperCase()} #${doc.documentNumber}. A payment receipt proof was attached.`,
+      });
+    } catch (err) {
+      console.warn('Owner payment report email notice:', err);
     }
 
     return updatedDoc;

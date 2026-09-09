@@ -27,6 +27,7 @@ export interface SendEmailOptions {
   customSubject?: string;
   customMessage?: string;
   attachPdf?: boolean;
+  receiptUrl?: string;
 }
 
 export interface EmailLogEntry {

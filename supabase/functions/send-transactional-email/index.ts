@@ -159,6 +159,26 @@ serve(async (req: Request) => {
           </div>
         `;
         break;
+      case "payment_reported":
+        subject = subject || `[Payment Reported] Bank Transfer for Invoice ${documentData?.document_number || ""}`;
+        htmlContent = `
+          <div style="font-family: sans-serif; color: #1E293B; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 12px; background: #ffffff;">
+            <h2 style="color: #0B1F3A; margin-top: 0;">Payment Reported by Client</h2>
+            <p>A client has reported a manual bank wire transfer for <strong>Invoice #${documentData?.document_number || ""}</strong>.</p>
+            ${payload.customMessage ? `<div style="background: #F8FAFC; padding: 14px; border-left: 4px solid #C9A227; border-radius: 4px; margin: 16px 0; font-size: 14px;">${payload.customMessage}</div>` : ""}
+            ${payload.receiptUrl ? `
+              <div style="margin: 20px 0; padding: 16px; background: #F1F5F9; border-radius: 8px; text-align: center;">
+                <p style="font-weight: bold; margin-bottom: 12px; color: #0B1F3A;">Payment Proof / Receipt Attached</p>
+                <a href="${payload.receiptUrl}" target="_blank" style="display: inline-block; background: #0B1F3A; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                  View & Verify Receipt Proof
+                </a>
+              </div>
+            ` : ""}
+            <p style="font-size: 13px; color: #64748B;">Please check your bank account statement and confirm the payment in your BizPilotly dashboard to issue the official receipt.</p>
+            <p style="margin-top: 32px; font-size: 12px; color: #94A3B8; border-top: 1px solid #E2E8F0; padding-top: 16px;">Powered by BizPilotly Platform</p>
+          </div>
+        `;
+        break;
       case "welcome":
       default:
         subject = subject || `Welcome to ${fromName}!`;

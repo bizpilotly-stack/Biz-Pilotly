@@ -177,6 +177,9 @@ export interface Payment {
   status: 'completed' | 'pending' | 'failed' | 'refunded';
   reference?: string;
   notes?: string;
+  receiptUrl?: string;
+  depositorName?: string;
+  depositorBank?: string;
 }
 
 export type ExpenseCategory = 

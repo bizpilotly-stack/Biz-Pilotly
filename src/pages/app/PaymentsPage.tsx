@@ -7,7 +7,9 @@ import {
   Clock,
   AlertCircle,
   FileSpreadsheet,
-  MoreVertical,
+  Eye,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { Payment } from '../../types';
 import { paymentService } from '../../services/paymentService';
@@ -30,13 +32,11 @@ export const PaymentsPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleOutside = () => setActiveMenuId(null);
-    window.addEventListener('click', handleOutside);
-    return () => window.removeEventListener('click', handleOutside);
-  }, []);
+  // Receipt Preview & Verification Modal State
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState<Payment | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // Record Payment Modal State
   const [recordModalOpen, setRecordModalOpen] = useState(false);
@@ -99,6 +99,20 @@ export const PaymentsPage: React.FC = () => {
       showToast('Error recording payment', 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmPayment = async (paymentId: string) => {
+    setIsConfirming(true);
+    try {
+      await paymentService.confirmPayment(paymentId);
+      showToast('✓ Payment confirmed! Linked invoice marked as Paid.', 'success');
+      setReceiptModalOpen(false);
+      loadData();
+    } catch {
+      showToast('Error confirming payment.', 'error');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -261,6 +275,7 @@ export const PaymentsPage: React.FC = () => {
                   <th>Amount</th>
                   <th>Reference</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,6 +295,39 @@ export const PaymentsPage: React.FC = () => {
                     <td>
                       <Badge status={p.status}>{p.status}</Badge>
                     </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {p.receiptUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedReceiptPayment(p);
+                              setReceiptModalOpen(true);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: '0.6875rem', padding: '3px 8px', gap: '4px', color: '#2563EB', borderColor: '#BFDBFE' }}
+                            title="View Client Uploaded Receipt"
+                          >
+                            <Eye size={12} />
+                            <span>Proof</span>
+                          </button>
+                        ) : null}
+
+                        {p.status === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmPayment(p.id)}
+                            disabled={isConfirming}
+                            className="btn btn-primary btn-sm"
+                            style={{ fontSize: '0.6875rem', padding: '3px 8px', gap: '4px', background: '#10B981', borderColor: '#10B981' }}
+                            title="Confirm Payment"
+                          >
+                            <CheckCircle2 size={12} />
+                            <span>Confirm</span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -288,11 +336,9 @@ export const PaymentsPage: React.FC = () => {
 
           {/* 2. Mobile Responsive Cards */}
           <div className="mobile-cards-view" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {payments.map((p) => {
-              const isMenuOpen = activeMenuId === p.id;
-              return (
-                <div
-                  key={p.id}
+            {payments.map((p) => (
+              <div
+                key={p.id}
                   style={{
                     background: '#ffffff',
                     border: '1px solid var(--border-color)',
@@ -309,51 +355,31 @@ export const PaymentsPage: React.FC = () => {
                       <strong style={{ fontSize: '0.9375rem', color: '#0B1F3A' }}>{p.clientName}</strong>
                     </div>
 
-                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        onClick={() => setActiveMenuId(isMenuOpen ? null : p.id)}
-                        style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#64748b' }}
-                        aria-label="Actions Menu"
-                      >
-                        <MoreVertical size={18} />
-                      </button>
-
-                      {isMenuOpen && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            right: 0,
-                            top: '100%',
-                            background: '#ffffff',
-                            border: '1px solid #E2E8F0',
-                            borderRadius: '8px',
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                            zIndex: 50,
-                            minWidth: '150px',
-                            padding: '4px 0',
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {p.receiptUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedReceiptPayment(p);
+                            setReceiptModalOpen(true);
                           }}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.6875rem', padding: '2px 6px', color: '#2563EB', borderColor: '#BFDBFE' }}
                         >
-                          <div
-                            style={{
-                              padding: '8px 12px',
-                              fontSize: '0.8125rem',
-                              color: '#64748b',
-                              borderBottom: '1px solid #F1F5F9',
-                            }}
-                          >
-                            Ref: {p.reference || 'N/A'}
-                          </div>
-                          <div
-                            style={{
-                              padding: '8px 12px',
-                              fontSize: '0.8125rem',
-                              color: '#0B1F3A',
-                            }}
-                          >
-                            Method: {p.method}
-                          </div>
-                        </div>
+                          <Eye size={12} />
+                          <span>Proof</span>
+                        </button>
+                      )}
+                      {p.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmPayment(p.id)}
+                          disabled={isConfirming}
+                          className="btn btn-primary btn-sm"
+                          style={{ fontSize: '0.6875rem', padding: '2px 6px', background: '#10B981', borderColor: '#10B981' }}
+                        >
+                          <span>Confirm</span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -370,8 +396,7 @@ export const PaymentsPage: React.FC = () => {
                     <Badge status={p.status}>{p.status}</Badge>
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
         </>
       )}
@@ -451,6 +476,91 @@ export const PaymentsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Receipt Verification & Preview Modal */}
+      {receiptModalOpen && selectedReceiptPayment && (
+        <Modal
+          isOpen={receiptModalOpen}
+          onClose={() => setReceiptModalOpen(false)}
+          title={`Payment Proof: ${selectedReceiptPayment.paymentNumber}`}
+        >
+          <div>
+            <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.8125rem' }}>
+                <div>
+                  <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Client / Depositor</span>
+                  <strong style={{ color: '#0B1F3A' }}>{selectedReceiptPayment.depositorName || selectedReceiptPayment.clientName}</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Amount Reported</span>
+                  <strong style={{ color: '#047857' }}>{formatCurrency(selectedReceiptPayment.amount, selectedReceiptPayment.currency, selectedReceiptPayment.currencySymbol)}</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Sending Bank</span>
+                  <strong style={{ color: '#0B1F3A' }}>{selectedReceiptPayment.depositorBank || 'N/A'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Linked Invoice</span>
+                  <strong style={{ color: '#2563EB' }}>{selectedReceiptPayment.invoiceNumber}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Receipt Preview Area */}
+            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+              {selectedReceiptPayment.receiptUrl ? (
+                selectedReceiptPayment.receiptUrl.includes('.pdf') || selectedReceiptPayment.receiptUrl.startsWith('data:application/pdf') ? (
+                  <div style={{ padding: '2rem', border: '2px dashed #CBD5E1', borderRadius: '12px', background: '#F8FAFC' }}>
+                    <FileText size={48} color="#2563EB" style={{ margin: '0 auto 0.75rem auto' }} />
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0B1F3A', marginBottom: '0.75rem' }}>PDF Payment Receipt Attached</p>
+                    <a
+                      href={selectedReceiptPayment.receiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <ExternalLink size={14} />
+                      <span>Open PDF Receipt in New Tab</span>
+                    </a>
+                  </div>
+                ) : (
+                  <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden', maxHeight: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0F172A' }}>
+                    <img
+                      src={selectedReceiptPayment.receiptUrl}
+                      alt="Bank Transfer Receipt"
+                      style={{ maxWidth: '100%', maxHeight: '380px', objectFit: 'contain' }}
+                    />
+                  </div>
+                )
+              ) : (
+                <div style={{ padding: '2rem', color: '#64748B', fontSize: '0.875rem' }}>
+                  No receipt image file available for this record.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <Button type="button" variant="secondary" onClick={() => setReceiptModalOpen(false)}>
+                Close
+              </Button>
+              {selectedReceiptPayment.status === 'pending' && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => handleConfirmPayment(selectedReceiptPayment.id)}
+                  isLoading={isConfirming}
+                  disabled={isConfirming}
+                  style={{ background: '#10B981', borderColor: '#10B981' }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Confirm Payment & Mark Paid</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

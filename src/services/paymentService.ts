@@ -55,6 +55,9 @@ class PaymentService {
       status: row.status as Payment['status'],
       reference: row.reference || undefined,
       notes: row.notes || undefined,
+      receiptUrl: row.receipt_url || (row.notes && row.notes.includes('http') ? row.notes.match(/(https?:\/\/[^\s]+)/)?.[0] : undefined),
+      depositorName: row.depositor_name || undefined,
+      depositorBank: row.depositor_bank || undefined,
     }));
   }
 
@@ -104,6 +107,9 @@ class PaymentService {
       status: data.status as Payment['status'],
       reference: data.reference || undefined,
       notes: data.notes || undefined,
+      receiptUrl: (data as any).receipt_url || ((data as any).notes && (data as any).notes.includes('http') ? (data as any).notes.match(/(https?:\/\/[^\s]+)/)?.[0] : undefined),
+      depositorName: (data as any).depositor_name || undefined,
+      depositorBank: (data as any).depositor_bank || undefined,
     };
   }
 
@@ -228,6 +234,22 @@ class PaymentService {
 
     const updated = await this.getPaymentById(id);
     if (!updated) throw new Error('Failed to fetch updated payment');
+    return updated;
+  }
+
+  async confirmPayment(paymentId: string): Promise<Payment> {
+    const payment = await this.getPaymentById(paymentId);
+    if (!payment) throw new Error('Payment not found');
+
+    const updated = await this.updatePayment(paymentId, { status: 'completed' });
+
+    if (payment.invoiceId) {
+      await supabase
+        .from('documents')
+        .update({ status: 'paid' as any })
+        .eq('id', payment.invoiceId);
+    }
+
     return updated;
   }
 

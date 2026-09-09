@@ -31,6 +31,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<PlanTier>(initialPlan === 'free' ? 'pro' : initialPlan);
   const [currency, setCurrency] = useState<PricingCurrency>(getStoredCurrency());
   const [interval, setInterval] = useState<BillingInterval>('monthly');
+  const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
@@ -38,6 +39,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       setSelectedPlan(initialPlan);
     }
   }, [initialPlan, isOpen]);
+
+  React.useEffect(() => {
+    if (user && isOpen) {
+      subscriptionService.getSubscription({ id: user.id, email: user.email }).then(setSubscription);
+    }
+  }, [user, isOpen]);
 
   if (!isOpen) return null;
 
@@ -329,6 +336,19 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '2px 0 0 0' }}>
               Selected: <strong>{currentPlanConfig.name} ({interval === 'yearly' ? `${currentPrice.yearlyFormatted} (20% OFF)` : `${currentPrice.formatted}/month`})</strong>
             </p>
+            {subscription?.status === 'TRIAL_ACTIVE' && subscription.plan === selectedPlan ? (
+              <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#047857', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>✓ Early payment preserves all {subscription.daysRemaining} remaining trial days (paid period begins after trial ends).</span>
+              </div>
+            ) : subscription?.status === 'TRIAL_ACTIVE' && subscription.plan !== selectedPlan ? (
+              <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#B45309', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>⚡ Migrating to {currentPlanConfig.name}: Paid period begins immediately upon checkout.</span>
+              </div>
+            ) : (
+              <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#64748B', fontWeight: 500 }}>
+                <span>Instant activation: Features unlocked immediately upon checkout.</span>
+              </div>
+            )}
           </div>
 
           <button
