@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from 'lucide-react';
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   text: string;
 }
 
 interface ToastContextValue {
-  showToast: (text: string, type?: 'success' | 'error' | 'info') => void;
+  showToast: (text: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
 const ToastContext = createContext<ToastContextValue>({
@@ -20,7 +20,7 @@ export const useToast = () => useContext(ToastContext);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const showToast = useCallback((text: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const showToast = useCallback((text: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
     setToasts((prev) => [...prev, { id, type, text }]);
 
@@ -41,6 +41,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           <div key={toast.id} className="toast" role="alert">
             {toast.type === 'success' && <CheckCircle2 size={18} color="#10b981" />}
             {toast.type === 'error' && <AlertCircle size={18} color="#ef4444" />}
+            {toast.type === 'warning' && <AlertTriangle size={18} color="#f59e0b" />}
             {toast.type === 'info' && <Info size={18} color="#3b82f6" />}
             <span style={{ flex: 1 }}>{toast.text}</span>
             <button

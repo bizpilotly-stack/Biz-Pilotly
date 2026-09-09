@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  TrendingUp,
   CreditCard,
   FileCheck2,
-  DollarSign,
   ArrowUpRight,
   ShieldCheck,
   CheckCircle2,
-  Clock,
   Send,
   Building2,
   Sparkles,
