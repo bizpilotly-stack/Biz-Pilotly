@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { RotateCcw, ArrowLeft, Mail, DollarSign } from 'lucide-react';
+import { RotateCcw, ArrowLeft, Mail } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { SEO } from '../../components/common/SEO';
 

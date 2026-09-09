@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, ArrowLeft, Mail, FileText } from 'lucide-react';
+import { ArrowLeft, Mail, FileText } from 'lucide-react';
 import { BRAND_NAME } from '../../constants/brand';
 import { SEO } from '../../components/common/SEO';
 

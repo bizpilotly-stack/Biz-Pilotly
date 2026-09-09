@@ -24,45 +24,46 @@ class PaymentEngineService {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('platform_payment_settings')
         .select('*')
         .limit(1)
         .maybeSingle();
 
       if (!error && data) {
+        const row = data as any;
         const settings: PlatformFeeSettings = {
-          flutterwaveEnabled: data.flutterwave_enabled ?? true,
-          flutterwavePriority: data.flutterwave_priority ?? 1,
-          squadEnabled: data.squad_enabled ?? true,
-          squadPriority: data.squad_priority ?? 2,
-          stripeEnabled: data.stripe_enabled ?? false,
-          stripePriority: data.stripe_priority ?? 3,
-          feePercentage: Number(data.fee_percentage) || 0.005,
+          flutterwaveEnabled: row.flutterwave_enabled ?? true,
+          flutterwavePriority: row.flutterwave_priority ?? 1,
+          squadEnabled: row.squad_enabled ?? true,
+          squadPriority: row.squad_priority ?? 2,
+          stripeEnabled: row.stripe_enabled ?? false,
+          stripePriority: row.stripe_priority ?? 3,
+          feePercentage: Number(row.fee_percentage) || 0.005,
           currencies: {
             NGN: {
-              percentage: Number(data.fee_percentage) || 0.005,
-              maxCap: Number(data.cap_ngn) || 10000,
-              minFee: Number(data.min_ngn) || 0,
+              percentage: Number(row.fee_percentage) || 0.005,
+              maxCap: Number(row.cap_ngn) || 10000,
+              minFee: Number(row.min_ngn) || 0,
             },
             USD: {
-              percentage: Number(data.fee_percentage) || 0.005,
-              maxCap: Number(data.cap_usd) || 10,
-              minFee: Number(data.min_usd) || 0,
+              percentage: Number(row.fee_percentage) || 0.005,
+              maxCap: Number(row.cap_usd) || 10,
+              minFee: Number(row.min_usd) || 0,
             },
             GBP: {
-              percentage: Number(data.fee_percentage) || 0.005,
-              maxCap: Number(data.cap_gbp) || 10,
-              minFee: Number(data.min_gbp) || 0,
+              percentage: Number(row.fee_percentage) || 0.005,
+              maxCap: Number(row.cap_gbp) || 10,
+              minFee: Number(row.min_gbp) || 0,
             },
             EUR: {
-              percentage: Number(data.fee_percentage) || 0.005,
-              maxCap: Number(data.cap_eur) || 10,
-              minFee: Number(data.min_eur) || 0,
+              percentage: Number(row.fee_percentage) || 0.005,
+              maxCap: Number(row.cap_eur) || 10,
+              minFee: Number(row.min_eur) || 0,
             },
           },
-          platformFeePayer: data.platform_fee_payer || 'customer',
-          gatewayFeePayer: data.gateway_fee_payer || 'customer',
+          platformFeePayer: row.platform_fee_payer || 'customer',
+          gatewayFeePayer: row.gateway_fee_payer || 'customer',
         };
 
         this.cachedPlatformSettings = settings;
@@ -146,7 +147,7 @@ class PaymentEngineService {
     let subaccountId: string | undefined;
     if (request.businessId) {
       try {
-        const { data: bpc } = await supabase
+        const { data: bpc } = await (supabase as any)
           .from('business_payment_configs')
           .select('provider_subaccount_id')
           .eq('business_id', request.businessId)

@@ -74,7 +74,6 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
   const [isSavingToCloud, setIsSavingToCloud] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [selectedPaymentMode, setSelectedPaymentMode] = useState<'gateway' | 'manual'>('gateway');
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportedSenderName, setReportedSenderName] = useState('');
   const [reportedBank, setReportedBank] = useState('');
@@ -1225,7 +1224,6 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                         paymentPreference: pref,
                       },
                     });
-                    setSelectedPaymentMode(pref);
                   }}
                   style={{ fontWeight: 600, fontSize: '0.8125rem' }}
                 >
@@ -1758,6 +1756,7 @@ export const DocumentEditorLayout: React.FC<DocumentEditorProps> = ({
                       How to Settle This Invoice
                     </span>
                   </div>
+                </div>
 
                 {/* Render Gateway or Direct Bank Transfer based on selection */}
                 {doc.paymentDetails?.paymentPreference === 'gateway' ? (
