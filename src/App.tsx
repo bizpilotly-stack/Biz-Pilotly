@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/common/Toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { TierProtectedPage } from './components/subscription/TierProtectedPage';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { AppLayout } from './components/layout/AppLayout';
 
@@ -138,10 +139,31 @@ export const App: React.FC = () => {
               <Route path="documents/quote" element={<QuoteBuilderPage />} />
               <Route path="documents/estimate" element={<EstimateBuilderPage />} />
               <Route path="documents/proposal" element={<ProposalBuilderPage />} />
-              <Route path="documents/contract" element={<ContractBuilderPage />} />
+              <Route
+                path="documents/contract"
+                element={
+                  <TierProtectedPage requiredPlan="business" featureName="Bilateral Contracts & Legal Signatures">
+                    <ContractBuilderPage />
+                  </TierProtectedPage>
+                }
+              />
               <Route path="documents/receipt" element={<ReceiptBuilderPage />} />
-              <Route path="recurring" element={<RecurringInvoicesPage />} />
-              <Route path="team" element={<TeamSeatsPage />} />
+              <Route
+                path="recurring"
+                element={
+                  <TierProtectedPage requiredPlan="pro" featureName="Recurring Invoices & Retainers">
+                    <RecurringInvoicesPage />
+                  </TierProtectedPage>
+                }
+              />
+              <Route
+                path="team"
+                element={
+                  <TierProtectedPage requiredPlan="business" featureName="Team Member Seats & Staff Roles">
+                    <TeamSeatsPage />
+                  </TierProtectedPage>
+                }
+              />
 
               {/* In-App Interactive Calculators Hub & Tools */}
               <Route path="calculators" element={<AppCalculatorsHubPage />} />
@@ -157,9 +179,30 @@ export const App: React.FC = () => {
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="expenses" element={<ExpensesPage />} />
               <Route path="profit" element={<ProfitPage />} />
-              <Route path="accounting" element={<AccountingPage />} />
-              <Route path="tasks" element={<TasksPage />} />
-              <Route path="tasks/csv" element={<TasksPage />} />
+              <Route
+                path="accounting"
+                element={
+                  <TierProtectedPage requiredPlan="pro" featureName="Accounting Reports & Financial CSV">
+                    <AccountingPage />
+                  </TierProtectedPage>
+                }
+              />
+              <Route
+                path="tasks"
+                element={
+                  <TierProtectedPage requiredPlan="pro" featureName="Task Management & Deliverables CSV">
+                    <TasksPage />
+                  </TierProtectedPage>
+                }
+              />
+              <Route
+                path="tasks/csv"
+                element={
+                  <TierProtectedPage requiredPlan="pro" featureName="Task Management & Deliverables CSV">
+                    <TasksPage />
+                  </TierProtectedPage>
+                }
+              />
               <Route path="settings" element={<Navigate to="/app/settings/business" replace />} />
               <Route path="settings/business" element={<BusinessSettingsPage />} />
               <Route path="settings/account" element={<AccountSettingsPage />} />

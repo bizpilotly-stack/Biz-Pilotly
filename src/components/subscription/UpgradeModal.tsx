@@ -17,12 +17,14 @@ interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialPlan?: PlanTier;
+  onUpgradeSuccess?: () => void;
 }
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   isOpen,
   onClose,
   initialPlan = 'pro',
+  onUpgradeSuccess,
 }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -30,6 +32,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [currency, setCurrency] = useState<PricingCurrency>(getStoredCurrency());
   const [interval, setInterval] = useState<BillingInterval>('monthly');
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (initialPlan && initialPlan !== 'free') {
+      setSelectedPlan(initialPlan);
+    }
+  }, [initialPlan, isOpen]);
 
   if (!isOpen) return null;
 
@@ -46,6 +54,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     try {
       await subscriptionService.activateSubscription(user.id, selectedPlan as 'pro' | 'business', currency, interval);
       showToast(`🎉 Upgraded to ${currentPlanConfig.name} (${interval === 'yearly' ? 'Annual - 20% OFF' : 'Monthly'})! All features unlocked.`, 'success');
+      onUpgradeSuccess?.();
       setTimeout(() => {
         onClose();
       }, 1000);

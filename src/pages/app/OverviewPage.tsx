@@ -16,6 +16,8 @@ import {
   PenTool,
   RefreshCw,
   AlertCircle,
+  Zap,
+  Crown,
 } from 'lucide-react';
 import {
   DashboardStats,
@@ -36,16 +38,23 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { Badge } from '../../components/common/Badge';
 import { SEO } from '../../components/common/SEO';
 import { BRAND_NAME } from '../../constants/brand';
+import { useAuth } from '../../contexts/AuthContext';
+import { subscriptionService, UserSubscription } from '../../services/subscriptionService';
+import { UpgradeModal } from '../../components/subscription/UpgradeModal';
 
 const ONBOARDING_DISMISSED_KEY = 'bizpilotly_onboarding_dismissed';
 
 export const OverviewPage: React.FC = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [lifecycle, setLifecycle] = useState<LifecycleFunnelStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<BusinessDocument[]>([]);
   const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [clientsList, setClientsList] = useState<Client[]>([]);
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeTargetPlan, setUpgradeTargetPlan] = useState<'pro' | 'business'>('pro');
   const [loading, setLoading] = useState(true);
   // Onboarding Checklist States
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
@@ -59,6 +68,10 @@ export const OverviewPage: React.FC = () => {
     const loadOverviewData = async () => {
       setLoading(true);
       try {
+        if (user) {
+          const sub = await subscriptionService.getSubscription({ id: user.id, email: user.email });
+          setSubscription(sub);
+        }
         const [
           statsData,
           lifecycleData,
@@ -107,7 +120,7 @@ export const OverviewPage: React.FC = () => {
     };
 
     loadOverviewData();
-  }, []);
+  }, [user]);
 
   const handleDismissOnboarding = () => {
     setOnboardingDismissed(true);
@@ -152,6 +165,253 @@ export const OverviewPage: React.FC = () => {
           </div>
         }
       />
+
+      {/* Tier Status Banner */}
+      {(() => {
+        const effectivePlan = subscription ? subscriptionService.getEffectivePlan(subscription) : 'free';
+        const isTrial = subscription?.status === 'TRIAL_ACTIVE';
+        const daysLeft = subscription?.daysRemaining ?? 0;
+
+        if (effectivePlan === 'free') {
+          return (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(201, 162, 39, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                border: '1px solid rgba(201, 162, 39, 0.3)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem 1.5rem',
+                marginBottom: '1.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1.25rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: '12px',
+                    background: 'rgba(201, 162, 39, 0.15)',
+                    border: '1px solid rgba(201, 162, 39, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#C9A227',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#C9A227',
+                        background: 'rgba(201, 162, 39, 0.12)',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(201, 162, 39, 0.25)',
+                      }}
+                    >
+                      Free Starter Tier
+                    </span>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      • Basic Invoicing Active
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                    Client Cap: <strong>{clientsList.length} / 5</strong> used • Direct Bank Transfer Invoicing • Manual Accounting
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpgradeTargetPlan('pro');
+                    setUpgradeModalOpen(true);
+                  }}
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                    fontWeight: 700,
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Zap size={15} />
+                  <span>Start 15-Day Pro Trial</span>
+                </button>
+                <Link to="/app/settings/subscription" className="btn btn-secondary btn-sm">
+                  View Plans
+                </Link>
+              </div>
+            </div>
+          );
+        }
+
+        if (effectivePlan === 'pro') {
+          return (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem 1.5rem',
+                marginBottom: '1.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1.25rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: '12px',
+                    background: 'rgba(37, 99, 235, 0.15)',
+                    border: '1px solid rgba(37, 99, 235, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#3b82f6',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Zap size={22} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#3b82f6',
+                        background: 'rgba(37, 99, 235, 0.12)',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(37, 99, 235, 0.25)',
+                      }}
+                    >
+                      {isTrial ? `⭐ Pro Plan • 15-Day Trial (${daysLeft}d left)` : '⭐ Professional Plan Active'}
+                    </span>
+                    <span style={{ fontSize: '0.8125rem', color: '#10b981', fontWeight: 600 }}>
+                      ✓ All Pro Modules Unlocked
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                    Unlimited Clients ({clientsList.length} Active) • Online Payment Gateways (Stripe/PayPal) • Double-Entry Accounting
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpgradeTargetPlan('business');
+                    setUpgradeModalOpen(true);
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    borderColor: 'rgba(201, 162, 39, 0.4)',
+                    color: '#C9A227',
+                    fontWeight: 700,
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Crown size={15} />
+                  <span>Upgrade to Business Suite</span>
+                </button>
+                <Link to="/app/settings/subscription" className="btn btn-secondary btn-sm">
+                  Manage Plan
+                </Link>
+              </div>
+            </div>
+          );
+        }
+
+        // Business Suite
+        return (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(201, 162, 39, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%)',
+              border: '1px solid rgba(201, 162, 39, 0.4)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '1.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1.25rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(201, 162, 39, 0.3) 0%, rgba(201, 162, 39, 0.1) 100%)',
+                  border: '1px solid rgba(201, 162, 39, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#C9A227',
+                  flexShrink: 0,
+                }}
+              >
+                <Crown size={22} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#C9A227',
+                      background: 'rgba(201, 162, 39, 0.15)',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '999px',
+                      border: '1px solid rgba(201, 162, 39, 0.35)',
+                    }}
+                  >
+                    {isTrial ? `👑 Business Suite • 15-Day Trial (${daysLeft}d left)` : '👑 Business Suite Active'}
+                  </span>
+                  <span style={{ fontSize: '0.8125rem', color: '#10b981', fontWeight: 600 }}>
+                    ✓ Full Enterprise Access
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                  Multi-Entity Workspaces • Bilateral Legal Execution • Team Collaboration • Automated Workflows
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Link to="/app/settings/subscription" className="btn btn-secondary btn-sm" style={{ fontWeight: 600 }}>
+                Manage Subscription
+              </Link>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* First-Login Onboarding Tutorial Card */}
       {showOnboarding && (
@@ -977,6 +1237,18 @@ export const OverviewPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <UpgradeModal
+        isOpen={upgradeModalOpen}
+        initialPlan={upgradeTargetPlan}
+        onClose={() => setUpgradeModalOpen(false)}
+        onUpgradeSuccess={async () => {
+          if (user) {
+            const updated = await subscriptionService.getSubscription({ id: user.id, email: user.email });
+            setSubscription(updated);
+          }
+        }}
+      />
     </div>
   );
 };
