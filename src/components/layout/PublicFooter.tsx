@@ -20,7 +20,7 @@ export const PublicFooter: React.FC = () => {
             </p>
           </div>
 
-          <div>
+          <div className="footer-column">
             <h4 className="footer-col-title">Calculators</h4>
             <div className="footer-links">
               <Link to="/calculators/profit" className="footer-link">Profit Calculator</Link>
@@ -29,24 +29,24 @@ export const PublicFooter: React.FC = () => {
               <Link to="/calculators/roi" className="footer-link">ROI Calculator</Link>
               <Link to="/calculators/break-even" className="footer-link">Break-even</Link>
               <Link to="/calculators/discount" className="footer-link">Discount Calculator</Link>
-              <Link to="/calculators" className="footer-link" style={{ color: '#C9A227' }}>All 8 Calculators →</Link>
+              <Link to="/calculators" className="footer-link footer-link-highlight">All 8 Calculators →</Link>
             </div>
           </div>
 
-          <div>
+          <div className="footer-column">
             <h4 className="footer-col-title">Documents</h4>
             <div className="footer-links">
               <Link to="/documents/invoice" className="footer-link">Invoice Generator</Link>
               <Link to="/documents/quote" className="footer-link">Quote Generator</Link>
               <Link to="/documents/receipt" className="footer-link">Receipt Creator</Link>
               <Link to="/documents/proposal" className="footer-link">Proposal Builder</Link>
-              <Link to="/documents" className="footer-link" style={{ color: '#C9A227' }}>All Document Tools →</Link>
+              <Link to="/documents" className="footer-link footer-link-highlight">All Document Tools →</Link>
             </div>
           </div>
 
-          <div>
+          <div className="footer-column footer-column-platform">
             <h4 className="footer-col-title">Platform</h4>
-            <div className="footer-links">
+            <div className="footer-links footer-links-split">
               <Link to="/business" className="footer-link">Business Overview</Link>
               <Link to="/pricing" className="footer-link">Pricing (Free First)</Link>
               <Link to="/about" className="footer-link">About BizPilotly</Link>
@@ -58,10 +58,10 @@ export const PublicFooter: React.FC = () => {
         </div>
 
         <div className="footer-bottom">
-          <div>
+          <div className="footer-copyright">
             © {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div className="footer-bottom-links">
             <Link to="/privacy" className="footer-link" style={{ fontSize: '0.8125rem' }}>Privacy Policy</Link>
             <Link to="/terms" className="footer-link" style={{ fontSize: '0.8125rem' }}>Terms of Service</Link>
             <Link to="/refund-policy" className="footer-link" style={{ fontSize: '0.8125rem' }}>Refund & Cancellation</Link>

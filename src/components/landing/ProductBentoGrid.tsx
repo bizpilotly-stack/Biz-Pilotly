@@ -54,53 +54,58 @@ export const ProductBentoGrid: React.FC = () => {
             intensity="subtle"
             style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: '720px' }}
           >
-            No more jumping between spreadsheets, invoice apps, and manual notes. BizPilotly unifies your client pipeline from initial estimate to net realized profit.
+            No more jumping between disconnected spreadsheets, manual invoicing, and notes. BizPilotly unifies your complete workflow from initial estimate to net realized profit.
           </KineticText>
         </div>
 
-        {/* Bento Grid Layout (Strictly Balanced 3-Column Hierarchy) */}
+        {/* Bento Grid Layout (Strictly Balanced Architecture) */}
         <div className="bento-grid">
-          {/* 1. LARGE PRIMARY ANCHOR CELL (Spans 2 columns) */}
+          {/* 1. LARGE PRIMARY HERO CELL (Spans 2 columns on desktop) */}
           <div className="bento-card bento-card-hero">
-            <div className="bento-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="bento-icon-badge" style={{ background: 'rgba(201, 162, 39, 0.15)', color: '#C9A227' }}>
-                  <Sparkles size={18} />
+            <div>
+              <div className="bento-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div className="bento-icon-badge" style={{ background: 'rgba(201, 162, 39, 0.15)', color: '#C9A227' }}>
+                    <Sparkles size={18} />
+                  </div>
+                  <div>
+                    <span className="bento-category">Unified Engine</span>
+                    <h3 className="bento-title" style={{ fontSize: '1.25rem' }}>Operating Command Center</h3>
+                  </div>
                 </div>
-                <div>
-                  <span className="bento-category">Unified Engine</span>
-                  <h3 className="bento-title" style={{ fontSize: '1.25rem' }}>Operating Command Center</h3>
+                <span className="badge badge-gold" style={{ fontSize: '0.6875rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
+                  Live Production UI
+                </span>
+              </div>
+
+              <p style={{ fontSize: '0.9375rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                Real-time financial reconciliation synchronizing gross billings, client retainers, active receivables, and true take-home margins.
+              </p>
+
+              <div className="bento-hero-metrics-grid">
+                <div className="bento-hero-metric-box">
+                  <div className="bento-metric-label">Gross Invoicing</div>
+                  <div className="bento-hero-metric-val">$24,500.00</div>
+                  <div className="bento-metric-subtext" style={{ color: '#10B981' }}>+18.4% this month</div>
+                </div>
+                <div className="bento-hero-metric-box">
+                  <div className="bento-metric-label">Active Receivables</div>
+                  <div className="bento-hero-metric-val" style={{ color: '#FBBF24' }}>$3,200.00</div>
+                  <div className="bento-metric-subtext" style={{ color: '#94a3b8' }}>2 Invoices Pending</div>
+                </div>
+                <div className="bento-hero-metric-box">
+                  <div className="bento-metric-label">Realized Margin</div>
+                  <div className="bento-hero-metric-val" style={{ color: '#38BDF8' }}>81.9% Net</div>
+                  <div className="bento-metric-subtext" style={{ color: '#C9A227' }}>Expenses Logged</div>
                 </div>
               </div>
-              <span className="badge badge-gold" style={{ fontSize: '0.6875rem' }}>Live Production UI</span>
             </div>
 
-            <p style={{ fontSize: '0.9375rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-              Real-time financial reconciliation combining gross revenue, client retainers, deductible expenses, and true net margins.
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.875rem', marginBottom: '1.5rem' }}>
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
-                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gross Billings</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '4px' }}>Real-time Tracking</div>
-                <div style={{ fontSize: '0.6875rem', color: '#10B981', marginTop: '2px' }}>Automatic Reconciliation</div>
-              </div>
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
-                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Receivables</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FBBF24', marginTop: '4px' }}>Active Invoices</div>
-                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', marginTop: '2px' }}>Overdue Reminders</div>
-              </div>
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
-                <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Intelligence</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38BDF8', marginTop: '4px' }}>True Profit Margin</div>
-                <div style={{ fontSize: '0.6875rem', color: '#C9A227', marginTop: '2px' }}>Deductible Expenses</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div className="bento-hero-footer">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#cbd5e1', fontSize: '0.8125rem' }}>
                 <CheckCircle2 size={16} color="#10B981" />
-                <span>All client retainers & accounts balanced.</span>
+                <span>All client accounts & tax ledgers reconciled</span>
               </div>
               <Link to="/signup" className="btn btn-gold btn-sm" style={{ fontSize: '0.8125rem', padding: '6px 14px' }}>
                 <span>Get Started Free</span>
@@ -111,91 +116,108 @@ export const ProductBentoGrid: React.FC = () => {
 
           {/* 2. CELL: CLIENT DIRECTORY (1 Column) */}
           <div className="bento-card">
-            <div className="bento-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="bento-icon-badge" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38BDF8' }}>
-                  <Users size={16} />
-                </div>
-                <div>
-                  <span className="bento-category">Relationships</span>
-                  <h3 className="bento-title">Clients & Ledgers</h3>
+            <div>
+              <div className="bento-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <div className="bento-icon-badge" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#0284C7' }}>
+                    <Users size={16} />
+                  </div>
+                  <div>
+                    <span className="bento-category">Relationships</span>
+                    <h3 className="bento-title">Clients & Ledgers</h3>
+                  </div>
                 </div>
               </div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                Maintain verified contact profiles, multi-currency billing terms, active retainers, and complete document histories.
+              </p>
             </div>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              Maintain verified contact profiles, billing currencies, active retainers, and complete document histories.
-            </p>
 
-            {/* Real Client Card Preview */}
+            {/* Client Card Preview */}
             <div className="bento-mini-preview">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0B1F3A' }}>Apex Digital Studio</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '8px', background: '#0B1F3A', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 800 }}>
+                    AD
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A', lineHeight: 1.2 }}>Apex Digital Studio</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>Design Retainer</div>
+                  </div>
+                </div>
                 <span className="badge badge-success" style={{ fontSize: '0.625rem' }}>Active</span>
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Lifetime Value:</span>
-                <strong style={{ color: '#0B1F3A' }}>$19,800.00</strong>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-                <span>Terms:</span>
-                <span>Net 15 • USD</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color, #E2E8F0)' }}>
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>Lifetime Value</div>
+                  <strong style={{ fontSize: '0.8125rem', color: '#0B1F3A' }}>$19,800.00</strong>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>Terms</div>
+                  <span style={{ fontSize: '0.8125rem', color: '#0B1F3A', fontWeight: 600 }}>Net 15 • USD</span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* 3. CELL: DOCUMENT LIFECYCLE PIPELINE (1 Column) */}
           <div className="bento-card">
-            <div className="bento-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="bento-icon-badge" style={{ background: 'rgba(167, 139, 250, 0.15)', color: '#A78BFA' }}>
-                  <FileText size={16} />
-                </div>
-                <div>
-                  <span className="bento-category">Agreements</span>
-                  <h3 className="bento-title">Documents Pipeline</h3>
+            <div>
+              <div className="bento-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <div className="bento-icon-badge" style={{ background: 'rgba(167, 139, 250, 0.15)', color: '#7C3AED' }}>
+                    <FileText size={16} />
+                  </div>
+                  <div>
+                    <span className="bento-category">Agreements</span>
+                    <h3 className="bento-title">Documents Pipeline</h3>
+                  </div>
                 </div>
               </div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                Proposals convert seamlessly to accepted contracts, quotes, invoices, and instant customer receipts with 1 click.
+              </p>
             </div>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              Proposals convert seamlessly to accepted contracts, quotes, invoices, and instant receipts with 1 click.
-            </p>
 
             {/* Document Progression Chain */}
-            <div className="bento-mini-preview" style={{ padding: '0.625rem 0.875rem' }}>
+            <div className="bento-mini-preview">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#0B1F3A' }}>
-                <span style={{ color: '#1E40AF' }}>PROP-2026-004</span>
+                <span style={{ color: '#1E40AF', fontFamily: 'var(--font-mono, monospace)' }}>PROP-2026-004</span>
                 <span className="badge badge-success" style={{ fontSize: '0.625rem' }}>Accepted</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '6px 0', fontSize: '0.6875rem', color: '#10B981', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '0.5rem 0', fontSize: '0.6875rem', color: '#10B981', fontWeight: 600, background: 'rgba(16, 185, 129, 0.08)', padding: '4px 8px', borderRadius: '6px' }}>
                 <Zap size={12} />
                 <span>Auto-converts to Invoice #INV-0089</span>
               </div>
-              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>
-                Scope & deliverables locked with digital timestamp.
+              <div style={{ fontSize: '0.6875rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Deliverables locked</span>
+                <span style={{ color: '#0B1F3A', fontWeight: 600 }}>PDF & WhatsApp</span>
               </div>
             </div>
           </div>
 
           {/* 4. CELL: PAYMENTS & SETTLEMENT (1 Column) */}
           <div className="bento-card">
-            <div className="bento-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="bento-icon-badge" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#10B981' }}>
-                  <CreditCard size={16} />
-                </div>
-                <div>
-                  <span className="bento-category">Settlement</span>
-                  <h3 className="bento-title">Payments & Deposits</h3>
+            <div>
+              <div className="bento-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <div className="bento-icon-badge" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#059669' }}>
+                    <CreditCard size={16} />
+                  </div>
+                  <div>
+                    <span className="bento-category">Settlement</span>
+                    <h3 className="bento-title">Payments & Deposits</h3>
+                  </div>
                 </div>
               </div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                Record direct bank transfers, USSD, and card settlements. Automatically generates and emails customer receipts.
+              </p>
             </div>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              Record direct bank transfers, USSD, and card settlements. Automatically generates and emails customer receipts.
-            </p>
 
-            {/* Real Payment Record Preview */}
+            {/* Payment Record Preview */}
             <div className="bento-mini-preview">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0B1F3A' }}>Wire Deposit #PAY-992</div>
                   <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>Bank Transfer • Today</div>
@@ -205,37 +227,47 @@ export const ProductBentoGrid: React.FC = () => {
                   <span className="badge badge-success" style={{ fontSize: '0.625rem' }}>Settled</span>
                 </div>
               </div>
+              <div style={{ fontSize: '0.6875rem', color: '#64748B', display: 'flex', justifyContent: 'space-between', paddingTop: '0.375rem', borderTop: '1px solid var(--border-color, #E2E8F0)' }}>
+                <span>Receipt generated:</span>
+                <span style={{ color: '#0B1F3A', fontWeight: 600 }}>REC-2026-089</span>
+              </div>
             </div>
           </div>
 
           {/* 5. CELL: EXPENSES, ACCOUNTING & REALIZED NET PROFIT (1 Column) */}
           <div className="bento-card">
-            <div className="bento-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="bento-icon-badge" style={{ background: 'rgba(201, 162, 39, 0.2)', color: '#C9A227' }}>
-                  <TrendingUp size={16} />
-                </div>
-                <div>
-                  <span className="bento-category">Accounting</span>
-                  <h3 className="bento-title">Profit & Overheads</h3>
+            <div>
+              <div className="bento-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <div className="bento-icon-badge" style={{ background: 'rgba(201, 162, 39, 0.15)', color: '#B45309' }}>
+                    <TrendingUp size={16} />
+                  </div>
+                  <div>
+                    <span className="bento-category">Financial Clarity</span>
+                    <h3 className="bento-title">Profit & Overheads</h3>
+                  </div>
                 </div>
               </div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                Deductible expenses update your true profit margins in real-time. Export 1-click tax ledgers instantly.
+              </p>
             </div>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              Deductible expenses update your true profit margins in real-time. Export 1-click tax ledgers instantly.
-            </p>
 
-            {/* Realized Profit Badge */}
-            <div className="bento-mini-preview" style={{ background: '#0B1F3A', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {/* Realized Profit Preview */}
+            <div className="bento-mini-preview" style={{ background: 'linear-gradient(135deg, #0B1F3A 0%, #172B4D 100%)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textTransform: 'uppercase' }}>Net Margin Target</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#C9A227', marginTop: '2px' }}>81.9% Net</div>
+                  <div style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Net Margin Target</div>
+                  <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#FBBF24', marginTop: '1px' }}>81.9% Net</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>Realized Return</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', marginTop: '2px' }}>$16,227.52</div>
+                  <div style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Realized Return</div>
+                  <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#ffffff', marginTop: '1px' }}>$16,227.52</div>
                 </div>
+              </div>
+              <div style={{ fontSize: '0.625rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', paddingTop: '0.375rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <span>Overhead Deductions:</span>
+                <span style={{ color: '#cbd5e1', fontWeight: 600 }}>$3,572.48 Logged</span>
               </div>
             </div>
           </div>
